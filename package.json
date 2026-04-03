@@ -6,7 +6,7 @@
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
-    "start": "electron-forge start",
+    "dev": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
+    "modern-monaco": "^0.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   }
