@@ -1,28 +1,15 @@
 import type { CSSProperties } from 'react';
 
 import Header from './components/Header';
-import Panel from './components/Panel';
-
-const sections = [
-  {
-    title: 'Project',
-    description: 'Group files, commands, and status into dedicated UI pieces.',
-  },
-  {
-    title: 'Editor',
-    description: 'Keep your actual workspace isolated from the shell and chrome.',
-  },
-  {
-    title: 'Console',
-    description: 'Move logs, diagnostics, and actions into reusable renderer modules.',
-  },
-];
+import ModernEditor from './components/ModernEditor';
 
 export default function App() {
   return (
     <main style={styles.page}>
       <Header />
-      
+      <section style={styles.editorShell}>
+        <ModernEditor />
+      </section>
     </main>
   );
 }
@@ -35,9 +22,7 @@ const styles: Record<string, CSSProperties> = {
     gap: '24px',
     alignContent: 'start',
   },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '16px',
+  editorShell: {
+    width: '100%',
   },
 };
