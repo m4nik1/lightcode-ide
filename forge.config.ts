@@ -7,9 +7,17 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
+const packagedIcon =
+  process.platform === 'darwin'
+    ? './assets/appIcon/icon.icns'
+    : process.platform === 'win32'
+      ? './assets/appIcon/icon.ico'
+      : './assets/appIcon/Icon.png';
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    icon: packagedIcon,
   },
   rebuildConfig: {},
   makers: [
