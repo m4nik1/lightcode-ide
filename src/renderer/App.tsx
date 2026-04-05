@@ -22,15 +22,7 @@ export default function App() {
   return (
     <main style={styles.page}>
       <Header />
-      <section style={styles.grid}>
-        {sections.map((section) => (
-          <Panel
-            key={section.title}
-            title={section.title}
-            description={section.description}
-          />
-        ))}
-      </section>
+      
     </main>
   );
 }
