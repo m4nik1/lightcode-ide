@@ -1,12 +1,11 @@
-import type { CSSProperties } from 'react';
-
-import Header from './components/Header';
-import ModernEditor from './components/ModernEditor';
+import type { CSSProperties } from "react";
+import ModernEditor from "./components/ModernEditor";
+import TopBar from "./components/TopBar";
 
 export default function App() {
   return (
     <main style={styles.page}>
-      <Header />
+      <TopBar />
       <section style={styles.editorShell}>
         <ModernEditor />
       </section>
@@ -16,13 +15,13 @@ export default function App() {
 
 const styles: Record<string, CSSProperties> = {
   page: {
-    minHeight: '100vh',
-    padding: '48px 24px',
-    display: 'grid',
-    gap: '24px',
-    alignContent: 'start',
+    height: "100vh",
+    display: "grid",
+    gridTemplateRows: "30px minmax(0, 1fr)",
   },
   editorShell: {
-    width: '100%',
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
   },
 };
