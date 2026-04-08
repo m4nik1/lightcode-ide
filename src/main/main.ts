@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
+const isMac = process.platform === 'darwin';
 const iconFileName = process.platform === 'win32' ? 'icon.ico' : 'Icon.png';
 
 const iconPath = path.join(app.getAppPath(), 'assets', 'appIcon', iconFileName);
@@ -17,6 +18,8 @@ const createWindow = () => {
     width: 800,
     height: 600,
     icon: iconPath,
+    autoHideMenuBar: true,
+    ...(isMac ? { titleBarStyle: 'hiddenInset' } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -25,21 +28,21 @@ const createWindow = () => {
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
-  if (process.platform === 'darwin' && app.dock) {
+  if (isMac && app.dock) {
     app.dock.setIcon(iconPath);
   }
 
@@ -50,7 +53,7 @@ app.on('ready', () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (!isMac) {
     app.quit();
   }
 });
