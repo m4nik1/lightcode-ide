@@ -1,3 +1,10 @@
+:root,
+html,
+body,
+#root {
+  height: 100%;
+}
+
 :root {
   color: #f5f7fb;
   background: #111827;
@@ -12,10 +19,6 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.24), transparent 35%),
-    #111827;
 }
 
 button,
@@ -27,4 +30,17 @@ select {
 
 #root {
   min-height: 100vh;
+}
+
+/* ── TopBar ─────────────────────────────────────────── */
+
+.topbar-trigger:hover,
+.topbar-trigger[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.topbar-menu-item:hover,
+.topbar-menu-item:focus-visible {
+  background: #094771 !important;
+  color: #ffffff !important;
 }

@@ -1,35 +1,16 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties } from "react";
+import ModernEditor from "./components/ModernEditor";
+import TopBar from "./components/TopBar";
 
-import Header from './components/Header';
-import Panel from './components/Panel';
-
-const sections = [
-  {
-    title: 'Project',
-    description: 'Group files, commands, and status into dedicated UI pieces.',
-  },
-  {
-    title: 'Editor',
-    description: 'Keep your actual workspace isolated from the shell and chrome.',
-  },
-  {
-    title: 'Console',
-    description: 'Move logs, diagnostics, and actions into reusable renderer modules.',
-  },
-];
+const isMac = navigator.platform.toUpperCase().includes("MAC");
+const macTopBarHeight = 52;
 
 export default function App() {
   return (
     <main style={styles.page}>
-      <Header />
-      <section style={styles.grid}>
-        {sections.map((section) => (
-          <Panel
-            key={section.title}
-            title={section.title}
-            description={section.description}
-          />
-        ))}
+      {isMac ? <div aria-hidden="true" style={styles.macTopBar} /> : <TopBar />}
+      <section style={styles.editorShell}>
+        <ModernEditor />
       </section>
     </main>
   );
@@ -37,15 +18,21 @@ export default function App() {
 
 const styles: Record<string, CSSProperties> = {
   page: {
-    minHeight: '100vh',
-    padding: '48px 24px',
-    display: 'grid',
-    gap: '24px',
-    alignContent: 'start',
+    height: "100vh",
+    display: "grid",
+    gridTemplateRows: isMac
+      ? `${macTopBarHeight}px minmax(0, 1fr)`
+      : "30px minmax(0, 1fr)",
   },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '16px',
+  macTopBar: {
+    background: "#111827",
+    borderBottom: "1px solid #2b2b2b",
+    // @ts-expect-error -- Electron-specific CSS for draggable title bar
+    WebkitAppRegion: "drag",
+  },
+  editorShell: {
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
   },
 };
