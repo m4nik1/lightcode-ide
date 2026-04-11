@@ -2,7 +2,6 @@ import { CSSProperties } from "react";
 import type { FileTreeNode } from "../../types/FileTreeNode";
 import Chevron from "./ChevronArrow";
 
-
 type TreeNodeProps = {
   node: FileTreeNode;
   depth: number;
@@ -13,49 +12,57 @@ type TreeNodeProps = {
   onSelectItem: (path: string) => void;
 };
 
-
-function FolderIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      style={{ flexShrink: 0 }}
-    >
-      {open ? (
-        <path
-          d="M1.5 3C1.5 2.44772 1.94772 2 2.5 2H6.29289L7.79289 3.5H13.5C14.0523 3.5 14.5 3.94772 14.5 4.5V5H3L1.5 12.5V3Z"
-          fill="#dcb67a"
-        />
-      ) : (
-        <path
-          d="M1.5 3C1.5 2.44772 1.94772 2 2.5 2H6.29289L7.79289 3.5H13.5C14.0523 3.5 14.5 3.94772 14.5 4.5V12C14.5 12.5523 14.0523 13 13.5 13H2.5C1.94772 13 1.5 12.5523 1.5 12V3Z"
-          fill="#dcb67a"
-        />
-      )}
-    </svg>
-  );
+function getExtension(name: string): string {
+  const idx = name.lastIndexOf(".");
+  return idx === -1 ? "" : name.slice(idx + 1).toLowerCase();
 }
 
-function FileIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      style={{ flexShrink: 0 }}
-    >
-      <path
-        d="M3 1.5H10L13 4.5V14.5H3V1.5Z"
-        stroke="#8b949e"
-        strokeWidth="1"
-        fill="none"
-      />
-      <path d="M10 1.5V4.5H13" stroke="#8b949e" strokeWidth="1" fill="none" />
-    </svg>
-  );
+function FileTypeIcon({ name }: { name: string }) {
+  const ext = getExtension(name);
+  const viewBox = "0 0 16 16";
+  const size = { width: 16, height: 16, flexShrink: 0 } as const;
+
+  switch (ext) {
+    case "tsx": {
+      const color = "#61dafb";
+      return (
+        <svg {...size} viewBox={viewBox} fill="none">
+          <path d="M3 1.5H10L13 4.5V14.5H3V1.5Z" fill={color} fillOpacity={0.15} stroke={color} strokeWidth="1" />
+          <path d="M10 1.5V4.5H13" stroke={color} strokeWidth="1" fill="none" />
+          <text x="5" y="11" fontSize="6" fontFamily="monospace" fontWeight="700" fill={color}>TX</text>
+        </svg>
+      );
+    }
+    case "ts": {
+      const color = "#3178c6";
+      return (
+        <svg {...size} viewBox={viewBox} fill="none">
+          <path d="M3 1.5H10L13 4.5V14.5H3V1.5Z" fill={color} fillOpacity={0.15} stroke={color} strokeWidth="1" />
+          <path d="M10 1.5V4.5H13" stroke={color} strokeWidth="1" fill="none" />
+          <text x="4.5" y="11" fontSize="6.5" fontFamily="monospace" fontWeight="700" fill={color}>TS</text>
+        </svg>
+      );
+    }
+    case "js": {
+      const color = "#f7df1e";
+      return (
+        <svg {...size} viewBox={viewBox} fill="none">
+          <path d="M3 1.5H10L13 4.5V14.5H3V1.5Z" fill={color} fillOpacity={0.15} stroke={color} strokeWidth="1" />
+          <path d="M10 1.5V4.5H13" stroke={color} strokeWidth="1" fill="none" />
+          <text x="4.5" y="11" fontSize="6.5" fontFamily="monospace" fontWeight="700" fill={color}>JS</text>
+        </svg>
+      );
+    }
+    default: {
+      const color = "#8b949e";
+      return (
+        <svg {...size} viewBox={viewBox} fill="none">
+          <path d="M3 1.5H10L13 4.5V14.5H3V1.5Z" stroke={color} strokeWidth="1" fill="none" />
+          <path d="M10 1.5V4.5H13" stroke={color} strokeWidth="1" fill="none" />
+        </svg>
+      );
+    }
+  }
 }
 
 export default function TreeNode({
@@ -78,14 +85,19 @@ export default function TreeNode({
     }
   };
 
-  const paddingLeft = 12 + depth * 16;
+  const paddingLeft = 8 + depth * 14;
   const className = `explorer-item${isSelected ? " explorer-item-selected" : ""}`;
 
   return (
     <>
       <div
         className={className}
-        style={{ ...styles.treeRow, paddingLeft }}
+        style={{
+          ...styles.treeRow,
+          paddingLeft,
+          color: isFolder ? "#e0e0e0" : undefined,
+          fontWeight: isFolder ? 600 : undefined,
+        }}
         onClick={handleClick}
         role="treeitem"
         aria-expanded={isFolder ? isExpanded : undefined}
@@ -101,10 +113,9 @@ export default function TreeNode({
         {isFolder ? (
           <Chevron open={isExpanded} />
         ) : (
-          /* Spacer to align files with folder labels */
           <span style={{ width: 16, flexShrink: 0 }} />
         )}
-        {isFolder ? <FolderIcon open={isExpanded} /> : <FileIcon />}
+        {!isFolder && <FileTypeIcon name={node.name} />}
         <span style={styles.label}>{node.name}</span>
       </div>
 
@@ -126,8 +137,6 @@ export default function TreeNode({
   );
 }
 
-// ── Styles ──────────────────────────────────────────────────
-
 const styles: Record<string, CSSProperties> = {
   treeRow: {
     height: 22,
@@ -139,6 +148,11 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     color: "#cccccc",
     outline: "none",
+    whiteSpace: "nowrap",
+  },
+  label: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
 };

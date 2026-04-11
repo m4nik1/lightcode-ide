@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import TreeNode from "./TreeNode";
-import Chevron from "./ChevronArrow";
 import { mockTree } from "./mockData";
 
 export default function FileExplorer() {
@@ -28,18 +27,9 @@ export default function FileExplorer() {
 
   return (
     <div style={styles.container}>
-      {/* ── Sidebar header ─────────────────────────── */}
-      <div style={styles.header}>
-        <span style={styles.headerLabel}>EXPLORER</span>
-      </div>
-
-      {/* Section header (project name) */}
       <div style={styles.sectionHeader}>
-        <Chevron open={true} />
-        <span style={styles.sectionLabel}>M4CODE-IDE</span>
+        <span style={styles.sectionLabel}>m4code-ide</span>
       </div>
-
-      {/* Mock tree view */}
       <div style={styles.treeContainer} role="tree" aria-label="File explorer">
         {mockTree.map((node) => (
           <TreeNode
@@ -58,32 +48,16 @@ export default function FileExplorer() {
   );
 }
 
-// ── Styles ──────────────────────────────────────────────────
-
 const styles: Record<string, CSSProperties> = {
   container: {
     width: "100%",
     height: "100%",
-    background: "#252526",
+    background: "#0A0A0A",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
     userSelect: "none",
   },
-  header: {
-    height: 35,
-    display: "flex",
-    alignItems: "center",
-    paddingLeft: 20,
-    fontSize: 11,
-    fontWeight: 400,
-    letterSpacing: "0.04em",
-    color: "#bbbbbb",
-    textTransform: "uppercase",
-    borderBottom: "1px solid #1e1e1e",
-    flexShrink: 0,
-  },
-  headerLabel: {},
   sectionHeader: {
     height: 22,
     display: "flex",
@@ -95,7 +69,7 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: "0.04em",
     color: "#cccccc",
     textTransform: "uppercase",
-    background: "#252526",
+    background: "#000000",
     borderBottom: "1px solid #1e1e1e",
     flexShrink: 0,
     cursor: "pointer",
@@ -107,10 +81,5 @@ const styles: Record<string, CSSProperties> = {
     overflowX: "hidden",
     paddingTop: 2,
     paddingBottom: 8,
-  },
-  label: {
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
   },
 };

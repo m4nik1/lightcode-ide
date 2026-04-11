@@ -11,9 +11,7 @@ export default function ModernEditor() {
       return;
     }
 
-    const monaco = await init({
-      defaultTheme: "one-dark-pro",
-    });
+    const monaco = await init();
 
     const model = monaco.editor.createModel("", "javascript");
 
