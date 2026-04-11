@@ -44,3 +44,45 @@ select {
   background: #094771 !important;
   color: #ffffff !important;
 }
+
+/* ── FileExplorer ───────────────────────────────────────── */
+
+.explorer-item:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.explorer-item-selected {
+  background: #094771 !important;
+  color: #ffffff !important;
+}
+
+.explorer-item-selected:hover {
+  background: #094771 !important;
+}
+
+.explorer-item:focus-visible {
+  outline: 1px solid #094771;
+  outline-offset: -1px;
+}
+
+/* Thin scrollbar for the tree (VS Code style) */
+.explorer-item + div::-webkit-scrollbar,
+div[role='tree']::-webkit-scrollbar {
+  width: 10px;
+}
+
+div[role='tree']::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+div[role='tree']::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+div[role='tree']::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+}
