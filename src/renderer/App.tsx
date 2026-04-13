@@ -1,10 +1,9 @@
 import type { CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
-import TopBar from "./components/TopBar";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
-const macTopBarHeight = 52;
+const macTopBarHeight = 37;
 const sidebarWidth = 240;
 
 export default function App() {
@@ -33,7 +32,7 @@ const styles: Record<string, CSSProperties> = {
       : "30px minmax(0, 1fr)",
   },
   macTopBar: {
-    background: "#111827",
+    background: "var(--editor-surface)",
     borderBottom: "1px solid #2b2b2b",
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",

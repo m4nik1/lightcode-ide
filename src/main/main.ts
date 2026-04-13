@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { createMacApplicationMenu } from './macAppMenu';
 
 const isMac = process.platform === 'darwin';
 const iconFileName = process.platform === 'win32' ? 'icon.ico' : 'Icon.png';
@@ -42,8 +44,12 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
-  if (isMac && app.dock) {
-    app.dock.setIcon(iconPath);
+  if (isMac && app.dock && runtimeIconPath) {
+    app.dock.setIcon(runtimeIconPath);
+  }
+
+  if (isMac) {
+    createMacApplicationMenu();
   }
 
   createWindow();

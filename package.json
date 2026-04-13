@@ -2,7 +2,7 @@
   "name": "m4code-ide",
   "productName": "m4code-ide",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Code at the speed of light",
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {

@@ -6,6 +6,7 @@ body,
 }
 
 :root {
+  --editor-surface: #1e1e1e;
   color: #f5f7fb;
   background: #111827;
   font-family:
