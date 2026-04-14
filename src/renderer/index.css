@@ -6,7 +6,7 @@ body,
 }
 
 :root {
-  --editor-surface: #1e1e1e;
+  --editor-surface: #121212;
   color: #f5f7fb;
   background: #111827;
   font-family:
@@ -44,6 +44,20 @@ select {
 .topbar-menu-item:focus-visible {
   background: #094771 !important;
   color: #ffffff !important;
+}
+
+.topbar-menu-item {
+  width: fit-content;
+  height: 22px;
+  border: 0;
+  background: transparent;
+  color: #cccccc;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: 0 8px;
+  border-radius: 4px;
 }
 
 /* ── FileExplorer ───────────────────────────────────────── */

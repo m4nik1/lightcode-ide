@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
+import TopBar from "./components/TopBar";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 const macTopBarHeight = 37;
@@ -9,7 +10,7 @@ const sidebarWidth = 240;
 export default function App() {
   return (
     <main style={styles.page}>
-      {isMac ? <div aria-hidden="true" style={styles.macTopBar} /> : <TopBar />}
+      <TopBar />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
           <FileExplorer />

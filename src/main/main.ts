@@ -1,5 +1,4 @@
-import { app, BrowserWindow } from 'electron';
-import fs from 'node:fs';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { createMacApplicationMenu } from './macAppMenu';
@@ -40,14 +39,14 @@ const createWindow = () => {
   }
 };
 
+ipcMain.handle("dialog.openFile", () => {
+  return dialog.showOpenDialog({ properties: ['openFile'] })
+})
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
-  if (isMac && app.dock && runtimeIconPath) {
-    app.dock.setIcon(runtimeIconPath);
-  }
-
   if (isMac) {
     createMacApplicationMenu();
   }
