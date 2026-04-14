@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
 import TopBar from "./components/TopBar";
@@ -8,16 +8,19 @@ const macTopBarHeight = 37;
 const sidebarWidth = 240;
 
 export default function App() {
+  // Keep the selected path in App so both the menu and editor can share it.
+  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+
   return (
     <main style={styles.page}>
-      <TopBar />
+      <TopBar onOpenFile={setActiveFilePath} />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
           <FileExplorer />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <ModernEditor />
+          <ModernEditor filePath={activeFilePath} />
         </section>
       </div>
     </main>

@@ -1,10 +1,24 @@
 import { CSSProperties, useState } from "react"
 
-export default function TopBar() {
+type TopBarProps = {
+  onOpenFile: (filePath: string) => void
+}
+
+export default function TopBar({ onOpenFile }: TopBarProps) {
   const [fileDropDown, setFileDropDown] = useState(false);
 
-  function openFile() {
-    window.electronAPI.openFile()
+  async function openFile() {
+    // Send the selected path up so App can share it with the editor.
+    const file = await window.electronAPI.openFile()
+    const filePath = file.filePaths[0]
+
+    if (!filePath) {
+      return
+    }
+
+    onOpenFile(filePath)
+    setFileDropDown(false)
+
   }
 
   return (

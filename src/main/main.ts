@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { createMacApplicationMenu } from './macAppMenu';
@@ -41,6 +42,10 @@ const createWindow = () => {
 
 ipcMain.handle("dialog.openFile", () => {
   return dialog.showOpenDialog({ properties: ['openFile'] })
+})
+
+ipcMain.handle('fs.readFile', async (_event, filePath: string) => {
+  return fs.readFile(filePath, 'utf8');
 })
 
 // This method will be called when Electron has finished
