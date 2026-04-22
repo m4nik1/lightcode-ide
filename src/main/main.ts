@@ -45,7 +45,9 @@ ipcMain.handle("dialog.openFile", () => {
 })
 
 ipcMain.handle('fs.readFile', async (_event, filePath: string) => {
-  return fs.readFile(filePath, 'utf8');
+  console.log("Reading file: ", filePath);
+  const contents = await fs.readFile(filePath, 'utf8');
+  return contents
 })
 
 // This method will be called when Electron has finished

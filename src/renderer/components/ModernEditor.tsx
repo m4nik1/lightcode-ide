@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { init } from "modern-monaco";
+import { editor } from "modern-monaco/types/monaco";
 
 type ModernEditorProps = {
   filePath: string | null;
@@ -7,44 +8,43 @@ type ModernEditorProps = {
 
 export default function ModernEditor({ filePath }: ModernEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const monacoRef = useRef<Awaited<ReturnType<typeof init>> | null>(null);
-  const editorInstanceRef = useRef<ReturnType<Awaited<ReturnType<typeof init>>["editor"]["create"]> | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
+  let editor : editor.IStandaloneCodeEditor;
 
   useEffect(() => {
     latestFilePathRef.current = filePath;
   }, [filePath]);
 
   const initializeEditor = async () => {
-    if (!editorRef.current || editorInstanceRef.current) {
+    if (!editorRef.current) {
       return;
     }
 
+
+  };
+
+  const setupEditor = async (nextFilePath: string) => {
+
     const monaco = await init();
-    monacoRef.current = monaco;
-    editorInstanceRef.current = monaco.editor.create(editorRef.current, {
+
+    console.log("Setting up editor with file selected.", nextFilePath)
+
+    editor = monaco.editor.create(editorRef.current!, {
       smoothScrolling: true,
       cursorSmoothCaretAnimation: "on", // Smooth caret animation
       cursorBlinking: "smooth",
     });
-  };
 
-  const setupEditor = async (nextFilePath: string) => {
-    if (!monacoRef.current || !editorInstanceRef.current) {
-      return;
+    try {
+      // Read the active file after App tells the editor which path was chosen.
+      const fileContents = await window.electronAPI.readFile(nextFilePath);
+
+      const model = monaco.editor.createModel(fileContents, undefined, monaco.Uri.file(nextFilePath));
+
+      editor.setModel(model);
+    } catch(err) {
+      console.error(err);
     }
-
-    // Read the active file after App tells the editor which path was chosen.
-    const fileContents = await window.electronAPI.readFile(nextFilePath);
-    const modelUri = monacoRef.current.Uri.file(nextFilePath);
-    const existingModel = monacoRef.current.editor.getModel(modelUri);
-    const model = existingModel ?? monacoRef.current.editor.createModel(fileContents, undefined, modelUri);
-
-    if (existingModel) {
-      existingModel.setValue(fileContents);
-    }
-
-    editorInstanceRef.current.setModel(model);
   };
 
   useEffect(() => {
