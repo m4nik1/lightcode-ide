@@ -1,17 +1,28 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
+import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
 import TopBar from "./components/TopBar";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
-const macTopBarHeight = 52;
+const macTopBarHeight = 37;
+const sidebarWidth = 240;
 
 export default function App() {
+  // Keep the selected path in App so both the menu and editor can share it.
+  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+
   return (
     <main style={styles.page}>
-      {isMac ? <div aria-hidden="true" style={styles.macTopBar} /> : <TopBar />}
-      <section style={styles.editorShell}>
-        <ModernEditor />
-      </section>
+      <TopBar onOpenFile={setActiveFilePath} />
+      <div style={styles.body}>
+        <aside style={styles.sidebar}>
+          <FileExplorer />
+        </aside>
+        <div style={styles.sidebarBorder} />
+        <section style={styles.editorShell}>
+          <ModernEditor filePath={activeFilePath} />
+        </section>
+      </div>
     </main>
   );
 }
@@ -25,10 +36,23 @@ const styles: Record<string, CSSProperties> = {
       : "30px minmax(0, 1fr)",
   },
   macTopBar: {
-    background: "#111827",
+    background: "var(--editor-surface)",
     borderBottom: "1px solid #2b2b2b",
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",
+  },
+  body: {
+    display: "grid",
+    gridTemplateColumns: `${sidebarWidth}px 1px minmax(0, 1fr)`,
+    minHeight: 0,
+    height: "100%",
+  },
+  sidebar: {
+    height: "100%",
+    overflow: "hidden",
+  },
+  sidebarBorder: {
+    background: "#2b2b2b",
   },
   editorShell: {
     width: "100%",
