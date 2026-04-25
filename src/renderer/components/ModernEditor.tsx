@@ -19,8 +19,6 @@ export default function ModernEditor({ filePath }: ModernEditorProps) {
     if (!editorRef.current) {
       return;
     }
-
-
   };
 
   const setupEditor = async (nextFilePath: string) => {
