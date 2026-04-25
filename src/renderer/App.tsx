@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
 import TopBar from "./components/TopBar";
+import TopTabs from "./components/TopTabs";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 const macTopBarHeight = 37;
@@ -20,6 +21,7 @@ export default function App() {
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
+          <TopTabs />
           <ModernEditor filePath={activeFilePath} />
         </section>
       </div>
