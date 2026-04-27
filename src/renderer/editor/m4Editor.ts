@@ -21,7 +21,8 @@ export class m4Editor {
         
         console.log("Setting up editor...")
 
-        if(this.editor != null) {
+        if(this.editor == null) {
+            console.log("Editor does not exist, creating new one...");
             this.editor = this.monaco.editor.create(this.editorRef!, {
                 smoothScrolling: true,
                 cursorSmoothCaretAnimation: "on",
@@ -30,7 +31,7 @@ export class m4Editor {
 
             if(filePath != '') {
                 const fileContents = await window.electronAPI.readFile(filePath)
-                this.model = this.monaco.editor.createModel(fileContents, undefined, monaco.Uri.file(filePath));
+                this.model = this.monaco.editor.createModel(fileContents, undefined, this.monaco.Uri.file(filePath));
             }
             else {
                 this.model = this.monaco.editor.createModel('')
