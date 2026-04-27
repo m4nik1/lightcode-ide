@@ -5,8 +5,14 @@ import TopBar from "./components/TopBar";
 import TopTabs from "./components/TopTabs";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
-const macTopBarHeight = 37;
+const macTrafficLightRowHeight = 38;
+const topBarHeight = 30;
+const tabBarHeight = 35;
 const sidebarWidth = 240;
+
+function openAIWindow() {
+  console.log("Opening AI window");
+}
 
 export default function App() {
   // Keep the selected path in App so both the menu and editor can share it.
@@ -14,7 +20,19 @@ export default function App() {
 
   return (
     <main style={styles.page}>
-      <TopBar onOpenFile={setActiveFilePath} />
+      {isMac && (
+        <div style={styles.macTrafficLightRow}>
+          <button
+            className="ai-window-btn"
+            style={styles.aiWindowBtn}
+            onClick={openAIWindow}
+            type="button"
+          >
+            AI window
+          </button>
+        </div>
+      )}
+      {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null}
       <div style={styles.body}>
         <aside style={styles.sidebar}>
           <FileExplorer />
@@ -34,12 +52,16 @@ const styles: Record<string, CSSProperties> = {
     height: "100vh",
     display: "grid",
     gridTemplateRows: isMac
-      ? `${macTopBarHeight}px minmax(0, 1fr)`
-      : "30px minmax(0, 1fr)",
+      ? `${macTrafficLightRowHeight}px minmax(0, 1fr)`
+      : `${topBarHeight}px minmax(0, 1fr)`,
   },
-  macTopBar: {
+  macTrafficLightRow: {
     background: "var(--editor-surface)",
     borderBottom: "1px solid #2b2b2b",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: 12,
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",
   },
@@ -60,5 +82,17 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     height: "100%",
     minHeight: 0,
+  },
+  aiWindowBtn: {
+    height: 22,
+    padding: "0 10px",
+    border: 0,
+    background: "transparent",
+    color: "#cccccc",
+    fontSize: 12,
+    borderRadius: 4,
+    cursor: "default",
+    // @ts-expect-error -- Electron-specific CSS so the button is clickable
+    WebkitAppRegion: "no-drag",
   },
 };

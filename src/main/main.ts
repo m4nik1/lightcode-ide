@@ -21,7 +21,7 @@ const createWindow = () => {
     height: 600,
     icon: iconPath,
     autoHideMenuBar: true,
-    ...(isMac ? { titleBarStyle: 'hiddenInset' } : {}),
+    ...(isMac ? { titleBarStyle: 'hidden' } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
