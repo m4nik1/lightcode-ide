@@ -91,7 +91,7 @@ const styles: Record<string, CSSProperties> = {
     color: "#cccccc",
     fontSize: 12,
     borderRadius: 4,
-    cursor: "default",
+    cursor: "pointer",
     // @ts-expect-error -- Electron-specific CSS so the button is clickable
     WebkitAppRegion: "no-drag",
   },
