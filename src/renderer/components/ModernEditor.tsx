@@ -5,12 +5,12 @@ import { m4Editor } from "../editor/m4Editor";
 
 type ModernEditorProps = {
   filePath: string | null;
+  editor: m4Editor;
 };
 
-export default function ModernEditor({ filePath }: ModernEditorProps) {
+export default function ModernEditor({ filePath, editor }: ModernEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
-  let editor;
   
 
   useEffect(() => {
@@ -18,15 +18,14 @@ export default function ModernEditor({ filePath }: ModernEditorProps) {
   }, [filePath]);
 
   const initializeEditor = async () => {
-    if (!editorRef.current) {
+    if (editorRef.current == null) {
       return;
     }
+    editor.setRef(editorRef);
   };
 
   const setupEditor = async (nextFilePath: string) => {
-    editor = new m4Editor(editorRef.current);
-
-    editor.createEditor(nextFilePath);
+    await editor.createEditor(nextFilePath);
   };
 
   useEffect(() => {

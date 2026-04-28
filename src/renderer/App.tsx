@@ -1,8 +1,9 @@
-import { useState, type CSSProperties } from "react";
+import { useState, useRef, type CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
 import TopBar from "./components/TopBar";
 import TopTabs from "./components/TopTabs";
+import { m4Editor } from "./editor/m4Editor";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 const macTrafficLightRowHeight = 38;
@@ -17,6 +18,11 @@ function openAIWindow() {
 export default function App() {
   // Keep the selected path in App so both the menu and editor can share it.
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+  const editorRef = useRef<m4Editor | null>(null);
+  if (!editorRef.current) {
+    editorRef.current = new m4Editor(null);
+  }
+  const editor = editorRef.current;
 
   return (
     <main style={styles.page}>
@@ -32,15 +38,16 @@ export default function App() {
           </button>
         </div>
       )}
-      {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null}
+      {/* {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null} */}
+      <TopBar onOpenFile={setActiveFilePath} />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
           <FileExplorer />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <TopTabs />
-          <ModernEditor filePath={activeFilePath} />
+          <TopTabs tabPath={activeFilePath} setPath={setActiveFilePath} />
+          <ModernEditor filePath={activeFilePath} editor={editor} />
         </section>
       </div>
     </main>
@@ -52,7 +59,7 @@ const styles: Record<string, CSSProperties> = {
     height: "100vh",
     display: "grid",
     gridTemplateRows: isMac
-      ? `${macTrafficLightRowHeight}px minmax(0, 1fr)`
+      ? `${macTrafficLightRowHeight}px ${topBarHeight}px minmax(0, 1fr)`
       : `${topBarHeight}px minmax(0, 1fr)`,
   },
   macTrafficLightRow: {

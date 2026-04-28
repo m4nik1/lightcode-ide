@@ -1,7 +1,8 @@
 export type EditorTab = {
     id: string;
-    label: string;
+    name: string;
     isModified: boolean;
+    filePath: string;
 }
 
 function getFileName(filePath: string) {

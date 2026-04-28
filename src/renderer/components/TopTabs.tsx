@@ -1,26 +1,43 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { EditorTab } from "../types/EditorTab";
 
-// ── Mock tabs for visual demonstration ──────────────────────────────
-type Tab = {
-  id: string;
-  label: string;
-  isModified: boolean;
-};
+interface TopTabProps {
+  tabPath: string | null;
+  setPath: (filePath: string) => void;
+}
 
-const MOCK_TABS: Tab[] = [
-  { id: "1", label: "index.tsx", isModified: false },
-  { id: "2", label: "App.tsx", isModified: true },
-  { id: "3", label: "TopTabs.tsx", isModified: false },
-];
-
-export default function TopTabs() {
-  const [activeTabId, setActiveTabId] = useState<string>(MOCK_TABS[0].id);
+export default function TopTabs(props: TopTabProps) {
+  const [activeTabId, setActiveTab] = useState<EditorTab | null>(null);
   const [hoveredTabId, setHoveredTabId] = useState<string | null>(null);
   const [hoveredCloseId, setHoveredCloseId] = useState<string | null>(null);
 
+  const [tabs, setTabs] = useState<EditorTab[]>([]);
+  const [tabID, setTabID] = useState(0);
+
+  useEffect(() => {
+    if (props.tabPath != null && props.tabPath != activeTabId?.filePath){
+      console.log("Creating new tab since file is opening")
+      const newTab : EditorTab = { 
+        id: String(tabID+1),  
+        name: props.tabPath.replace(/^.*[\\\/]/, ''),
+        filePath: props.tabPath,
+        isModified: false
+      } 
+
+      setActiveTab(newTab);
+      setTabs([...tabs, newTab]);
+      setTabID(tabID + 1);
+    }
+  }, [props.tabPath])
+
   // TODO: Implement tab selection — switch active editor model
-  function handleSelectTab(_id: string) {
-    setActiveTabId(_id);
+  function handleSelectTab(tabSelected: EditorTab) {
+    console.log("Selecting: ", tabSelected.name)
+
+    // Trigger callback function to switch to that tab/model
+    props.setPath(tabSelected.filePath);
+
+    setActiveTab(tabSelected);
   }
 
   // TODO: Implement tab close — dispose editor model & remove tab from state
@@ -35,8 +52,8 @@ export default function TopTabs() {
 
   return (
     <div style={styles.strip}>
-      {MOCK_TABS.map((tab) => {
-        const isActive = tab.id === activeTabId;
+      {tabs.map((tab: EditorTab) => {
+        const isActive = tab.id === activeTabId.id;
         const isHovered = tab.id === hoveredTabId;
 
         const tabStyle: CSSProperties = {
@@ -53,7 +70,7 @@ export default function TopTabs() {
             role="tab"
             aria-selected={isActive}
             style={tabStyle}
-            onClick={() => handleSelectTab(tab.id)}
+            onClick={() => handleSelectTab(tab)}
             onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
             onMouseEnter={() => setHoveredTabId(tab.id)}
             onMouseLeave={() => {
@@ -65,7 +82,7 @@ export default function TopTabs() {
             {isActive && <span style={styles.activeIndicator} />}
 
             <span style={styles.label}>
-              {tab.label}
+              {tab.name}
             </span>
 
             {/* Modified dot or close button */}
@@ -74,7 +91,7 @@ export default function TopTabs() {
             ) : (
               <span
                 role="button"
-                aria-label={`Close ${tab.label}`}
+                aria-label={`Close ${tab.name}`}
                 style={{
                   ...styles.closeBtn,
                   ...(hoveredCloseId === tab.id ? styles.closeBtnHover : {}),

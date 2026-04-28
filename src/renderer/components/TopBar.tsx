@@ -16,9 +16,10 @@ export default function TopBar({ onOpenFile }: TopBarProps) {
       return
     }
 
+    // Sends to call back file is open
     onOpenFile(filePath)
+    
     setFileDropDown(false)
-
   }
 
   return (
