@@ -16,7 +16,6 @@ export default function TopTabs(props: TopTabProps) {
 
   useEffect(() => {
     if (props.tabPath != null && props.tabPath != activeTabId?.filePath){
-      console.log("Creating new tab since file is opening")
       const newTab : EditorTab = { 
         id: String(tabID+1),  
         name: props.tabPath.replace(/^.*[\\\/]/, ''),
@@ -32,8 +31,6 @@ export default function TopTabs(props: TopTabProps) {
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
-    console.log("Selecting: ", tabSelected.name)
-
     // Trigger callback function to switch to that tab/model
     props.setPath(tabSelected.filePath);
 

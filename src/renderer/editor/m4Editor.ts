@@ -8,20 +8,18 @@ export class m4Editor {
     private model: mEditor.ITextModel | null;
     public activeTabId: string | null;
     private monaco; 
-    private models: mEditor.ITextModel[];
+    private models: Map<string, mEditor.ITextModel>;
 
     constructor(ref : React.RefObject<HTMLDivElement> | null) {
         this.editorRef = ref
         this.editor = null;
         this.model = null;
         this.monaco = null;
-        this.models = [];
+        this.models = new Map<string, mEditor.ITextModel>();
     }
 
     async createEditor(filePath : string) {
         this.monaco = await init();
-        
-        console.log("Setting up editor...")
 
         if(this.editor == null) {
             console.log("Editor does not exist, creating new one...");
@@ -34,6 +32,7 @@ export class m4Editor {
             if(filePath != '') {
                 const fileContents = await window.electronAPI.readFile(filePath)
                 this.model = this.monaco.editor.createModel(fileContents, undefined, this.monaco.Uri.file(filePath));
+                this.models.set(filePath, this.model);
             }
             else {
                 this.model = this.monaco.editor.createModel('')
@@ -47,15 +46,16 @@ export class m4Editor {
     }
 
     async createModel(filePath : string) {
-        const findModel = this.models.find(model => model.uri.fsPath === filePath)
-        if(findModel) {
-            this.editor.setModel(findModel)
+        console.log("models: ", this.models);
+        if(this.models.has(filePath)) {
+            this.editor.setModel(this.models.get(filePath))
         }
         else {
             const fileContents = await window.electronAPI.readFile(filePath);
-            const newModel = this.monaco.editor.createModel(fileContents, undefined, this.monaco.Uri.file(filePath))
-            this.models.push(newModel);
+            const newModel: mEditor.ITextModel = this.monaco.editor.createModel(fileContents, undefined, this.monaco.Uri.file(filePath))
+            this.models.set(filePath, newModel);
             this.editor.setModel(newModel);
+            console.log("created model...: ", newModel);
         }
     }
 

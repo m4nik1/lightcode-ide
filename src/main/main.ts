@@ -45,7 +45,6 @@ ipcMain.handle("dialog.openFile", () => {
 })
 
 ipcMain.handle('fs.readFile', async (_event, filePath: string) => {
-  console.log("Reading file: ", filePath);
   const contents = await fs.readFile(filePath, 'utf8');
   return contents
 })
