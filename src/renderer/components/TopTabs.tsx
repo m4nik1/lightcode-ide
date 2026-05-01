@@ -1,9 +1,11 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import type { m4Editor } from "../editor/m4Editor";
 import { EditorTab } from "../types/EditorTab";
 
 interface TopTabProps {
   tabPath: string | null;
   setPath: (filePath: string) => void;
+  editor: m4Editor;
 }
 
 export default function TopTabs(props: TopTabProps) {
@@ -12,22 +14,44 @@ export default function TopTabs(props: TopTabProps) {
   const [hoveredCloseId, setHoveredCloseId] = useState<string | null>(null);
 
   const [tabs, setTabs] = useState<EditorTab[]>([]);
-  const [tabID, setTabID] = useState(0);
+  const nextTabId = useRef(1);
 
   useEffect(() => {
-    if (props.tabPath != null && props.tabPath != activeTabId?.filePath){
-      const newTab : EditorTab = { 
-        id: String(tabID+1),  
-        name: props.tabPath.replace(/^.*[\\\/]/, ''),
-        filePath: props.tabPath,
-        isModified: false
-      } 
+    const path = props.tabPath;
+    if (path != null && path !== activeTabId?.filePath) {
+      setTabs((prev) => {
+        const existingTab = prev.find((tab) => tab.filePath === path);
+        if (existingTab) {
+          setActiveTab(existingTab);
+          return prev;
+        }
 
-      setActiveTab(newTab);
-      setTabs([...tabs, newTab]);
-      setTabID(tabID + 1);
+        const newTab: EditorTab = {
+          id: String(nextTabId.current),
+          name: path.replace(/^.*[\\/]/, ""),
+          filePath: path,
+          isModified: false,
+        };
+        nextTabId.current += 1;
+        setActiveTab(newTab);
+        return [...prev, newTab];
+      });
     }
-  }, [props.tabPath])
+  }, [props.tabPath, activeTabId?.filePath]);
+
+  useEffect(() => {
+    const syncModified = () => {
+      setTabs((prev) =>
+        prev.map((t) => ({
+          ...t,
+          isModified: props.editor.isModifiedForPath(t.filePath),
+        })),
+      );
+    };
+    const unsub = props.editor.subscribeDirty(syncModified);
+    syncModified();
+    return unsub;
+  }, [props.editor]);
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
@@ -50,7 +74,7 @@ export default function TopTabs(props: TopTabProps) {
   return (
     <div style={styles.strip}>
       {tabs.map((tab: EditorTab) => {
-        const isActive = tab.id === activeTabId.id;
+        const isActive = tab.id === activeTabId?.id;
         const isHovered = tab.id === hoveredTabId;
 
         const tabStyle: CSSProperties = {
@@ -78,32 +102,35 @@ export default function TopTabs(props: TopTabProps) {
             {/* Active indicator — thin coloured top border */}
             {isActive && <span style={styles.activeIndicator} />}
 
+            {tab.isModified ? (
+              <span
+                style={styles.modifiedDot}
+                title="Unsaved changes"
+                aria-label={`${tab.name}, unsaved changes`}
+              />
+            ) : null}
+
             <span style={styles.label}>
               {tab.name}
             </span>
 
-            {/* Modified dot or close button */}
-            {tab.isModified && !showClose ? (
-              <span style={styles.modifiedDot} />
-            ) : (
-              <span
-                role="button"
-                aria-label={`Close ${tab.name}`}
-                style={{
-                  ...styles.closeBtn,
-                  ...(hoveredCloseId === tab.id ? styles.closeBtnHover : {}),
-                  opacity: showClose ? 1 : 0,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCloseTab(tab.id);
-                }}
-                onMouseEnter={() => setHoveredCloseId(tab.id)}
-                onMouseLeave={() => setHoveredCloseId(null)}
-              >
-                ×
-              </span>
-            )}
+            <span
+              role="button"
+              aria-label={`Close ${tab.name}`}
+              style={{
+                ...styles.closeBtn,
+                ...(hoveredCloseId === tab.id ? styles.closeBtnHover : {}),
+                opacity: showClose ? 1 : 0,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCloseTab(tab.id);
+              }}
+              onMouseEnter={() => setHoveredCloseId(tab.id)}
+              onMouseLeave={() => setHoveredCloseId(null)}
+            >
+              ×
+            </span>
 
             {/* Right-side separator between inactive tabs */}
             {!isActive && <span style={styles.separator} />}

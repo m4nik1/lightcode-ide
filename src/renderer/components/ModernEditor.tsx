@@ -1,6 +1,4 @@
 import { useEffect, useRef } from "react";
-import { init } from "modern-monaco";
-import { editor } from "modern-monaco/types/monaco";
 import { m4Editor } from "../editor/m4Editor";
 
 type ModernEditorProps = {
@@ -16,6 +14,13 @@ export default function ModernEditor({ filePath, editor }: ModernEditorProps) {
   useEffect(() => {
     latestFilePathRef.current = filePath;
   }, [filePath]);
+
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onFileSaveRequest(() => {
+      void editor.save();
+    });
+    return unsubscribe;
+  }, [editor]);
 
   const initializeEditor = async () => {
     if (editorRef.current == null) {

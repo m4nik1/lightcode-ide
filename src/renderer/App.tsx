@@ -21,6 +21,7 @@ export default function App() {
   const editorRef = useRef<m4Editor | null>(null);
   if (!editorRef.current) {
     editorRef.current = new m4Editor(null);
+
   }
   const editor = editorRef.current;
 
@@ -46,7 +47,11 @@ export default function App() {
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <TopTabs tabPath={activeFilePath} setPath={setActiveFilePath} />
+          <TopTabs
+            tabPath={activeFilePath}
+            setPath={setActiveFilePath}
+            editor={editor}
+          />
           <ModernEditor filePath={activeFilePath} editor={editor} />
         </section>
       </div>
