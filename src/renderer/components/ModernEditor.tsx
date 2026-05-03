@@ -3,10 +3,11 @@ import { m4Editor } from "../editor/m4Editor";
 
 type ModernEditorProps = {
   filePath: string | null;
+  folderPath: string | null;
   editor: m4Editor;
 };
 
-export default function ModernEditor({ filePath, editor }: ModernEditorProps) {
+export default function ModernEditor({ filePath, folderPath, editor }: ModernEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
   
