@@ -47,7 +47,7 @@ export default function FileExplorer({ folderPath, onFileOpen } : FileExplorerPr
   return (
     <div style={styles.container}>
       <div style={styles.sectionHeader}>
-        <span style={styles.sectionLabel}>m4code-ide</span>
+        <span style={styles.sectionLabel}>lightcode</span>
       </div>
       <div style={styles.treeContainer} role="tree" aria-label="File explorer">
         {tree.map((node) => (
