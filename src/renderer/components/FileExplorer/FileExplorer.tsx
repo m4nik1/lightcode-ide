@@ -1,13 +1,30 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { CSSProperties } from "react";
 import TreeNode from "./TreeNode";
-import { mockTree } from "./mockData";
+import makeTree from "./FileTree/makeTree";
+import { FileTreeNode } from "src/renderer/types/FileTreeNode";
 
-export default function FileExplorer() {
+interface FileExplorerProps {
+  folderPath : string | null
+  onFileOpen: (filePath: string) => void
+}
+
+export default function FileExplorer({ folderPath, onFileOpen } : FileExplorerProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    () => new Set(["src", "src/renderer", "src/renderer/components"]),
+    () => new Set(["src", "src/renderer"]),
   );
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [tree, setTree] = useState<FileTreeNode[]>([]);
+
+  useEffect(() => {
+    if(folderPath != null) {
+      console.log(folderPath);
+      setSelectedPath(folderPath);
+      makeTree(folderPath).then((newTree) => {
+        setTree(newTree)
+      })
+    }
+  }, [folderPath]);
 
   const handleToggleFolder = useCallback((path: string) => {
     setExpandedFolders((prev) => {
@@ -21,9 +38,11 @@ export default function FileExplorer() {
     });
   }, []);
 
-  const handleSelectItem = useCallback((path: string) => {
-    setSelectedPath(path);
-  }, []);
+  const handleSelectItem = useCallback((fileName: string) => {
+    const fullPath = folderPath + '/' + fileName;
+    console.log("full path:", fullPath);
+    onFileOpen(fullPath);
+  }, [folderPath]);
 
   return (
     <div style={styles.container}>
@@ -31,7 +50,7 @@ export default function FileExplorer() {
         <span style={styles.sectionLabel}>m4code-ide</span>
       </div>
       <div style={styles.treeContainer} role="tree" aria-label="File explorer">
-        {mockTree.map((node) => (
+        {tree.map((node) => (
           <TreeNode
             key={node.name}
             node={node}

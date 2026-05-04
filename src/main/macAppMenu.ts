@@ -1,4 +1,6 @@
-import { dialog, Menu, type MenuItemConstructorOptions } from 'electron';
+import { BrowserWindow, dialog, Menu, type MenuItemConstructorOptions } from 'electron';
+
+const FILE_SAVE_REQUEST_CHANNEL = 'file.save-request';
 
 export const createMacApplicationMenu = () => {
   const fileMenu: MenuItemConstructorOptions = {
@@ -23,7 +25,7 @@ export const createMacApplicationMenu = () => {
         label: 'Save',
         accelerator: 'CmdOrCtrl+S',
         click: () => {
-          // TODO: Save the active file to its current path.
+          BrowserWindow.getFocusedWindow()?.webContents.send(FILE_SAVE_REQUEST_CHANNEL);
         },
       },
       {

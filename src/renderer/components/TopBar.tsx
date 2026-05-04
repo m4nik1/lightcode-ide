@@ -2,9 +2,10 @@ import { CSSProperties, useState } from "react"
 
 type TopBarProps = {
   onOpenFile: (filePath: string) => void
+  onOpenFolder: (folderPath: string) => void
 }
 
-export default function TopBar({ onOpenFile }: TopBarProps) {
+export default function TopBar({ onOpenFile, onOpenFolder }: TopBarProps) {
   const [fileDropDown, setFileDropDown] = useState(false);
 
   async function openFile() {
@@ -16,11 +17,22 @@ export default function TopBar({ onOpenFile }: TopBarProps) {
       return
     }
 
+    // Sends to call back file is open
     onOpenFile(filePath)
+    
     setFileDropDown(false)
-
   }
 
+  async function openFolder() {
+    const folder = await window.electronAPI.openFolder()
+    const folderPath = folder.filePaths[0]
+    console.log("Selected: ", folderPath)
+    onOpenFolder(folderPath)
+
+    if (!folderPath) {
+      return
+    }
+  }
   return (
       <header style={styles.bar}>
         <button 
@@ -37,6 +49,9 @@ export default function TopBar({ onOpenFile }: TopBarProps) {
           <div role="menu" style={styles.menu}>
             <button className="topbar-menu-item" onClick={() => openFile()} role="menuItem" type="button">
               Open File
+            </button>
+            <button className="topbar-menu-item" onClick={() => openFolder()} role="menuItem" type="button">
+              Open Folder
             </button>
           </div> : null }
       </header>

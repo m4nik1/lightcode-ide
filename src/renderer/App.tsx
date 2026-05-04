@@ -1,26 +1,58 @@
-import { useState, type CSSProperties } from "react";
+import { useState, useRef, type CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
 import TopBar from "./components/TopBar";
+import TopTabs from "./components/TopTabs";
+import { m4Editor } from "./editor/m4Editor";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
-const macTopBarHeight = 37;
+const macTrafficLightRowHeight = 38;
+const topBarHeight = 30;
+const tabBarHeight = 35;
 const sidebarWidth = 240;
+
+function openAIWindow() {
+  console.log("Opening AI window");
+}
 
 export default function App() {
   // Keep the selected path in App so both the menu and editor can share it.
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+  const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
+  const editorRef = useRef<m4Editor | null>(null);
+  if (!editorRef.current) {
+    editorRef.current = new m4Editor(null);
+  }
+  const editor = editorRef.current;
 
   return (
     <main style={styles.page}>
-      <TopBar onOpenFile={setActiveFilePath} />
+      {isMac && (
+        <div style={styles.macTrafficLightRow}>
+          <button
+            className="ai-window-btn"
+            style={styles.aiWindowBtn}
+            onClick={openAIWindow}
+            type="button"
+          >
+            AI window
+          </button>
+        </div>
+      )}
+      {/* {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null} */}
+      <TopBar onOpenFile={setActiveFilePath} onOpenFolder={setActiveFolderPath} />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
-          <FileExplorer />
+          <FileExplorer folderPath={activeFolderPath} onFileOpen={setActiveFilePath} />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <ModernEditor filePath={activeFilePath} />
+          <TopTabs
+            tabPath={activeFilePath}
+            setPath={setActiveFilePath}
+            editor={editor}
+          />
+          <ModernEditor filePath={activeFilePath} folderPath={activeFolderPath} editor={editor} />
         </section>
       </div>
     </main>
@@ -32,12 +64,16 @@ const styles: Record<string, CSSProperties> = {
     height: "100vh",
     display: "grid",
     gridTemplateRows: isMac
-      ? `${macTopBarHeight}px minmax(0, 1fr)`
-      : "30px minmax(0, 1fr)",
+      ? `${macTrafficLightRowHeight}px ${topBarHeight}px minmax(0, 1fr)`
+      : `${topBarHeight}px minmax(0, 1fr)`,
   },
-  macTopBar: {
+  macTrafficLightRow: {
     background: "var(--editor-surface)",
     borderBottom: "1px solid #2b2b2b",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingRight: 12,
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",
   },
@@ -58,5 +94,17 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     height: "100%",
     minHeight: 0,
+  },
+  aiWindowBtn: {
+    height: 22,
+    padding: "0 10px",
+    border: 0,
+    background: "transparent",
+    color: "#cccccc",
+    fontSize: 12,
+    borderRadius: 4,
+    cursor: "pointer",
+    // @ts-expect-error -- Electron-specific CSS so the button is clickable
+    WebkitAppRegion: "no-drag",
   },
 };

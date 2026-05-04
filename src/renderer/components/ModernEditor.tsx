@@ -1,50 +1,37 @@
 import { useEffect, useRef } from "react";
-import { init } from "modern-monaco";
-import { editor } from "modern-monaco/types/monaco";
+import { m4Editor } from "../editor/m4Editor";
 
 type ModernEditorProps = {
   filePath: string | null;
+  folderPath: string | null;
+  editor: m4Editor;
 };
 
-export default function ModernEditor({ filePath }: ModernEditorProps) {
+export default function ModernEditor({ filePath, folderPath, editor }: ModernEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
-  let editor : editor.IStandaloneCodeEditor;
+  
 
   useEffect(() => {
     latestFilePathRef.current = filePath;
   }, [filePath]);
 
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onFileSaveRequest(() => {
+      void editor.save();
+    });
+    return unsubscribe;
+  }, [editor]);
+
   const initializeEditor = async () => {
-    if (!editorRef.current) {
+    if (editorRef.current == null) {
       return;
     }
-
-
+    editor.setRef(editorRef);
   };
 
   const setupEditor = async (nextFilePath: string) => {
-
-    const monaco = await init();
-
-    console.log("Setting up editor with file selected.", nextFilePath)
-
-    editor = monaco.editor.create(editorRef.current!, {
-      smoothScrolling: true,
-      cursorSmoothCaretAnimation: "on", // Smooth caret animation
-      cursorBlinking: "smooth",
-    });
-
-    try {
-      // Read the active file after App tells the editor which path was chosen.
-      const fileContents = await window.electronAPI.readFile(nextFilePath);
-
-      const model = monaco.editor.createModel(fileContents, undefined, monaco.Uri.file(nextFilePath));
-
-      editor.setModel(model);
-    } catch(err) {
-      console.error(err);
-    }
+    await editor.createEditor(nextFilePath);
   };
 
   useEffect(() => {

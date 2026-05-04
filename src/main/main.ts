@@ -21,7 +21,7 @@ const createWindow = () => {
     height: 600,
     icon: iconPath,
     autoHideMenuBar: true,
-    ...(isMac ? { titleBarStyle: 'hiddenInset' } : {}),
+    ...(isMac ? { titleBarStyle: 'hidden' } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -45,10 +45,47 @@ ipcMain.handle("dialog.openFile", () => {
 })
 
 ipcMain.handle('fs.readFile', async (_event, filePath: string) => {
-  console.log("Reading file: ", filePath);
   const contents = await fs.readFile(filePath, 'utf8');
   return contents
 })
+
+ipcMain.handle('fs.writeFile', async (_event, filePath: string, content: string) => {
+  await fs.writeFile(filePath, content);
+})
+
+ipcMain.handle('dialog.openFolder', () => {
+  return dialog.showOpenDialog({ properties: ['openDirectory'] })
+})
+
+type FileTreeNode = {
+  name: string;
+  kind: "file" | "folder";
+  children?: FileTreeNode[];
+};
+
+ipcMain.handle("fs.readDirectory", async (_event, folderPath: string): Promise<FileTreeNode[]> => {
+  async function readDirectory(pathToRead: string): Promise<FileTreeNode[]> {
+    const entries = await fs.readdir(pathToRead, { withFileTypes: true });
+    const nodes: FileTreeNode[] = await Promise.all(
+      entries.map(async (entry): Promise<FileTreeNode> => {
+        const fullPath = path.join(pathToRead, entry.name);
+        if (entry.isDirectory()) {
+          return {
+            name: entry.name,
+            kind: "folder",
+            children: await readDirectory(fullPath),
+          };
+        }
+        return {
+          name: entry.name,
+          kind: "file",
+        };
+      }),
+    );
+    return nodes;
+  }
+  return readDirectory(folderPath);
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

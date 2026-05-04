@@ -36,7 +36,8 @@ select {
 /* ── TopBar ─────────────────────────────────────────── */
 
 .topbar-trigger:hover,
-.topbar-trigger[aria-expanded='true'] {
+.topbar-trigger[aria-expanded='true'],
+.ai-window-btn:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
