@@ -57,6 +57,13 @@ ipcMain.handle('dialog.openFolder', () => {
   return dialog.showOpenDialog({ properties: ['openDirectory'] })
 })
 
+ipcMain.handle("window.openAIWindow", () => {
+  const aiWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+  });
+});
+
 type FileTreeNode = {
   name: string;
   kind: "file" | "folder";
