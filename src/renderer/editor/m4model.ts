@@ -1,4 +1,7 @@
 import type { editor as mEditor } from "modern-monaco/types/monaco";
+import { init } from "modern-monaco";
+
+type MonacoApi = Awaited<ReturnType<typeof init>>;
 
 export class m4model {
     private model: mEditor.ITextModel
@@ -6,8 +9,8 @@ export class m4model {
         this.model = null;
     }
 
-    createModel(editor, fileContents='') {
-        return 
+    createModel(monacoInstance : MonacoApi, filePath: string, fileContents='') {
+        this.model = monacoInstance.editor.createModel(fileContents, undefined, monacoInstance.Uri.file(filePath));
     }
 
     getModel() {
