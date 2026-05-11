@@ -48,9 +48,9 @@ export default function TopTabs(props: TopTabProps) {
         })),
       );
     };
-    const unsub = props.editor.subscribeDirty(syncModified);
+    // const unsub = props.editor.subscribeDirty(syncModified);
     syncModified();
-    return unsub;
+    // return unsub;
   }, [props.editor]);
 
   // TODO: Implement tab selection — switch active editor model
