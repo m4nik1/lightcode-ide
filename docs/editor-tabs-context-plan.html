@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editor Tabs Context Hook Plan</title>
+    <style>
+      body {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 24px 48px;
+        color: #d4d4d4;
+        background: #1e1e1e;
+        font-family: Arial, sans-serif;
+        line-height: 1.55;
+      }
+
+      h1,
+      h2 {
+        color: #ffffff;
+      }
+
+      h1 {
+        margin-bottom: 8px;
+      }
+
+      h2 {
+        margin-top: 32px;
+        border-bottom: 1px solid #3c3c3c;
+        padding-bottom: 6px;
+      }
+
+      code,
+      pre {
+        font-family: Consolas, Monaco, "Courier New", monospace;
+      }
+
+      code {
+        color: #ce9178;
+        background: #252526;
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
+
+      pre {
+        overflow-x: auto;
+        background: #252526;
+        border: 1px solid #3c3c3c;
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      pre code {
+        color: #d4d4d4;
+        background: transparent;
+        padding: 0;
+      }
+
+      li {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Editor Tabs Context Hook Plan</h1>
+
+    <p>
+      Use a React Context for the tab and editor state so <code>App.tsx</code>
+      does not have to manually pass <code>activeFilePath</code>,
+      <code>setActiveFilePath</code>, <code>tabs</code>, and related callbacks
+      through props.
+    </p>
+
+    <h2>Plan</h2>
+    <ol>
+      <li>Add <code>src/renderer/context/EditorTabsContext.tsx</code>.</li>
+      <li>
+        Store <code>tabs</code>, <code>activeFilePath</code>, and
+        <code>activeFolderPath</code> in the provider.
+      </li>
+      <li>Expose a custom hook: <code>useEditorTabs()</code>.</li>
+      <li>Wrap the app UI with <code>&lt;EditorTabsProvider&gt;</code>.</li>
+      <li>
+        Update <code>TopBar</code>, <code>FileExplorer</code>,
+        <code>TopTabs</code>, and <code>ModernEditor</code> to read and write
+        through the hook.
+      </li>
+    </ol>
+
+    <h2>Context Example</h2>
+    <pre><code>import { createContext, useContext, useState, type ReactNode } from "react";
+import type { EditorTab } from "../types/EditorTab";
+
+type EditorTabsContextValue = {
+  tabs: EditorTab[];
+  activeFilePath: string | null;
+  activeFolderPath: string | null;
+  openFile: (filePath: string) =&gt; void;
+  openFolder: (folderPath: string) =&gt; void;
+  selectTab: (filePath: string) =&gt; void;
+  closeTab: (filePath: string) =&gt; void;
+};
+
+const EditorTabsContext = createContext&lt;EditorTabsContextValue | null&gt;(null);
+
+function getFileName(filePath: string) {
+  return filePath.split(/[\\/]/).pop() ?? filePath;
+}
+
+export function EditorTabsProvider({ children }: { children: ReactNode }) {
+  const [tabs, setTabs] = useState&lt;EditorTab[]&gt;([]);
+  const [activeFilePath, setActiveFilePath] = useState&lt;string | null&gt;(null);
+  const [activeFolderPath, setActiveFolderPath] = useState&lt;string | null&gt;(null);
+
+  function openFile(filePath: string) {
+    setTabs((currentTabs) =&gt; {
+      const alreadyOpen = currentTabs.some((tab) =&gt; tab.filePath === filePath);
+
+      if (alreadyOpen) {
+        return currentTabs;
+      }
+
+      return [
+        ...currentTabs,
+        {
+          id: filePath,
+          name: getFileName(filePath),
+          filePath,
+          isModified: false,
+        },
+      ];
+    });
+
+    setActiveFilePath(filePath);
+  }
+
+  function openFolder(folderPath: string) {
+    setActiveFolderPath(folderPath);
+  }
+
+  function selectTab(filePath: string) {
+    setActiveFilePath(filePath);
+  }
+
+  function closeTab(filePath: string) {
+    setTabs((currentTabs) =&gt; {
+      const nextTabs = currentTabs.filter((tab) =&gt; tab.filePath !== filePath);
+
+      if (activeFilePath === filePath) {
+        const nextActiveTab = nextTabs[nextTabs.length - 1] ?? null;
+        setActiveFilePath(nextActiveTab?.filePath ?? null);
+      }
+
+      return nextTabs;
+    });
+  }
+
+  return (
+    &lt;EditorTabsContext.Provider
+      value={{
+        tabs,
+        activeFilePath,
+        activeFolderPath,
+        openFile,
+        openFolder,
+        selectTab,
+        closeTab,
+      }}
+    &gt;
+      {children}
+    &lt;/EditorTabsContext.Provider&gt;
+  );
+}
+
+export function useEditorTabs() {
+  const context = useContext(EditorTabsContext);
+
+  if (context == null) {
+    throw new Error("useEditorTabs must be used inside EditorTabsProvider");
+  }
+
+  return context;
+}</code></pre>
+
+    <h2>App Usage</h2>
+    <p>
+      <code>App.tsx</code> can become simpler because the active file and folder
+      paths come from context instead of local app state.
+    </p>
+
+    <pre><code>import { useRef } from "react";
+import { EditorTabsProvider, useEditorTabs } from "./context/EditorTabsContext";
+
+function AppLayout() {
+  const { activeFilePath, activeFolderPath } = useEditorTabs();
+
+  return (
+    &lt;&gt;
+      &lt;TopBar /&gt;
+      &lt;FileExplorer /&gt;
+      &lt;TopTabs /&gt;
+      &lt;ModernEditor
+        filePath={activeFilePath}
+        folderPath={activeFolderPath}
+        editor={editor}
+      /&gt;
+    &lt;/&gt;
+  );
+}
+
+export default function App() {
+  return (
+    &lt;EditorTabsProvider&gt;
+      &lt;AppLayout /&gt;
+    &lt;/EditorTabsProvider&gt;
+  );
+}</code></pre>
+
+    <h2>TopBar Usage</h2>
+    <p>
+      <code>TopBar</code> no longer needs <code>onOpenFile</code> or
+      <code>onOpenFolder</code> props.
+    </p>
+
+    <pre><code>import { useEditorTabs } from "../context/EditorTabsContext";
+
+export default function TopBar() {
+  const { openFile, openFolder } = useEditorTabs();
+
+  async function handleOpenFile() {
+    const file = await window.electronAPI.openFile();
+    const filePath = file.filePaths[0];
+
+    if (!filePath) {
+      return;
+    }
+
+    openFile(filePath);
+  }
+
+  async function handleOpenFolder() {
+    const folder = await window.electronAPI.openFolder();
+    const folderPath = folder.filePaths[0];
+
+    if (!folderPath) {
+      return;
+    }
+
+    openFolder(folderPath);
+  }
+
+  // Buttons call handleOpenFile and handleOpenFolder.
+}</code></pre>
+
+    <h2>TopTabs Usage</h2>
+    <p><code>TopTabs</code> reads the tab list and active file directly from context.</p>
+
+    <pre><code>import { useEditorTabs } from "../context/EditorTabsContext";
+
+export default function TopTabs() {
+  const { tabs, activeFilePath, selectTab, closeTab } = useEditorTabs();
+
+  return (
+    &lt;div style={styles.strip}&gt;
+      {tabs.map((tab) =&gt; {
+        const isActive = tab.filePath === activeFilePath;
+
+        return (
+          &lt;div
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() =&gt; selectTab(tab.filePath)}
+          &gt;
+            &lt;span&gt;{tab.name}&lt;/span&gt;
+
+            &lt;button
+              type="button"
+              onClick={(event) =&gt; {
+                event.stopPropagation();
+                closeTab(tab.filePath);
+              }}
+            &gt;
+              x
+            &lt;/button&gt;
+          &lt;/div&gt;
+        );
+      })}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+    <h2>Key Flow</h2>
+    <p><code>openFile(filePath)</code> does two things:</p>
+    <pre><code>creates a tab if needed
+sets activeFilePath</code></pre>
+
+    <p>
+      Then both <code>TopTabs</code> and <code>ModernEditor</code> react to the
+      same shared context state.
+    </p>
+
+    <h2>Component Data Flow</h2>
+    <pre><code>TopBar / FileExplorer
+  -&gt; openFile(filePath)
+  -&gt; EditorTabsProvider creates or selects tab
+  -&gt; activeFilePath changes
+  -&gt; TopTabs highlights the active tab
+  -&gt; ModernEditor loads the active file</code></pre>
+  </body>
+</html>
