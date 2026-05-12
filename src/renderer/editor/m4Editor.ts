@@ -8,7 +8,6 @@ type MonacoApi = Awaited<ReturnType<typeof init>>;
 export class m4Editor {
     private editorRef: RefObject<HTMLDivElement | null>;
     private editor: mEditor.IStandaloneCodeEditor | null;
-    private model: mEditor.ITextModel | null;
     public activeTabId: string | null = null;
     private monaco: MonacoApi | null;
     private models: Map<string, mEditor.ITextModel>;
@@ -21,7 +20,6 @@ export class m4Editor {
     constructor(ref: RefObject<HTMLDivElement | null> | null) {
         this.editorRef = ref ?? { current: null };
         this.editor = null;
-        this.model = null;
         this.monaco = null;
         this.models = new Map<string, mEditor.ITextModel>();
         this.savedVersionByPath = new Map();
@@ -85,10 +83,10 @@ export class m4Editor {
                 cursorBlinking: "smooth",
             });
 
-            this.currentModel = new m4model().createModel(this.monaco, filePath);
+            this.currentModel = await new m4model().createModel(this.monaco, filePath);
             this.editor.setModel(this.currentModel);
         } else {
-            this.currentModel = new m4model().createModel(this.monaco, filePath); 
+            this.currentModel = await new m4model().createModel(this.monaco, filePath); 
             this.editor.setModel(this.currentModel);
         }
     }
@@ -127,7 +125,7 @@ export class m4Editor {
 
     async save(): Promise<void> {
         const ed = this.editor;
-        const current = ed?.getModel() ?? this.model;
+        const current = ed?.getModel() ?? this.currentModel;
         if (current == null) {
             return;
         }
@@ -162,7 +160,7 @@ export class m4Editor {
     }
 
     isModified() {
-        const m = this.model;
+        const m = this.currentModel;
         if (m == null) {
             return false;
         }
@@ -182,6 +180,6 @@ export class m4Editor {
     }
 
     getModel() {
-        return this.model
+        return this.currentModel
     }
 }
