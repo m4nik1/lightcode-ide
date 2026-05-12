@@ -86,13 +86,12 @@ export class m4Editor {
             });
 
             this.currentModel = new m4model().createModel(this.monaco, filePath);
+            this.editor.setModel(this.currentModel);
         } else {
             this.currentModel = new m4model().createModel(this.monaco, filePath); 
             this.editor.setModel(this.currentModel);
         }
     }
-
-    //         this.editor.setModel(this.model);
     //         this.registerSaveKeybinding();
     //         this.attachModelChangeListener();
     //         this.notifyDirty();

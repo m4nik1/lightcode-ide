@@ -10,9 +10,9 @@ export class m4model {
         this.model = null;
     }
 
-    createModel(monacoInstance : MonacoApi, filePath: string) : mEditor.ITextModel {
+    async createModel(monacoInstance : MonacoApi, filePath: string) : Promise<mEditor.ITextModel> {
         // TODO: deal with opening file via ipc call
-        const fileContents = '';
+        const fileContents = filePath == '' ? '' : await window.electronAPI.readFile(filePath);
 
         this.model = monacoInstance.editor.createModel(fileContents, undefined, monacoInstance.Uri.file(filePath));
 
