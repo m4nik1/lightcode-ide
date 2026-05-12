@@ -10,7 +10,7 @@ export class m4Editor {
     private editor: mEditor.IStandaloneCodeEditor | null;
     public activeTabId: string | null = null;
     private monaco: MonacoApi | null;
-    private models: Map<string, mEditor.ITextModel>;
+    private models: Array<mEditor.ITextModel | []>;
     private currentModel: mEditor.ITextModel | null;
     /** Last saved Monaco alternative version id per file path (disk-backed tabs). */
     private savedVersionByPath: Map<string, number>;
@@ -21,7 +21,7 @@ export class m4Editor {
         this.editorRef = ref ?? { current: null };
         this.editor = null;
         this.monaco = null;
-        this.models = new Map<string, mEditor.ITextModel>();
+        this.models = [] 
         this.savedVersionByPath = new Map();
         this.currentModel = null;
     }
@@ -84,12 +84,19 @@ export class m4Editor {
             });
 
             this.currentModel = await new m4model().createModel(this.monaco, filePath);
+            this.models.push(this.currentModel)
             this.editor.setModel(this.currentModel);
         } else {
             this.currentModel = await new m4model().createModel(this.monaco, filePath); 
             this.editor.setModel(this.currentModel);
+            this.models.push(this.currentModel)
         }
     }
+
+    getModels() {
+        return this.models
+    }
+
     //         this.registerSaveKeybinding();
     //         this.attachModelChangeListener();
     //         this.notifyDirty();
@@ -142,34 +149,34 @@ export class m4Editor {
         this.savedVersionByPath.set(pathKey, current.getAlternativeVersionId());
     }
 
-    isModifiedForPath(filePath: string): boolean {
-        const m = this.models.get(filePath);
-        if (m == null) {
-            return false;
-        }
-        const uri = m.uri;
-        if (uri.scheme !== "file") {
-            return false;
-        }
-        const pathKey = uri.fsPath;
-        const saved = this.savedVersionByPath.get(pathKey);
-        if (saved === undefined) {
-            return false;
-        }
-        return m.getAlternativeVersionId() !== saved;
-    }
+    // isModifiedForPath(filePath: string): boolean {
+    //     const m = this.models.get(filePath);
+    //     if (m == null) {
+    //         return false;
+    //     }
+    //     const uri = m.uri;
+    //     if (uri.scheme !== "file") {
+    //         return false;
+    //     }
+    //     const pathKey = uri.fsPath;
+    //     const saved = this.savedVersionByPath.get(pathKey);
+    //     if (saved === undefined) {
+    //         return false;
+    //     }
+    //     return m.getAlternativeVersionId() !== saved;
+    // }
 
-    isModified() {
-        const m = this.currentModel;
-        if (m == null) {
-            return false;
-        }
-        const uri = m.uri;
-        if (uri.scheme !== "file") {
-            return false;
-        }
-        return this.isModifiedForPath(uri.fsPath);
-    }
+    // isModified() {
+    //     const m = this.currentModel;
+    //     if (m == null) {
+    //         return false;
+    //     }
+    //     const uri = m.uri;
+    //     if (uri.scheme !== "file") {
+    //         return false;
+    //     }
+    //     return this.isModifiedForPath(uri.fsPath);
+    // }
 
     getEditor() {
         return this.editor;

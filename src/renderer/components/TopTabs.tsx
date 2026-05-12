@@ -16,59 +16,12 @@ export default function TopTabs(props: TopTabProps) {
   const [tabs, setTabs] = useState<EditorTab[]>([]);
   const nextTabId = useRef(1);
 
-  useEffect(() => {
-    const path = props.tabPath;
-    if (path != null && path !== activeTabId?.filePath) {
-      setTabs((prev) => {
-        const existingTab = prev.find((tab) => tab.filePath === path);
-        if (existingTab) {
-          setActiveTab(existingTab);
-          return prev;
-        }
-
-        const newTab: EditorTab = {
-          id: String(nextTabId.current),
-          name: path.replace(/^.*[\\/]/, ""),
-          filePath: path,
-          isModified: false,
-        };
-        nextTabId.current += 1;
-        setActiveTab(newTab);
-        return [...prev, newTab];
-      });
-    }
-  }, [props.tabPath, activeTabId?.filePath]);
-
-  useEffect(() => {
-    const syncModified = () => {
-      setTabs((prev) =>
-        prev.map((t) => ({
-          ...t,
-          isModified: props.editor.isModifiedForPath(t.filePath),
-        })),
-      );
-    };
-    // const unsub = props.editor.subscribeDirty(syncModified);
-    syncModified();
-    // return unsub;
-  }, [props.editor]);
-
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
     // Trigger callback function to switch to that tab/model
     props.setPath(tabSelected.filePath);
 
     setActiveTab(tabSelected);
-  }
-
-  // TODO: Implement tab close — dispose editor model & remove tab from state
-  function handleCloseTab(_id: string) {
-    // stub
-  }
-
-  // TODO: Implement context menu (right-click) — close others, close to the right, etc.
-  function handleTabContextMenu(_e: React.MouseEvent, _id: string) {
-    // stub
   }
 
   return (

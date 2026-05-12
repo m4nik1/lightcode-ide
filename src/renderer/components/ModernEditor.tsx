@@ -11,7 +11,6 @@ export default function ModernEditor({ filePath, folderPath, editor }: ModernEdi
   const editorRef = useRef<HTMLDivElement | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
   
-
   useEffect(() => {
     latestFilePathRef.current = filePath;
   }, [filePath]);
