@@ -5,7 +5,7 @@ type TopBarProps = {
   onOpenFolder: (folderPath: string) => void
 }
 
-export default function TopBar({ onOpenFile, onOpenFolder }: TopBarProps) {
+export default function TopBar() {
   const [fileDropDown, setFileDropDown] = useState(false);
 
   async function openFile() {
@@ -18,7 +18,7 @@ export default function TopBar({ onOpenFile, onOpenFolder }: TopBarProps) {
     }
 
     // Sends to call back file is open
-    onOpenFile(filePath)
+    // onOpenFile(filePath)
     
     setFileDropDown(false)
   }
@@ -27,7 +27,7 @@ export default function TopBar({ onOpenFile, onOpenFolder }: TopBarProps) {
     const folder = await window.electronAPI.openFolder()
     const folderPath = folder.filePaths[0]
     console.log("Selected: ", folderPath)
-    onOpenFolder(folderPath)
+    // onOpenFolder(folderPath)
 
     if (!folderPath) {
       return

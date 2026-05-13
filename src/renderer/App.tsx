@@ -4,6 +4,7 @@ import ModernEditor from "./components/ModernEditor";
 import TopBar from "./components/TopBar";
 import TopTabs from "./components/TopTabs";
 import { m4Editor } from "./editor/m4Editor";
+import { useEditorTabs } from "./context/EditorTabsContext";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 const macTrafficLightRowHeight = 38;
@@ -17,8 +18,11 @@ function openAIWindow() {
 
 export default function App() {
   // Keep the selected path in App so both the menu and editor can share it.
-  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+  // const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
+
+  const { activeFilePath } = useEditorTabs();
+
   const editorRef = useRef<m4Editor | null>(null);
   if (!editorRef.current) {
     editorRef.current = new m4Editor(null);
@@ -40,18 +44,20 @@ export default function App() {
         </div>
       )}
       {/* {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null} */}
-      <TopBar onOpenFile={setActiveFilePath} onOpenFolder={setActiveFolderPath} />
+      {/* <TopBar onOpenFile={setActiveFilePath} onOpenFolder={setActiveFolderPath} /> */}
+      <TopBar />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
           <FileExplorer folderPath={activeFolderPath} onFileOpen={setActiveFilePath} />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <TopTabs
+          {/* <TopTabs
             tabPath={activeFilePath}
             setPath={setActiveFilePath}
             editor={editor}
-          />
+          /> */}
+          <TopTabs editor={editor} />
           <ModernEditor filePath={activeFilePath} folderPath={activeFolderPath} editor={editor} />
         </section>
       </div>
