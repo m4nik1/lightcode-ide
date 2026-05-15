@@ -1,11 +1,10 @@
 import type { editor as mEditor } from "modern-monaco/types/monaco";
 
 export type EditorTab = {
-    id: string;
-    name: string;
-    isModified: boolean;
-    filePath: string;
-    model: mEditor.ITextModel
+    id: number,
+    filename: string,
+    filePath: string
+    isModified: boolean,
 }
 
 function getFileName(filePath: string) {

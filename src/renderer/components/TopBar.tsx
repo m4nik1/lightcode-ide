@@ -1,14 +1,11 @@
 import { CSSProperties, useState } from "react"
-
-type TopBarProps = {
-  onOpenFile: (filePath: string) => void
-  onOpenFolder: (folderPath: string) => void
-}
+import { useEditorTabs } from "../context/EditorTabsContext";
 
 export default function TopBar() {
   const [fileDropDown, setFileDropDown] = useState(false);
+  const { openFile } = useEditorTabs();
 
-  async function openFile() {
+  async function readOpenFile() {
     // Send the selected path up so App can share it with the editor.
     const file = await window.electronAPI.openFile()
     const filePath = file.filePaths[0]
@@ -18,21 +15,21 @@ export default function TopBar() {
     }
 
     // Sends to call back file is open
-    // onOpenFile(filePath)
+    openFile(filePath);
     
     setFileDropDown(false)
   }
 
-  async function openFolder() {
-    const folder = await window.electronAPI.openFolder()
-    const folderPath = folder.filePaths[0]
-    console.log("Selected: ", folderPath)
-    // onOpenFolder(folderPath)
+  // async function openFolder() {
+  //   const folder = await window.electronAPI.openFolder()
+  //   const folderPath = folder.filePaths[0]
+  //   console.log("Selected: ", folderPath)
+  //   // onOpenFolder(folderPath)
 
-    if (!folderPath) {
-      return
-    }
-  }
+  //   if (!folderPath) {
+  //     return
+  //   }
+  // }
   return (
       <header style={styles.bar}>
         <button 
@@ -47,7 +44,7 @@ export default function TopBar() {
 
         { fileDropDown ? 
           <div role="menu" style={styles.menu}>
-            <button className="topbar-menu-item" onClick={() => openFile()} role="menuItem" type="button">
+            <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuItem" type="button">
               Open File
             </button>
             <button className="topbar-menu-item" onClick={() => openFolder()} role="menuItem" type="button">

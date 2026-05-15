@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import type { m4Editor } from "../editor/m4Editor";
 import { EditorTab } from "../types/EditorTab";
+import { useEditorTabs } from "../context/EditorTabsContext";
 
 interface TopTabProps {
   tabPath: string | null;
@@ -10,16 +11,17 @@ interface TopTabProps {
 
 export default function TopTabs(props: TopTabProps) {
   const [activeTabId, setActiveTab] = useState<EditorTab | null>(null);
-  const [hoveredTabId, setHoveredTabId] = useState<string | null>(null);
-  const [hoveredCloseId, setHoveredCloseId] = useState<string | null>(null);
+  const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
+  const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
 
-  const [tabs, setTabs] = useState<EditorTab[]>([]);
-  const nextTabId = useRef(1);
+  const { openFile, tabs } = useEditorTabs();
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
     // Trigger callback function to switch to that tab/model
-    props.setPath(tabSelected.filePath);
+    
+    // Opens file in existing or new model
+    openFile(tabSelected.filePath);
 
     setActiveTab(tabSelected);
   }
@@ -38,6 +40,8 @@ export default function TopTabs(props: TopTabProps) {
 
         const showClose = isActive || isHovered;
 
+        console.log(tabs);
+
         return (
           <div
             key={tab.id}
@@ -45,7 +49,6 @@ export default function TopTabs(props: TopTabProps) {
             aria-selected={isActive}
             style={tabStyle}
             onClick={() => handleSelectTab(tab)}
-            onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
             onMouseEnter={() => setHoveredTabId(tab.id)}
             onMouseLeave={() => {
               setHoveredTabId(null);
@@ -59,17 +62,17 @@ export default function TopTabs(props: TopTabProps) {
               <span
                 style={styles.modifiedDot}
                 title="Unsaved changes"
-                aria-label={`${tab.name}, unsaved changes`}
+                aria-label={`${tab.filename}, unsaved changes`}
               />
             ) : null}
 
             <span style={styles.label}>
-              {tab.name}
+              {tab.filename}
             </span>
 
             <span
               role="button"
-              aria-label={`Close ${tab.name}`}
+              aria-label={`Close ${tab.filename}`}
               style={{
                 ...styles.closeBtn,
                 ...(hoveredCloseId === tab.id ? styles.closeBtnHover : {}),
@@ -77,10 +80,10 @@ export default function TopTabs(props: TopTabProps) {
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                handleCloseTab(tab.id);
+                // handleCloseTab(tab.id);
               }}
-              onMouseEnter={() => setHoveredCloseId(tab.id)}
-              onMouseLeave={() => setHoveredCloseId(null)}
+              // onMouseEnter={() => setHoveredCloseId(tab.id)}
+              // onMouseLeave={() => setHoveredCloseId(null)}
             >
               ×
             </span>

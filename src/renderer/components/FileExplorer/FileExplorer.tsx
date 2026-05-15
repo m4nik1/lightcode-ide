@@ -2,29 +2,34 @@ import { useState, useCallback, useEffect } from "react";
 import type { CSSProperties } from "react";
 import TreeNode from "./TreeNode";
 import makeTree from "./FileTree/makeTree";
-import { FileTreeNode } from "src/renderer/types/FileTreeNode";
+import { FileTreeNode } from "../../types/FileTreeNode";
+import { useEditorTabs } from "../../context/EditorTabsContext";
 
 interface FileExplorerProps {
   folderPath : string | null
   onFileOpen: (filePath: string) => void
 }
 
-export default function FileExplorer({ folderPath, onFileOpen } : FileExplorerProps) {
+export default function FileExplorer({ onFileOpen } : FileExplorerProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     () => new Set(["src", "src/renderer"]),
   );
+
+  const { activeFilePath } = useEditorTabs();
+
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [tree, setTree] = useState<FileTreeNode[]>([]);
 
+
   useEffect(() => {
-    if(folderPath != null) {
-      console.log(folderPath);
-      setSelectedPath(folderPath);
-      makeTree(folderPath).then((newTree) => {
+    if(activeFilePath != null) {
+      console.log(activeFilePath);
+      setSelectedPath(activeFilePath);
+      makeTree(activeFilePath).then((newTree) => {
         setTree(newTree)
       })
     }
-  }, [folderPath]);
+  }, [activeFilePath]);
 
   const handleToggleFolder = useCallback((path: string) => {
     setExpandedFolders((prev) => {
@@ -39,10 +44,10 @@ export default function FileExplorer({ folderPath, onFileOpen } : FileExplorerPr
   }, []);
 
   const handleSelectItem = useCallback((fileName: string) => {
-    const fullPath = folderPath + '/' + fileName;
+    const fullPath = activeFilePath + '/' + fileName;
     console.log("full path:", fullPath);
     onFileOpen(fullPath);
-  }, [folderPath]);
+  }, [activeFilePath]);
 
   return (
     <div style={styles.container}>

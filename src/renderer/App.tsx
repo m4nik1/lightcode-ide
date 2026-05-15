@@ -48,7 +48,8 @@ export default function App() {
       <TopBar />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
-          <FileExplorer folderPath={activeFolderPath} onFileOpen={setActiveFilePath} />
+          {/* <FileExplorer folderPath={activeFolderPath} onFileOpen={setActiveFilePath} /> */}
+          <FileExplorer />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>

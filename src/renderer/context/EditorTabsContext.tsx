@@ -1,33 +1,43 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect, React } from "react";
+import { EditorTab } from "../types/EditorTab";
 
-const tabContext = createContext(null)
-
-
-interface editorTabs {
-    filename: String,
-    filePath: String
-    isModified: boolean,
+type EditorTabsContext = {
+    activeFilePath: string,
+    setActivePath: React.Dispatch<React.SetStateAction<string>>,
+    tabs: EditorTab[],
+    setTabs: React.Dispatch<React.SetStateAction<EditorTab[]>>,
+    openFile: (filePath : string) => void;
 }
 
-function getFileName(filePath: String) {
+const tabContext = createContext<EditorTabsContext | undefined>(undefined)
+
+
+function getFileName(filePath: string) {
   return filePath.split(/[\\/]/).pop() ?? filePath;
 }
 
 export function EditorTabsProvider({ children } : { children : ReactNode }) {
     const [activeFilePath, setActivePath] = useState('');
-    const [tabs, setTabs] = useState<editorTabs[] | []>([]);
+    const [tabs, setTabs] = useState<EditorTab[] | []>([]);
 
-    function openFile(filePath : String) {
-        setTabs((tabs : editorTabs[]) => {
+    let nextTabID : number = tabs.length;
+
+
+    // Opens file and adds to the tabs
+    function openFile(filePath : string) {
+        setTabs((tabs : EditorTab[]) => {
             const ifOpen = tabs.some((tabs) => tabs.filePath === filePath)
 
             if(ifOpen) {
                 return tabs;
             }
 
+            nextTabID += 1;
+
             return [
                 ...tabs,
                 {
+                    nextTabID,
                     fileName: getFileName(filePath),
                     filePath,
                     isModified: false,
@@ -46,7 +56,8 @@ export function EditorTabsProvider({ children } : { children : ReactNode }) {
                 activeFilePath,
                 setActivePath,
                 tabs,
-                setTabs
+                setTabs,
+                openFile
             }}
         >
             {children}
@@ -56,6 +67,10 @@ export function EditorTabsProvider({ children } : { children : ReactNode }) {
 
 export function useEditorTabs() {
     const context = useContext(tabContext);
+
+      if (!context) {
+        throw new Error("useEditorTabs must be used within an EditorTabsProvider");
+    }
 
     return context;
 }
