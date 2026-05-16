@@ -3,13 +3,8 @@ import type { m4Editor } from "../editor/m4Editor";
 import { EditorTab } from "../types/EditorTab";
 import { useEditorTabs } from "../context/EditorTabsContext";
 
-interface TopTabProps {
-  tabPath: string | null;
-  setPath: (filePath: string) => void;
-  editor: m4Editor;
-}
 
-export default function TopTabs(props: TopTabProps) {
+export default function TopTabs() {
   const [activeTabId, setActiveTab] = useState<EditorTab | null>(null);
   const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
   const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
@@ -39,7 +34,7 @@ export default function TopTabs(props: TopTabProps) {
 
         const showClose = isActive || isHovered;
 
-        console.log(tabs);
+        // console.log(tabs);
 
         return (
           <div

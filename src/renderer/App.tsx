@@ -58,7 +58,7 @@ export default function App() {
             setPath={setActiveFilePath}
             editor={editor}
           /> */}
-          <TopTabs editor={editor} />
+          <TopTabs />
           <ModernEditor filePath={activeFilePath} folderPath={activeFolderPath} editor={editor} />
         </section>
       </div>

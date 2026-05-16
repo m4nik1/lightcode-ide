@@ -5,17 +5,12 @@ import makeTree from "./FileTree/makeTree";
 import { FileTreeNode } from "../../types/FileTreeNode";
 import { useEditorTabs } from "../../context/EditorTabsContext";
 
-interface FileExplorerProps {
-  folderPath : string | null
-  onFileOpen: (filePath: string) => void
-}
-
-export default function FileExplorer({ onFileOpen } : FileExplorerProps) {
+export default function FileExplorer() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     () => new Set(["src", "src/renderer"]),
   );
 
-  const { activeFilePath } = useEditorTabs();
+  const { activeFilePath, openFile } = useEditorTabs();
 
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [tree, setTree] = useState<FileTreeNode[]>([]);
@@ -46,7 +41,7 @@ export default function FileExplorer({ onFileOpen } : FileExplorerProps) {
   const handleSelectItem = useCallback((fileName: string) => {
     const fullPath = activeFilePath + '/' + fileName;
     console.log("full path:", fullPath);
-    onFileOpen(fullPath);
+    openFile(fullPath);
   }, [activeFilePath]);
 
   return (
