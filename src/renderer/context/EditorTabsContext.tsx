@@ -37,8 +37,8 @@ export function EditorTabsProvider({ children } : { children : ReactNode }) {
             return [
                 ...tabs,
                 {
-                    nextTabID,
-                    fileName: getFileName(filePath),
+                    id: nextTabID,
+                    filename: getFileName(filePath),
                     filePath,
                     isModified: false,
                 }

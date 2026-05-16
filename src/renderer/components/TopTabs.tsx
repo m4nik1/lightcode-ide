@@ -14,14 +14,17 @@ export default function TopTabs(props: TopTabProps) {
   const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
   const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
 
-  const { openFile, tabs } = useEditorTabs();
+  const { openFile, tabs, setActivePath } = useEditorTabs();
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
+    console.log("Selecting tab: ", tabSelected);
+
     // Trigger callback function to switch to that tab/model
     
     // Opens file in existing or new model
     openFile(tabSelected.filePath);
+    setActivePath(tabSelected.filePath);
 
     setActiveTab(tabSelected);
   }
