@@ -60,13 +60,6 @@ export class m4Editor {
     //     };
     // }
 
-    // private setActiveModel(next: mEditor.ITextModel, diskPath?: string) {
-    //     this.model = next;
-    //     if (diskPath != null && diskPath !== "" && !this.savedVersionByPath.has(diskPath)) {
-    //         this.savedVersionByPath.set(diskPath, next.getAlternativeVersionId());
-    //     }
-    // }
-
     async createEditor(filePath: string) {
         this.monaco = await init();
 
@@ -104,39 +97,6 @@ export class m4Editor {
         return this.models
     }
 
-    //         this.registerSaveKeybinding();
-    //         this.attachModelChangeListener();
-    //         this.notifyDirty();
-
-    // async createModel(filePath: string) {
-    //     console.log("models: ", this.models);
-    //     const ed = this.editor;
-    //     const monaco = this.monaco;
-    //     if (ed == null || monaco == null) {
-    //         return;
-    //     }
-    //     if (this.models.has(filePath)) {
-    //         const existing = this.models.get(filePath);
-    //         if (existing == null) {
-    //             return;
-    //         }
-    //         ed.setModel(existing);
-    //         this.model = existing;
-    //     } else {
-    //         const fileContents = await window.electronAPI.readFile(filePath);
-    //         const newModel: mEditor.ITextModel = monaco.editor.createModel(
-    //             fileContents,
-    //             undefined,
-    //             monaco.Uri.file(filePath),
-    //         );
-    //         this.models.set(filePath, newModel);
-    //         ed.setModel(newModel);
-    //         this.setActiveModel(newModel, filePath);
-    //         console.log("created model...: ", newModel);
-    //     }
-    //     this.notifyDirty();
-    // }
-
     async save(): Promise<void> {
         const ed = this.editor;
         const current = ed?.getModel() ?? this.currentModel;
@@ -155,35 +115,6 @@ export class m4Editor {
         await window.electronAPI.writeFile(pathKey, content);
         this.savedVersionByPath.set(pathKey, current.getAlternativeVersionId());
     }
-
-    // isModifiedForPath(filePath: string): boolean {
-    //     const m = this.models.get(filePath);
-    //     if (m == null) {
-    //         return false;
-    //     }
-    //     const uri = m.uri;
-    //     if (uri.scheme !== "file") {
-    //         return false;
-    //     }
-    //     const pathKey = uri.fsPath;
-    //     const saved = this.savedVersionByPath.get(pathKey);
-    //     if (saved === undefined) {
-    //         return false;
-    //     }
-    //     return m.getAlternativeVersionId() !== saved;
-    // }
-
-    // isModified() {
-    //     const m = this.currentModel;
-    //     if (m == null) {
-    //         return false;
-    //     }
-    //     const uri = m.uri;
-    //     if (uri.scheme !== "file") {
-    //         return false;
-    //     }
-    //     return this.isModifiedForPath(uri.fsPath);
-    // }
 
     getEditor() {
         return this.editor;
