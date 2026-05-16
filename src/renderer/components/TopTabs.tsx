@@ -1,5 +1,4 @@
-import { useRef, useState, type CSSProperties } from "react";
-import type { m4Editor } from "../editor/m4Editor";
+import { useState, type CSSProperties } from "react";
 import { EditorTab } from "../types/EditorTab";
 import { useEditorTabs } from "../context/EditorTabsContext";
 

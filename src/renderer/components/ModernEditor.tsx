@@ -7,7 +7,7 @@ type ModernEditorProps = {
   editor: m4Editor;
 };
 
-export default function ModernEditor({ filePath, folderPath, editor }: ModernEditorProps) {
+export default function ModernEditor({ filePath, editor }: ModernEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
   
@@ -15,12 +15,12 @@ export default function ModernEditor({ filePath, folderPath, editor }: ModernEdi
     latestFilePathRef.current = filePath;
   }, [filePath]);
 
-  useEffect(() => {
-    const unsubscribe = window.electronAPI.onFileSaveRequest(() => {
-      void editor.save();
-    });
-    return unsubscribe;
-  }, [editor]);
+  // useEffect(() => {
+  //   const unsubscribe = window.electronAPI.onFileSaveRequest(() => {
+  //     void editor.save();
+  //   });
+  //   return unsubscribe;
+  // }, [editor]);
 
   const initializeEditor = async () => {
     if (editorRef.current == null) {

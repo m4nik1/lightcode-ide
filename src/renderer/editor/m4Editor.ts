@@ -87,9 +87,16 @@ export class m4Editor {
             this.models.push(this.currentModel)
             this.editor.setModel(this.currentModel);
         } else {
-            this.currentModel = await new m4model().createModel(this.monaco, filePath); 
-            this.editor.setModel(this.currentModel);
-            this.models.push(this.currentModel)
+            const modelExist = this.models.some((model) => model.uri.path === filePath);
+            if(modelExist) {
+                this.currentModel = this.models.find((model) => model.uri.path === filePath) as mEditor.ITextModel;
+                this.editor.setModel(this.currentModel);
+                return;
+            } else {
+                this.currentModel = await new m4model().createModel(this.monaco, filePath); 
+                this.editor.setModel(this.currentModel);
+                this.models.push(this.currentModel)
+            }
         }
     }
 
