@@ -18,10 +18,6 @@ export default function TopTabs(props: TopTabProps) {
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
-    console.log("Selecting tab: ", tabSelected);
-
-    // Trigger callback function to switch to that tab/model
-    
     // Opens file in existing or new model
     openFile(tabSelected.filePath);
     setActivePath(tabSelected.filePath);
@@ -85,8 +81,8 @@ export default function TopTabs(props: TopTabProps) {
                 e.stopPropagation();
                 // handleCloseTab(tab.id);
               }}
-              // onMouseEnter={() => setHoveredCloseId(tab.id)}
-              // onMouseLeave={() => setHoveredCloseId(null)}
+              onMouseEnter={() => setHoveredCloseId(tab.id)}
+              onMouseLeave={() => setHoveredCloseId(null)}
             >
               ×
             </span>

@@ -21,15 +21,15 @@ export default function FileExplorer({ onFileOpen } : FileExplorerProps) {
   const [tree, setTree] = useState<FileTreeNode[]>([]);
 
 
-  useEffect(() => {
-    if(activeFilePath != null) {
-      console.log(activeFilePath);
-      setSelectedPath(activeFilePath);
-      makeTree(activeFilePath).then((newTree) => {
-        setTree(newTree)
-      })
-    }
-  }, [activeFilePath]);
+  // useEffect(() => {
+  //   if(activeFilePath != null) {
+  //     console.log(activeFilePath);
+  //     setSelectedPath(activeFilePath);
+  //     makeTree(activeFilePath).then((newTree) => {
+  //       setTree(newTree)
+  //     })
+  //   }
+  // }, [activeFilePath]);
 
   const handleToggleFolder = useCallback((path: string) => {
     setExpandedFolders((prev) => {
