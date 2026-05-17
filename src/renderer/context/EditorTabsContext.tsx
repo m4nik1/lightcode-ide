@@ -7,6 +7,8 @@ type EditorTabsContext = {
     tabs: EditorTab[],
     setTabs: React.Dispatch<React.SetStateAction<EditorTab[]>>,
     openFile: (filePath : string) => void;
+    activeFolder : string
+    openFolder: () => void;
 }
 
 const tabContext = createContext<EditorTabsContext | undefined>(undefined)
@@ -19,6 +21,7 @@ function getFileName(filePath: string) {
 export function EditorTabsProvider({ children } : { children : ReactNode }) {
     const [activeFilePath, setActivePath] = useState('');
     const [tabs, setTabs] = useState<EditorTab[] | []>([]);
+    const [activeFolder, setFolder] = useState('');
 
     let nextTabID : number = tabs.length;
 
@@ -46,6 +49,19 @@ export function EditorTabsProvider({ children } : { children : ReactNode }) {
         });
     }
 
+    async function openFolder() {
+        const folder = await window.electronAPI.openFolder()
+        const folderPath = folder.filePaths[0]
+
+        if (!folderPath) {
+          return
+        }
+
+        console.log("Selected: ", folderPath)
+
+        setFolder(folderPath);
+    }
+
     useEffect(() => {
         console.log("I am currently on: ", activeFilePath);
     }, [activeFilePath])
@@ -57,7 +73,9 @@ export function EditorTabsProvider({ children } : { children : ReactNode }) {
                 setActivePath,
                 tabs,
                 setTabs,
-                openFile
+                openFile,
+                openFolder,
+                activeFolder
             }}
         >
             {children}

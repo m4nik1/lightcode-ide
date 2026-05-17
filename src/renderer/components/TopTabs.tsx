@@ -33,8 +33,6 @@ export default function TopTabs() {
 
         const showClose = isActive || isHovered;
 
-        // console.log(tabs);
-
         return (
           <div
             key={tab.id}

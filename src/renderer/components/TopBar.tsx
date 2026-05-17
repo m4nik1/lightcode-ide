@@ -3,7 +3,7 @@ import { useEditorTabs } from "../context/EditorTabsContext";
 
 export default function TopBar() {
   const [fileDropDown, setFileDropDown] = useState(false);
-  const { openFile } = useEditorTabs();
+  const { openFile, openFolder } = useEditorTabs();
 
   async function readOpenFile() {
     // Send the selected path up so App can share it with the editor.
@@ -19,17 +19,7 @@ export default function TopBar() {
     
     setFileDropDown(false)
   }
-
-  // async function openFolder() {
-  //   const folder = await window.electronAPI.openFolder()
-  //   const folderPath = folder.filePaths[0]
-  //   console.log("Selected: ", folderPath)
-  //   // onOpenFolder(folderPath)
-
-  //   if (!folderPath) {
-  //     return
-  //   }
-  // }
+  
   return (
       <header style={styles.bar}>
         <button 

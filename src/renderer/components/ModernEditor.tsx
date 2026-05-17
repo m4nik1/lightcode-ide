@@ -3,7 +3,6 @@ import { m4Editor } from "../editor/m4Editor";
 
 type ModernEditorProps = {
   filePath: string | null;
-  folderPath: string | null;
   editor: m4Editor;
 };
 

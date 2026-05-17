@@ -10,21 +10,18 @@ export default function FileExplorer() {
     () => new Set(["src", "src/renderer"]),
   );
 
-  const { activeFilePath, openFile } = useEditorTabs();
-
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const { activeFolder, openFile } = useEditorTabs();
   const [tree, setTree] = useState<FileTreeNode[]>([]);
 
 
-  // useEffect(() => {
-  //   if(activeFilePath != null) {
-  //     console.log(activeFilePath);
-  //     setSelectedPath(activeFilePath);
-  //     makeTree(activeFilePath).then((newTree) => {
-  //       setTree(newTree)
-  //     })
-  //   }
-  // }, [activeFilePath]);
+  useEffect(() => {
+    if(activeFolder != null) {
+      console.log(activeFolder);
+      makeTree(activeFolder).then((newTree) => {
+        setTree(newTree)
+      })
+    }
+  }, [activeFolder]);
 
   const handleToggleFolder = useCallback((path: string) => {
     setExpandedFolders((prev) => {
@@ -38,11 +35,16 @@ export default function FileExplorer() {
     });
   }, []);
 
-  const handleSelectItem = useCallback((fileName: string) => {
-    const fullPath = activeFilePath + '/' + fileName;
+  const handleSelectItem = useCallback((fileName: string, isFolder : boolean) => {
+    const fullPath = activeFolder + '/' + fileName;
     console.log("full path:", fullPath);
-    openFile(fullPath);
-  }, [activeFilePath]);
+
+    if(!isFolder) {
+      openFile(fullPath);
+    }
+    
+  }, [activeFolder]);
+
 
   return (
     <div style={styles.container}>
@@ -57,7 +59,7 @@ export default function FileExplorer() {
             depth={0}
             path={node.name}
             expandedFolders={expandedFolders}
-            selectedPath={selectedPath}
+            selectedPath={activeFolder}
             onToggleFolder={handleToggleFolder}
             onSelectItem={handleSelectItem}
           />

@@ -9,7 +9,7 @@ type TreeNodeProps = {
   expandedFolders: Set<string>;
   selectedPath: string | null;
   onToggleFolder: (path: string) => void;
-  onSelectItem: (path: string) => void;
+  onSelectItem: (path: string, isFolder: boolean) => void;
 };
 
 function getExtension(name: string): string {
@@ -79,7 +79,7 @@ export default function TreeNode({
   const isSelected = selectedPath === path;
 
   const handleClick = () => {
-    onSelectItem(path);
+    onSelectItem(path, isFolder);
     if (isFolder) {
       onToggleFolder(path);
     }

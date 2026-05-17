@@ -17,10 +17,6 @@ function openAIWindow() {
 }
 
 export default function App() {
-  // Keep the selected path in App so both the menu and editor can share it.
-  // const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
-  const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
-
   const { activeFilePath } = useEditorTabs();
 
   const editorRef = useRef<m4Editor | null>(null);
@@ -44,22 +40,15 @@ export default function App() {
         </div>
       )}
       {/* {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null} */}
-      {/* <TopBar onOpenFile={setActiveFilePath} onOpenFolder={setActiveFolderPath} /> */}
       <TopBar />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
-          {/* <FileExplorer folderPath={activeFolderPath} onFileOpen={setActiveFilePath} /> */}
           <FileExplorer />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          {/* <TopTabs
-            tabPath={activeFilePath}
-            setPath={setActiveFilePath}
-            editor={editor}
-          /> */}
           <TopTabs />
-          <ModernEditor filePath={activeFilePath} folderPath={activeFolderPath} editor={editor} />
+          <ModernEditor filePath={activeFilePath} editor={editor} />
         </section>
       </div>
     </main>
