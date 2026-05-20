@@ -1,14 +1,18 @@
 import { useState, type CSSProperties } from "react";
 import { EditorTab } from "../types/EditorTab";
 import { useEditorTabs } from "../context/EditorTabsContext";
+import { m4Editor } from "../editor/m4Editor";
 
+type TopTabsProps = {
+  editor: m4Editor;
+};
 
-export default function TopTabs() {
+export default function TopTabs({ editor }: TopTabsProps) {
   const [activeTabId, setActiveTab] = useState<EditorTab | null>(null);
   const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
   const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
 
-  const { openFile, tabs, setActivePath } = useEditorTabs();
+  const { openFile, tabs, activeFilePath, setActivePath, setTabs } = useEditorTabs();
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
@@ -17,6 +21,28 @@ export default function TopTabs() {
     setActivePath(tabSelected.filePath);
 
     setActiveTab(tabSelected);
+  }
+
+  function handleCloseTab(tab: EditorTab) {
+    editor.disposeModel(tab.filePath);
+
+    const closingIndex = tabs.findIndex((t) => t.id === tab.id);
+    const wasActive =
+      tab.filePath === activeFilePath || tab.id === activeTabId?.id;
+    const remaining = tabs.filter((t) => t.id !== tab.id);
+
+    if (wasActive && remaining.length > 0) {
+      const nextIndex =
+        closingIndex >= remaining.length ? remaining.length - 1 : closingIndex;
+      const nextTab = remaining[nextIndex];
+      setActivePath(nextTab.filePath);
+      setActiveTab(nextTab);
+    } else if (wasActive) {
+      setActivePath("");
+      setActiveTab(null);
+    }
+
+    setTabs(remaining);
   }
 
   return (
@@ -71,7 +97,7 @@ export default function TopTabs() {
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                // handleCloseTab(tab.id);
+                handleCloseTab(tab);
               }}
               onMouseEnter={() => setHoveredCloseId(tab.id)}
               onMouseLeave={() => setHoveredCloseId(null)}

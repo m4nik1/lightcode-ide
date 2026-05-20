@@ -47,7 +47,7 @@ export default function App() {
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <TopTabs />
+          <TopTabs editor={editor} />
           <ModernEditor filePath={activeFilePath} editor={editor} />
         </section>
       </div>

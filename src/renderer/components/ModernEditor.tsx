@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
+import { useEditorTabs } from "../context/EditorTabsContext";
 import { m4Editor } from "../editor/m4Editor";
+import { EditorTab } from "../types/EditorTab";
 
 type ModernEditorProps = {
   filePath: string | null;
@@ -7,19 +9,25 @@ type ModernEditorProps = {
 };
 
 export default function ModernEditor({ filePath, editor }: ModernEditorProps) {
+  const { setTabs } = useEditorTabs();
   const editorRef = useRef<HTMLDivElement | null>(null);
   const latestFilePathRef = useRef<string | null>(filePath);
-  
+
+  useEffect(() => {
+    editor.setOnModifiedChange((modifiedFilePath, isModified) => {
+      setTabs((tabs: EditorTab[]) =>
+        tabs.map((tab: EditorTab) =>
+          tab.filePath === modifiedFilePath
+            ? { ...tab, isModified }
+            : tab
+        )
+      );
+    });
+  }, [editor, setTabs]);
+
   useEffect(() => {
     latestFilePathRef.current = filePath;
   }, [filePath]);
-
-  // useEffect(() => {
-  //   const unsubscribe = window.electronAPI.onFileSaveRequest(() => {
-  //     void editor.save();
-  //   });
-  //   return unsubscribe;
-  // }, [editor]);
 
   const initializeEditor = async () => {
     if (editorRef.current == null) {
