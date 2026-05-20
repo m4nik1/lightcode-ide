@@ -42,7 +42,6 @@ export class m4Editor {
         this.monaco = await init();
 
         if (this.editor == null) {
-            console.log("Editor does not exist, creating new one...");
             const container = this.editorRef.current;
             if (container == null) {
                 console.warn("createEditor: editor container ref is not mounted");

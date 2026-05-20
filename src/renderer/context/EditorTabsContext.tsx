@@ -57,8 +57,6 @@ export function EditorTabsProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    console.log("Selected: ", folderPath)
-
     setFolder(folderPath);
   }
 
