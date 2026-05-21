@@ -38,12 +38,16 @@ export default function FileExplorer() {
   const headerTitle = folderName || "Explorer";
 
   useEffect(() => {
-    if (activeFolder != null) {
-      console.log(activeFolder);
-      makeTree(activeFolder).then((newTree) => {
-        setTree(newTree);
-      });
+    const folderPath = activeFolder?.trim() ?? "";
+
+    if (!folderPath) {
+      setTree([]);
+      return;
     }
+
+    makeTree(folderPath).then((newTree) => {
+      setTree(newTree);
+    });
   }, [activeFolder]);
 
   const handleToggleFolder = useCallback((path: string) => {
