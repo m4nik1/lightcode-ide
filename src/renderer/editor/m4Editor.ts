@@ -1,28 +1,31 @@
 import type { RefObject } from "react";
 import { init } from "modern-monaco";
 import type { editor as mEditor } from "modern-monaco/types/monaco";
+import { m4model } from "./m4model";
 
 type MonacoApi = Awaited<ReturnType<typeof init>>;
 
 export class m4Editor {
     private editorRef: RefObject<HTMLDivElement | null>;
     private editor: mEditor.IStandaloneCodeEditor | null;
-    private model: mEditor.ITextModel | null;
     public activeTabId: string | null = null;
     private monaco: MonacoApi | null;
-    private models: Map<string, mEditor.ITextModel>;
-    /** Last saved Monaco alternative version id per file path (disk-backed tabs). */
-    private savedVersionByPath: Map<string, number>;
-    private dirtyListeners = new Set<() => void>();
-    private contentListenerAttached = false;
+    private models: mEditor.ITextModel[];
+    private currentModel: mEditor.ITextModel | null;
+    private onModifiedChange: ((filePath: string, isModified: boolean) => void) | null;
+    private contentDisposables = new Map<string, { dispose: () => void }>();
 
     constructor(ref: RefObject<HTMLDivElement | null> | null) {
         this.editorRef = ref ?? { current: null };
         this.editor = null;
-        this.model = null;
         this.monaco = null;
-        this.models = new Map<string, mEditor.ITextModel>();
-        this.savedVersionByPath = new Map();
+        this.models = [];
+        this.currentModel = null;
+        this.onModifiedChange = null;
+    }
+
+    setOnModifiedChange(callback: (filePath: string, isModified: boolean) => void) {
+        this.onModifiedChange = callback;
     }
 
     private registerSaveKeybinding() {
@@ -35,42 +38,10 @@ export class m4Editor {
         });
     }
 
-    private attachModelChangeListener() {
-        if (this.editor == null || this.contentListenerAttached) {
-            return;
-        }
-        this.contentListenerAttached = true;
-        this.editor.onDidChangeModelContent(() => {
-            this.notifyDirty();
-        });
-    }
-
-    private notifyDirty() {
-        this.dirtyListeners.forEach((listener) => {
-            listener();
-        });
-    }
-
-    /** Subscribe to edits / saves that affect dirty state; used to refresh tab indicators. */
-    subscribeDirty(listener: () => void): () => void {
-        this.dirtyListeners.add(listener);
-        return () => {
-            this.dirtyListeners.delete(listener);
-        };
-    }
-
-    private setActiveModel(next: mEditor.ITextModel, diskPath?: string) {
-        this.model = next;
-        if (diskPath != null && diskPath !== "" && !this.savedVersionByPath.has(diskPath)) {
-            this.savedVersionByPath.set(diskPath, next.getAlternativeVersionId());
-        }
-    }
-
     async createEditor(filePath: string) {
         this.monaco = await init();
 
         if (this.editor == null) {
-            console.log("Editor does not exist, creating new one...");
             const container = this.editorRef.current;
             if (container == null) {
                 console.warn("createEditor: editor container ref is not mounted");
@@ -82,61 +53,71 @@ export class m4Editor {
                 cursorBlinking: "smooth",
             });
 
-            if (filePath !== "") {
-                const fileContents = await window.electronAPI.readFile(filePath);
-                const created = this.monaco.editor.createModel(
-                    fileContents,
-                    undefined,
-                    this.monaco.Uri.file(filePath),
-                );
-                this.models.set(filePath, created);
-                this.setActiveModel(created, filePath);
-            } else {
-                const untitled = this.monaco.editor.createModel("");
-                this.setActiveModel(untitled);
-            }
-
-            this.editor.setModel(this.model);
+            this.currentModel = await new m4model().createModel(this.monaco, filePath);
+            this.onContentChange();
             this.registerSaveKeybinding();
-            this.attachModelChangeListener();
-            this.notifyDirty();
+            this.models.push(this.currentModel)
+            this.editor.setModel(this.currentModel);
         } else {
-            await this.createModel(filePath);
+            const modelExist = this.models.some((model) => model.uri.path === filePath);
+            if(modelExist) {
+                this.currentModel = this.models.find((model) => model.uri.path === filePath) as mEditor.ITextModel;
+                this.editor.setModel(this.currentModel);
+                return;
+            } else {
+                this.currentModel = await new m4model().createModel(this.monaco, filePath); 
+                this.onContentChange();
+                this.registerSaveKeybinding();
+                this.editor.setModel(this.currentModel);
+                this.models.push(this.currentModel)
+            }
         }
     }
 
-    async createModel(filePath: string) {
-        console.log("models: ", this.models);
-        const ed = this.editor;
-        const monaco = this.monaco;
-        if (ed == null || monaco == null) {
+    getModels() {
+        return this.models
+    }
+
+    disposeModel(filePath: string) {
+        const model = this.models.find((m) => m.uri.fsPath === filePath);
+        if (model == null) {
             return;
         }
-        if (this.models.has(filePath)) {
-            const existing = this.models.get(filePath);
-            if (existing == null) {
-                return;
-            }
-            ed.setModel(existing);
-            this.model = existing;
-        } else {
-            const fileContents = await window.electronAPI.readFile(filePath);
-            const newModel: mEditor.ITextModel = monaco.editor.createModel(
-                fileContents,
-                undefined,
-                monaco.Uri.file(filePath),
-            );
-            this.models.set(filePath, newModel);
-            ed.setModel(newModel);
-            this.setActiveModel(newModel, filePath);
-            console.log("created model...: ", newModel);
+
+        if (this.editor?.getModel() === model) {
+            this.editor.setModel(null);
         }
-        this.notifyDirty();
+
+        this.contentDisposables.get(filePath)?.dispose();
+        this.contentDisposables.delete(filePath);
+
+        model.dispose();
+        this.models = this.models.filter((m) => m.uri.fsPath !== filePath);
+
+        if (this.currentModel === model) {
+            this.currentModel = null;
+        }
+    }
+
+    onContentChange() {
+        const model = this.currentModel;
+        if (model == null || model.uri.scheme !== "file") {
+            return;
+        }
+
+        const filePath = model.uri.fsPath;
+        const existing = this.contentDisposables.get(filePath);
+        existing?.dispose();
+
+        const disposable = model.onDidChangeContent(() => {
+            this.onModifiedChange?.(filePath, true);
+        });
+        this.contentDisposables.set(filePath, disposable);
     }
 
     async save(): Promise<void> {
         const ed = this.editor;
-        const current = ed?.getModel() ?? this.model;
+        const current = ed?.getModel() ?? this.currentModel;
         if (current == null) {
             return;
         }
@@ -150,37 +131,7 @@ export class m4Editor {
         const pathKey = uri.fsPath;
         const content = current.getValue();
         await window.electronAPI.writeFile(pathKey, content);
-        this.savedVersionByPath.set(pathKey, current.getAlternativeVersionId());
-        this.notifyDirty();
-    }
-
-    isModifiedForPath(filePath: string): boolean {
-        const m = this.models.get(filePath);
-        if (m == null) {
-            return false;
-        }
-        const uri = m.uri;
-        if (uri.scheme !== "file") {
-            return false;
-        }
-        const pathKey = uri.fsPath;
-        const saved = this.savedVersionByPath.get(pathKey);
-        if (saved === undefined) {
-            return false;
-        }
-        return m.getAlternativeVersionId() !== saved;
-    }
-
-    isModified() {
-        const m = this.model;
-        if (m == null) {
-            return false;
-        }
-        const uri = m.uri;
-        if (uri.scheme !== "file") {
-            return false;
-        }
-        return this.isModifiedForPath(uri.fsPath);
+        this.onModifiedChange?.(pathKey, false);
     }
 
     getEditor() {
@@ -192,6 +143,6 @@ export class m4Editor {
     }
 
     getModel() {
-        return this.model
+        return this.currentModel
     }
 }

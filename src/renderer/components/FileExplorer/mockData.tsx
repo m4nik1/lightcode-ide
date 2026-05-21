@@ -1,4 +1,4 @@
-import { FileTreeNode } from "src/renderer/types/FileTreeNode";
+import { FileTreeNode } from "../../types/FileTreeNode";
 
 export const mockTree: FileTreeNode[] = [
   {

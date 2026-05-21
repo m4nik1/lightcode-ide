@@ -11,6 +11,10 @@ declare global {
       writeFile: (filePath: string, content: string) => Promise<void>;
       readDirectory: (folderPath: string) => Promise<FileTreeNode[]>;
       openAIWindow: () => Promise<void>;
+      minimizeWindow: () => Promise<void>;
+      toggleMaximizeWindow: () => Promise<boolean>;
+      closeWindow: () => Promise<void>;
+      isWindowMaximized: () => Promise<boolean>;
       onFileSaveRequest: (callback: () => void) => () => void;
     };
   }

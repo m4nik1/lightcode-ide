@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editor Tabs Context Integration Plan</title>
+    <style>
+      body {
+        max-width: 980px;
+        margin: 40px auto;
+        padding: 0 24px 48px;
+        color: #d4d4d4;
+        background: #1e1e1e;
+        font-family: Arial, sans-serif;
+        line-height: 1.55;
+      }
+
+      h1,
+      h2 {
+        color: #ffffff;
+      }
+
+      h1 {
+        margin-bottom: 8px;
+      }
+
+      h2 {
+        margin-top: 32px;
+        border-bottom: 1px solid #3c3c3c;
+        padding-bottom: 6px;
+      }
+
+      code,
+      pre {
+        font-family: Consolas, Monaco, "Courier New", monospace;
+      }
+
+      code {
+        color: #ce9178;
+        background: #252526;
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
+
+      pre {
+        overflow-x: auto;
+        background: #252526;
+        border: 1px solid #3c3c3c;
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      pre code {
+        color: #d4d4d4;
+        background: transparent;
+        padding: 0;
+      }
+
+      li {
+        margin: 6px 0;
+      }
+
+      .summary {
+        color: #bdbdbd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Editor Tabs Context Integration Plan</h1>
+
+    <p class="summary">
+      <code>EditorTabsContext</code> should become the single source of truth for
+      open tabs, the active file, tab selection, and tab closing. Then
+      <code>TopTabs</code> renders from that shared state, and
+      <code>ModernEditor</code> switches the modern-monaco model whenever
+      <code>activeFilePath</code> changes.
+    </p>
+
+    <h2>Current Problems</h2>
+    <ul>
+      <li><code>EditorTabsProvider</code> is not mounted in <code>main.tsx</code>.</li>
+      <li><code>EditorTabsContext.tsx</code> uses <code>currentTabs</code>, but that variable is not defined.</li>
+      <li><code>getFileName()</code> is used but not defined or imported in the context file.</li>
+      <li><code>openFile()</code> is created inside the provider but is not exposed in the context value.</li>
+      <li><code>TopTabs.tsx</code> keeps its own local <code>tabs</code> state instead of using context.</li>
+      <li><code>App.tsx</code> passes <code>setActiveFilePath</code>, but that local state is commented out.</li>
+      <li><code>TopTabs.tsx</code> references <code>handleCloseTab</code> and <code>handleTabContextMenu</code>, but they are not defined.</li>
+      <li><code>m4Editor.createEditor(filePath)</code> creates a new Monaco model every time instead of reusing an existing model for an open file.</li>
+    </ul>
+
+    <h2>Target Ownership</h2>
+    <p>The context should own:</p>
+    <ul>
+      <li><code>tabs</code>: the list of open editor tabs.</li>
+      <li><code>activeFilePath</code>: the file currently shown in Monaco.</li>
+      <li><code>openFile(filePath)</code>: create a tab if needed and activate it.</li>
+      <li><code>selectTab(filePath)</code>: activate an existing tab.</li>
+      <li><code>closeTab(filePath)</code>: remove a tab and choose the next active file.</li>
+    </ul>
+
+    <h2>Mount The Provider</h2>
+    <p>Wrap <code>App</code> in <code>EditorTabsProvider</code> from <code>main.tsx</code>.</p>
+
+    <pre><code>import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+import { EditorTabsProvider } from "./context/EditorTabsContext";
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Renderer root element was not found");
+}
+
+ReactDOM.createRoot(rootElement).render(
+  &lt;React.StrictMode&gt;
+    &lt;EditorTabsProvider&gt;
+      &lt;App /&gt;
+    &lt;/EditorTabsProvider&gt;
+  &lt;/React.StrictMode&gt;,
+);</code></pre>
+
+    <h2>Context Shape</h2>
+    <p>The provider should expose the tab state and operations that other components need.</p>
+
+    <pre><code>import { createContext, ReactNode, useContext, useState } from "react";
+import type { EditorTab } from "../types/EditorTab";
+
+type EditorTabsContextValue = {
+  activeFilePath: string | null;
+  tabs: EditorTab[];
+  openFile: (filePath: string) =&gt; void;
+  selectTab: (filePath: string) =&gt; void;
+  closeTab: (filePath: string) =&gt; void;
+  setTabs: React.Dispatch&lt;React.SetStateAction&lt;EditorTab[]&gt;&gt;;
+};
+
+const EditorTabsContext = createContext&lt;EditorTabsContextValue | null&gt;(null);
+
+function getFileName(filePath: string) {
+  return filePath.split(/[\\/]/).pop() ?? filePath;
+}
+
+export function EditorTabsProvider({ children }: { children: ReactNode }) {
+  const [activeFilePath, setActivePath] = useState&lt;string | null&gt;(null);
+  const [tabs, setTabs] = useState&lt;EditorTab[]&gt;([]);
+
+  function openFile(filePath: string) {
+    setTabs((currentTabs) =&gt; {
+      const alreadyOpen = currentTabs.some((tab) =&gt; tab.filePath === filePath);
+
+      if (alreadyOpen) {
+        return currentTabs;
+      }
+
+      return [
+        ...currentTabs,
+        {
+          id: filePath,
+          name: getFileName(filePath),
+          filePath,
+          isModified: false,
+        },
+      ];
+    });
+
+    setActivePath(filePath);
+  }
+
+  function selectTab(filePath: string) {
+    setActivePath(filePath);
+  }
+
+  function closeTab(filePath: string) {
+    setTabs((currentTabs) =&gt; {
+      const nextTabs = currentTabs.filter((tab) =&gt; tab.filePath !== filePath);
+
+      if (activeFilePath === filePath) {
+        const nextActiveTab = nextTabs[nextTabs.length - 1] ?? null;
+        setActivePath(nextActiveTab?.filePath ?? null);
+      }
+
+      return nextTabs;
+    });
+  }
+
+  return (
+    &lt;EditorTabsContext.Provider
+      value={{
+        activeFilePath,
+        tabs,
+        openFile,
+        selectTab,
+        closeTab,
+        setTabs,
+      }}
+    &gt;
+      {children}
+    &lt;/EditorTabsContext.Provider&gt;
+  );
+}
+
+export function useEditorTabs() {
+  const context = useContext(EditorTabsContext);
+
+  if (context == null) {
+    throw new Error("useEditorTabs must be used inside EditorTabsProvider");
+  }
+
+  return context;
+}</code></pre>
+
+    <h2>App Integration</h2>
+    <p>
+      <code>App.tsx</code> should read <code>activeFilePath</code> and
+      <code>openFile</code> from context. Opening from the explorer should call
+      <code>openFile</code>, not a local <code>setActiveFilePath</code>.
+    </p>
+
+    <pre><code>const { activeFilePath, openFile } = useEditorTabs();
+
+&lt;FileExplorer folderPath={activeFolderPath} onFileOpen={openFile} /&gt;
+
+&lt;TopTabs editor={editor} /&gt;
+
+&lt;ModernEditor
+  filePath={activeFilePath}
+  folderPath={activeFolderPath}
+  editor={editor}
+/&gt;</code></pre>
+
+    <h2>TopTabs Integration</h2>
+    <p>
+      <code>TopTabs</code> should not own tab data. It should render
+      <code>tabs</code> from context and use context actions for selecting and
+      closing tabs.
+    </p>
+
+    <pre><code>import { useEditorTabs } from "../context/EditorTabsContext";
+
+export default function TopTabs() {
+  const { tabs, activeFilePath, selectTab, closeTab } = useEditorTabs();
+
+  return (
+    &lt;div style={styles.strip}&gt;
+      {tabs.map((tab) =&gt; {
+        const isActive = tab.filePath === activeFilePath;
+
+        return (
+          &lt;div
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() =&gt; selectTab(tab.filePath)}
+          &gt;
+            &lt;span&gt;{tab.name}&lt;/span&gt;
+
+            &lt;button
+              type="button"
+              aria-label={`Close ${tab.name}`}
+              onClick={(event) =&gt; {
+                event.stopPropagation();
+                closeTab(tab.filePath);
+              }}
+            &gt;
+              x
+            &lt;/button&gt;
+          &lt;/div&gt;
+        );
+      })}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+    <h2>ModernEditor Integration</h2>
+    <p>
+      <code>ModernEditor</code> can stay as the bridge between React state and
+      modern-monaco. Whenever <code>activeFilePath</code> changes, it asks
+      <code>m4Editor</code> to show that file.
+    </p>
+
+    <pre><code>useEffect(() =&gt; {
+  if (!filePath) {
+    return;
+  }
+
+  void setupEditor(filePath);
+}, [filePath]);</code></pre>
+
+    <h2>m4Editor Model Cache</h2>
+    <p>
+      <code>m4Editor</code> should keep one Monaco model per file path. That way,
+      switching tabs switches models instead of recreating models and losing
+      editor state.
+    </p>
+
+    <pre><code>private models = new Map&lt;string, mEditor.ITextModel&gt;();
+
+async createEditor(filePath: string) {
+  this.monaco = this.monaco ?? await init();
+
+  if (this.editor == null) {
+    const container = this.editorRef.current;
+
+    if (container == null) {
+      console.warn("createEditor: editor container ref is not mounted");
+      return;
+    }
+
+    this.editor = this.monaco.editor.create(container, {
+      smoothScrolling: true,
+      cursorSmoothCaretAnimation: "on",
+      cursorBlinking: "smooth",
+    });
+  }
+
+  const existingModel = this.models.get(filePath);
+
+  if (existingModel != null) {
+    this.currentModel = existingModel;
+    this.editor.setModel(existingModel);
+    return;
+  }
+
+  const nextModel = await new m4model().createModel(this.monaco, filePath);
+  this.models.set(filePath, nextModel);
+  this.currentModel = nextModel;
+  this.editor.setModel(nextModel);
+}</code></pre>
+
+    <h2>Data Flow</h2>
+    <pre><code>FileExplorer / TopBar
+  -&gt; openFile(filePath)
+  -&gt; EditorTabsProvider adds or selects tab
+  -&gt; activeFilePath changes
+  -&gt; TopTabs highlights the active tab
+  -&gt; ModernEditor receives filePath
+  -&gt; m4Editor switches the modern-monaco model</code></pre>
+
+    <h2>Implementation Order</h2>
+    <ol>
+      <li>Mount <code>EditorTabsProvider</code> in <code>main.tsx</code>.</li>
+      <li>Fix and type <code>EditorTabsContext.tsx</code>.</li>
+      <li>Replace the old <code>App.tsx</code> file-opening flow with <code>openFile</code>.</li>
+      <li>Refactor <code>TopTabs.tsx</code> to consume context instead of local tab state.</li>
+      <li>Update <code>m4Editor</code> to cache Monaco models by file path.</li>
+    </ol>
+  </body>
+</html>

@@ -9,7 +9,7 @@ type TreeNodeProps = {
   expandedFolders: Set<string>;
   selectedPath: string | null;
   onToggleFolder: (path: string) => void;
-  onSelectItem: (path: string) => void;
+  onSelectItem: (path: string, isFolder: boolean) => void;
 };
 
 function getExtension(name: string): string {
@@ -79,7 +79,7 @@ export default function TreeNode({
   const isSelected = selectedPath === path;
 
   const handleClick = () => {
-    onSelectItem(path);
+    onSelectItem(path, isFolder);
     if (isFolder) {
       onToggleFolder(path);
     }
@@ -139,16 +139,19 @@ export default function TreeNode({
 
 const styles: Record<string, CSSProperties> = {
   treeRow: {
-    height: 22,
+    height: 26,
     display: "flex",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
     paddingRight: 8,
     cursor: "pointer",
     fontSize: 13,
-    color: "#cccccc",
+    color: "#d4d4d4",
     outline: "none",
     whiteSpace: "nowrap",
+    borderRadius: 4,
+    marginRight: 6,
+    marginLeft: 2,
   },
   label: {
     overflow: "hidden",
