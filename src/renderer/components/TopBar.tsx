@@ -1,4 +1,4 @@
-import { CSSProperties, useState } from "react"
+import { CSSProperties, FocusEvent, useState } from "react"
 import { useEditorTabs } from "../context/EditorTabsContext";
 
 export default function TopBar() {
@@ -19,28 +19,36 @@ export default function TopBar() {
     
     setFileDropDown(false)
   }
+
+  function closeDropdownOnBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setFileDropDown(false);
+    }
+  }
   
   return (
       <header style={styles.bar}>
-        <button 
-          className="topbar-trigger" 
-          style={styles.item} 
-          aria-expanded={fileDropDown} 
-          onClick={() => setFileDropDown(!fileDropDown)} 
-          type="button"
-        >
-          File
-        </button>
+        <div style={styles.menuRoot} onBlur={closeDropdownOnBlur}>
+          <button 
+            className="topbar-trigger" 
+            style={styles.item} 
+            aria-expanded={fileDropDown} 
+            onClick={() => setFileDropDown(!fileDropDown)} 
+            type="button"
+          >
+            File
+          </button>
 
-        { fileDropDown ? 
-          <div role="menu" style={styles.menu}>
-            <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuItem" type="button">
-              Open File
-            </button>
-            <button className="topbar-menu-item" onClick={() => openFolder()} role="menuItem" type="button">
-              Open Folder
-            </button>
-          </div> : null }
+          { fileDropDown ? 
+            <div role="menu" style={styles.menu}>
+              <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuitem" type="button">
+                Open File
+              </button>
+              <button className="topbar-menu-item" onClick={() => { openFolder(); setFileDropDown(false); }} role="menuitem" type="button">
+                Open Folder
+              </button>
+            </div> : null }
+        </div>
       </header>
   )
 }
