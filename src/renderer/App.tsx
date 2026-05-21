@@ -1,14 +1,14 @@
-import { useState, useRef, type CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
-import TopBar from "./components/TopBar";
+import NativeTopBar from "./components/NativeTopBar";
 import TopTabs from "./components/TopTabs";
 import { m4Editor } from "./editor/m4Editor";
+import { useEditorTabs } from "./context/EditorTabsContext";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 const macTrafficLightRowHeight = 38;
 const topBarHeight = 30;
-const tabBarHeight = 35;
 const sidebarWidth = 240;
 
 function openAIWindow() {
@@ -16,9 +16,8 @@ function openAIWindow() {
 }
 
 export default function App() {
-  // Keep the selected path in App so both the menu and editor can share it.
-  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
-  const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
+  const { activeFilePath } = useEditorTabs();
+
   const editorRef = useRef<m4Editor | null>(null);
   if (!editorRef.current) {
     editorRef.current = new m4Editor(null);
@@ -40,19 +39,15 @@ export default function App() {
         </div>
       )}
       {/* {!isMac ? <TopBar onOpenFile={setActiveFilePath} /> : null} */}
-      <TopBar onOpenFile={setActiveFilePath} onOpenFolder={setActiveFolderPath} />
+      <NativeTopBar />
       <div style={styles.body}>
         <aside style={styles.sidebar}>
-          <FileExplorer folderPath={activeFolderPath} onFileOpen={setActiveFilePath} />
+          <FileExplorer />
         </aside>
         <div style={styles.sidebarBorder} />
         <section style={styles.editorShell}>
-          <TopTabs
-            tabPath={activeFilePath}
-            setPath={setActiveFilePath}
-            editor={editor}
-          />
-          <ModernEditor filePath={activeFilePath} folderPath={activeFolderPath} editor={editor} />
+          <TopTabs editor={editor} />
+          <ModernEditor filePath={activeFilePath} editor={editor} />
         </section>
       </div>
     </main>
@@ -91,9 +86,13 @@ const styles: Record<string, CSSProperties> = {
     background: "#2b2b2b",
   },
   editorShell: {
+    display: "grid",
+    gridTemplateRows: "35px minmax(0, 1fr)",
     width: "100%",
     height: "100%",
     minHeight: 0,
+    minWidth: 0,
+    overflow: "hidden",
   },
   aiWindowBtn: {
     height: 22,

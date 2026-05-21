@@ -1,80 +1,48 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import type { m4Editor } from "../editor/m4Editor";
+import { useState, type CSSProperties } from "react";
 import { EditorTab } from "../types/EditorTab";
+import { useEditorTabs } from "../context/EditorTabsContext";
+import { m4Editor } from "../editor/m4Editor";
 
-interface TopTabProps {
-  tabPath: string | null;
-  setPath: (filePath: string) => void;
+type TopTabsProps = {
   editor: m4Editor;
-}
+};
 
-export default function TopTabs(props: TopTabProps) {
-  const [activeTabId, setActiveTab] = useState<EditorTab | null>(null);
-  const [hoveredTabId, setHoveredTabId] = useState<string | null>(null);
-  const [hoveredCloseId, setHoveredCloseId] = useState<string | null>(null);
+export default function TopTabs({ editor }: TopTabsProps) {
+  const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
+  const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
 
-  const [tabs, setTabs] = useState<EditorTab[]>([]);
-  const nextTabId = useRef(1);
-
-  useEffect(() => {
-    const path = props.tabPath;
-    if (path != null && path !== activeTabId?.filePath) {
-      setTabs((prev) => {
-        const existingTab = prev.find((tab) => tab.filePath === path);
-        if (existingTab) {
-          setActiveTab(existingTab);
-          return prev;
-        }
-
-        const newTab: EditorTab = {
-          id: String(nextTabId.current),
-          name: path.replace(/^.*[\\/]/, ""),
-          filePath: path,
-          isModified: false,
-        };
-        nextTabId.current += 1;
-        setActiveTab(newTab);
-        return [...prev, newTab];
-      });
-    }
-  }, [props.tabPath, activeTabId?.filePath]);
-
-  useEffect(() => {
-    const syncModified = () => {
-      setTabs((prev) =>
-        prev.map((t) => ({
-          ...t,
-          isModified: props.editor.isModifiedForPath(t.filePath),
-        })),
-      );
-    };
-    const unsub = props.editor.subscribeDirty(syncModified);
-    syncModified();
-    return unsub;
-  }, [props.editor]);
+  const { openFile, tabs, activeFilePath, setActivePath, setTabs } = useEditorTabs();
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
-    // Trigger callback function to switch to that tab/model
-    props.setPath(tabSelected.filePath);
-
-    setActiveTab(tabSelected);
+    // Opens file in existing or new model
+    openFile(tabSelected.filePath);
+    setActivePath(tabSelected.filePath);
   }
 
-  // TODO: Implement tab close — dispose editor model & remove tab from state
-  function handleCloseTab(_id: string) {
-    // stub
-  }
+  function handleCloseTab(tab: EditorTab) {
+    editor.disposeModel(tab.filePath);
 
-  // TODO: Implement context menu (right-click) — close others, close to the right, etc.
-  function handleTabContextMenu(_e: React.MouseEvent, _id: string) {
-    // stub
+    const closingIndex = tabs.findIndex((t) => t.id === tab.id);
+    const wasActive = tab.filePath === activeFilePath;
+    const remaining = tabs.filter((t) => t.id !== tab.id);
+
+    if (wasActive && remaining.length > 0) {
+      const nextIndex =
+        closingIndex >= remaining.length ? remaining.length - 1 : closingIndex;
+      const nextTab = remaining[nextIndex];
+      setActivePath(nextTab.filePath);
+    } else if (wasActive) {
+      setActivePath("");
+    }
+
+    setTabs(remaining);
   }
 
   return (
     <div style={styles.strip}>
       {tabs.map((tab: EditorTab) => {
-        const isActive = tab.id === activeTabId?.id;
+        const isActive = tab.filePath === activeFilePath;
         const isHovered = tab.id === hoveredTabId;
 
         const tabStyle: CSSProperties = {
@@ -92,7 +60,6 @@ export default function TopTabs(props: TopTabProps) {
             aria-selected={isActive}
             style={tabStyle}
             onClick={() => handleSelectTab(tab)}
-            onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
             onMouseEnter={() => setHoveredTabId(tab.id)}
             onMouseLeave={() => {
               setHoveredTabId(null);
@@ -106,17 +73,17 @@ export default function TopTabs(props: TopTabProps) {
               <span
                 style={styles.modifiedDot}
                 title="Unsaved changes"
-                aria-label={`${tab.name}, unsaved changes`}
+                aria-label={`${tab.filename}, unsaved changes`}
               />
             ) : null}
 
             <span style={styles.label}>
-              {tab.name}
+              {tab.filename}
             </span>
 
             <span
               role="button"
-              aria-label={`Close ${tab.name}`}
+              aria-label={`Close ${tab.filename}`}
               style={{
                 ...styles.closeBtn,
                 ...(hoveredCloseId === tab.id ? styles.closeBtnHover : {}),
@@ -124,7 +91,7 @@ export default function TopTabs(props: TopTabProps) {
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                handleCloseTab(tab.id);
+                handleCloseTab(tab);
               }}
               onMouseEnter={() => setHoveredCloseId(tab.id)}
               onMouseLeave={() => setHoveredCloseId(null)}

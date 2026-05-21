@@ -1,14 +1,11 @@
-import { CSSProperties, useState } from "react"
+import { CSSProperties, FocusEvent, useState } from "react"
+import { useEditorTabs } from "../context/EditorTabsContext";
 
-type TopBarProps = {
-  onOpenFile: (filePath: string) => void
-  onOpenFolder: (folderPath: string) => void
-}
-
-export default function TopBar({ onOpenFile, onOpenFolder }: TopBarProps) {
+export default function TopBar() {
   const [fileDropDown, setFileDropDown] = useState(false);
+  const { openFile, openFolder } = useEditorTabs();
 
-  async function openFile() {
+  async function readOpenFile() {
     // Send the selected path up so App can share it with the editor.
     const file = await window.electronAPI.openFile()
     const filePath = file.filePaths[0]
@@ -18,42 +15,40 @@ export default function TopBar({ onOpenFile, onOpenFolder }: TopBarProps) {
     }
 
     // Sends to call back file is open
-    onOpenFile(filePath)
+    openFile(filePath);
     
     setFileDropDown(false)
   }
 
-  async function openFolder() {
-    const folder = await window.electronAPI.openFolder()
-    const folderPath = folder.filePaths[0]
-    console.log("Selected: ", folderPath)
-    onOpenFolder(folderPath)
-
-    if (!folderPath) {
-      return
+  function closeDropdownOnBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setFileDropDown(false);
     }
   }
+  
   return (
       <header style={styles.bar}>
-        <button 
-          className="topbar-trigger" 
-          style={styles.item} 
-          aria-expanded={fileDropDown} 
-          onClick={() => setFileDropDown(!fileDropDown)} 
-          type="button"
-        >
-          File
-        </button>
+        <div style={styles.menuRoot} onBlur={closeDropdownOnBlur}>
+          <button 
+            className="topbar-trigger" 
+            style={styles.item} 
+            aria-expanded={fileDropDown} 
+            onClick={() => setFileDropDown(!fileDropDown)} 
+            type="button"
+          >
+            File
+          </button>
 
-        { fileDropDown ? 
-          <div role="menu" style={styles.menu}>
-            <button className="topbar-menu-item" onClick={() => openFile()} role="menuItem" type="button">
-              Open File
-            </button>
-            <button className="topbar-menu-item" onClick={() => openFolder()} role="menuItem" type="button">
-              Open Folder
-            </button>
-          </div> : null }
+          { fileDropDown ? 
+            <div role="menu" style={styles.menu}>
+              <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuitem" type="button">
+                Open File
+              </button>
+              <button className="topbar-menu-item" onClick={() => { openFolder(); setFileDropDown(false); }} role="menuitem" type="button">
+                Open Folder
+              </button>
+            </div> : null }
+        </div>
       </header>
   )
 }

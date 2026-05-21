@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
@@ -21,7 +21,7 @@ const createWindow = () => {
     height: 600,
     icon: iconPath,
     autoHideMenuBar: true,
-    ...(isMac ? { titleBarStyle: 'hidden' } : {}),
+    ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -56,6 +56,38 @@ ipcMain.handle('fs.writeFile', async (_event, filePath: string, content: string)
 ipcMain.handle('dialog.openFolder', () => {
   return dialog.showOpenDialog({ properties: ['openDirectory'] })
 })
+
+function getWindowFromEvent(event: IpcMainInvokeEvent) {
+  return BrowserWindow.fromWebContents(event.sender);
+}
+
+ipcMain.handle('window.minimize', (event) => {
+  getWindowFromEvent(event)?.minimize();
+});
+
+ipcMain.handle('window.toggleMaximize', (event) => {
+  const window = getWindowFromEvent(event);
+
+  if (!window) {
+    return false;
+  }
+
+  if (window.isMaximized()) {
+    window.unmaximize();
+    return false;
+  }
+
+  window.maximize();
+  return true;
+});
+
+ipcMain.handle('window.close', (event) => {
+  getWindowFromEvent(event)?.close();
+});
+
+ipcMain.handle('window.isMaximized', (event) => {
+  return getWindowFromEvent(event)?.isMaximized() ?? false;
+});
 
 type FileTreeNode = {
   name: string;
