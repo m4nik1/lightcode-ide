@@ -28,6 +28,8 @@ export function EditorTabsProvider({ children }: { children: ReactNode }) {
 
   // Opens file and adds to the tabs
   function openFile(filePath: string) {
+    setActivePath(filePath);
+
     setTabs((tabs: EditorTab[]) => {
       const ifOpen = tabs.some((tabs) => tabs.filePath === filePath)
 

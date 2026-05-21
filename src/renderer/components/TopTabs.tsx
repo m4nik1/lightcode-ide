@@ -8,7 +8,6 @@ type TopTabsProps = {
 };
 
 export default function TopTabs({ editor }: TopTabsProps) {
-  const [activeTabId, setActiveTab] = useState<EditorTab | null>(null);
   const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
   const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
 
@@ -19,16 +18,13 @@ export default function TopTabs({ editor }: TopTabsProps) {
     // Opens file in existing or new model
     openFile(tabSelected.filePath);
     setActivePath(tabSelected.filePath);
-
-    setActiveTab(tabSelected);
   }
 
   function handleCloseTab(tab: EditorTab) {
     editor.disposeModel(tab.filePath);
 
     const closingIndex = tabs.findIndex((t) => t.id === tab.id);
-    const wasActive =
-      tab.filePath === activeFilePath || tab.id === activeTabId?.id;
+    const wasActive = tab.filePath === activeFilePath;
     const remaining = tabs.filter((t) => t.id !== tab.id);
 
     if (wasActive && remaining.length > 0) {
@@ -36,10 +32,8 @@ export default function TopTabs({ editor }: TopTabsProps) {
         closingIndex >= remaining.length ? remaining.length - 1 : closingIndex;
       const nextTab = remaining[nextIndex];
       setActivePath(nextTab.filePath);
-      setActiveTab(nextTab);
     } else if (wasActive) {
       setActivePath("");
-      setActiveTab(null);
     }
 
     setTabs(remaining);
@@ -48,7 +42,7 @@ export default function TopTabs({ editor }: TopTabsProps) {
   return (
     <div style={styles.strip}>
       {tabs.map((tab: EditorTab) => {
-        const isActive = tab.id === activeTabId?.id;
+        const isActive = tab.filePath === activeFilePath;
         const isHovered = tab.id === hoveredTabId;
 
         const tabStyle: CSSProperties = {
