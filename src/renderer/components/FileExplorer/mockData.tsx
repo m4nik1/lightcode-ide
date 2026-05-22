@@ -56,6 +56,6 @@ export const mockTree: FileTreeNode[] = [
   { name: "tsconfig.json", kind: "file" },
   { name: "forge.config.ts", kind: "file" },
   { name: "vite.main.config.ts", kind: "file" },
-  { name: "vite.renderer.config.ts", kind: "file" },
+  { name: "vite.renderer.config.mts", kind: "file" },
   { name: ".eslintrc.json", kind: "file" },
 ];

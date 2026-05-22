@@ -1,3 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: #3c3c3c;
+  --color-card: #252526;
+  --color-foreground: #cccccc;
+  --color-muted-foreground: #8b8b8b;
+}
+
 :root,
 html,
 body,
