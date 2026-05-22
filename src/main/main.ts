@@ -89,6 +89,30 @@ ipcMain.handle('window.isMaximized', (event) => {
   return getWindowFromEvent(event)?.isMaximized() ?? false;
 });
 
+ipcMain.handle('window.openAIWindow', () => {
+  const aiWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    icon: iconPath,
+    autoHideMenuBar: true,
+    ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    const url = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    url.searchParams.set('window', 'ai');
+    void aiWindow.loadURL(url.href);
+  } else {
+    void aiWindow.loadFile(
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+      { query: { window: 'ai' } },
+    );
+  }
+});
+
 type FileTreeNode = {
   name: string;
   kind: "file" | "folder";

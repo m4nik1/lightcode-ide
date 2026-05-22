@@ -1,4 +1,5 @@
 import { useRef, type CSSProperties } from "react";
+import { AIWindow } from "./components/AIWindow";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ModernEditor from "./components/ModernEditor";
 import NativeTopBar from "./components/NativeTopBar";
@@ -12,10 +13,10 @@ const topBarHeight = 30;
 const sidebarWidth = 240;
 
 function openAIWindow() {
-  console.log("Opening AI window");
+  void window.electronAPI.openAIWindow();
 }
 
-export default function App() {
+function EditorApp() {
   const { activeFilePath } = useEditorTabs();
 
   const editorRef = useRef<m4Editor | null>(null);
@@ -52,6 +53,13 @@ export default function App() {
       </div>
     </main>
   );
+}
+
+export default function App() {
+  if (new URLSearchParams(window.location.search).get("window") === "ai") {
+    return <AIWindow />;
+  }
+  return <EditorApp />;
 }
 
 const styles: Record<string, CSSProperties> = {
