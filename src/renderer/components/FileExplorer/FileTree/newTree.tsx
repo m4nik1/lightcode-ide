@@ -29,6 +29,8 @@ export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps)
   const selectedPaths = useFileTreeSelection(model);
 
   useEffect(() => {
+    console.log("selectedPaths:", selectedPaths);
+
     onSelect(selectedPaths[0], false);
   }, [selectedPaths]);
 
