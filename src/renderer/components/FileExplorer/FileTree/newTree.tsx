@@ -30,6 +30,7 @@ export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps)
 
   useEffect(() => {
     console.log("selectedPaths:", selectedPaths);
+    console.log("Model:", model);
 
     onSelect(selectedPaths[0], false);
   }, [selectedPaths]);

@@ -49,15 +49,20 @@ export default function FileExplorer() {
     [tree],
   );
 
+  const folderPaths = useMemo(() => {
+    return new Set(
+      fileTreeNodesToPaths(tree)
+        .filter((path) => path.endsWith("/"))
+        .map((path) => path.slice(0, -1)),
+    );
+  }, [tree]);
+
 
   const handleSelectItem = useCallback(
-    (fileName: string, isFolder: boolean) => {
+    (fileName: string) => {
       const fullPath = activeFolder + "/" + fileName;
-      console.log("full path:", fullPath);
-
-      if (!isFolder) {
-        openFile(fullPath);
-      }
+      
+      openFile(fullPath);
     },
     [activeFolder],
   );
