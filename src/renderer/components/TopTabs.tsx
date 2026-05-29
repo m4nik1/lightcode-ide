@@ -11,12 +11,11 @@ export default function TopTabs({ editor }: TopTabsProps) {
   const [hoveredTabId, setHoveredTabId] = useState<number | null>(null);
   const [hoveredCloseId, setHoveredCloseId] = useState<number | null>(null);
 
-  const { openFile, tabs, activeFilePath, setActivePath, setTabs, activeFolder } = useEditorTabs();
+  const { openFile, tabs, activeFilePath, setActivePath, setTabs } = useEditorTabs();
 
   // TODO: Implement tab selection — switch active editor model
   function handleSelectTab(tabSelected: EditorTab) {
     // Opens file in existing or new model
-    console.log("Selected tab: ", tabSelected);
     openFile(tabSelected.filePath);
   }
 
