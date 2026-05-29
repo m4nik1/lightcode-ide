@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState, useEffect, React } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { EditorTab } from "../types/EditorTab";
 
 type EditorTabsContext = {
