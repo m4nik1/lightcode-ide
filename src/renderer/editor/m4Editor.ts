@@ -59,9 +59,9 @@ export class m4Editor {
             this.models.push(this.currentModel)
             this.editor.setModel(this.currentModel);
         } else {
-            const modelExist = this.models.some((model) => model.uri.path === filePath);
+            const modelExist = this.models.some((model) => model.uri.fsPath === filePath);
             if(modelExist) {
-                this.currentModel = this.models.find((model) => model.uri.path === filePath) as mEditor.ITextModel;
+                this.currentModel = this.models.find((model) => model.uri.fsPath === filePath) as mEditor.ITextModel;
                 this.editor.setModel(this.currentModel);
                 return;
             } else {

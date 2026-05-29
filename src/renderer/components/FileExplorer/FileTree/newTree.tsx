@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { FileTree, useFileTree, useFileTreeSelection } from "@pierre/trees/react";
 import type { FileTreePreparedInput } from "@pierre/trees";
 
@@ -21,6 +21,8 @@ export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps)
     [preparedInput],
   );
 
+  const previousSelectedPathRef = useRef<string | undefined>(undefined);
+
   const { model } = useFileTree({
     preparedInput,
     initialExpandedPaths,
@@ -29,11 +31,15 @@ export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps)
   const selectedPaths = useFileTreeSelection(model);
 
   useEffect(() => {
-    console.log("selectedPaths:", selectedPaths);
-    console.log("Model:", model);
+    const selectedPath = selectedPaths[0];
 
-    onSelect(selectedPaths[0], false);
-  }, [selectedPaths]);
+    if (!selectedPath || previousSelectedPathRef.current === selectedPath) {
+      return;
+    }
+
+    previousSelectedPathRef.current = selectedPath;
+    onSelect(selectedPath, false);
+  }, [selectedPaths, onSelect]);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
