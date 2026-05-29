@@ -1,7 +1,7 @@
 {
-  "name": "Lightcode Alpha",
+  "name": "Lightcode-Alpha",
   "productName": "Lightcode Alpha",
-  "version": "alpha-1",
+  "version": "1.0.0",
   "description": "Code at the speed of light",
   "main": ".vite/build/main.js",
   "private": true,
