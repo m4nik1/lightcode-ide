@@ -35,13 +35,20 @@ export default function FileExplorer() {
 
   useEffect(() => {
     const folderPath = activeFolder?.trim() ?? "";
+    let cancelled = false;
 
     if (!folderPath) {
       setTree([]);
       return;
     }
 
-    makeTree(folderPath).then(setTree);
+    makeTree(folderPath).then((nextTree) => {
+      if (!cancelled) setTree(nextTree);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeFolder]);
 
   const preparedInput = useMemo(
