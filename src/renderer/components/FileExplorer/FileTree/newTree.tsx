@@ -1,11 +1,21 @@
 import { useMemo, useEffect, useRef } from "react";
 import { FileTree, useFileTree, useFileTreeSelection } from "@pierre/trees/react";
 import type { FileTreePreparedInput } from "@pierre/trees";
+import { FILE_TREE_UNSAFE_CSS, fileTreeHostStyle, styles } from "./newTree.styles";
 
 interface ModernTreeProps {
   preparedInput: FileTreePreparedInput;
   onSelect: (fileName: string, isFolder: boolean) => void;
 }
+
+const FILE_TREE_ITEM_HEIGHT = 26;
+
+const fileTreeModelOptions = {
+  itemHeight: FILE_TREE_ITEM_HEIGHT,
+  density: "compact" as const,
+  icons: { set: "standard" as const, colored: true },
+  unsafeCSS: FILE_TREE_UNSAFE_CSS,
+};
 
 /** Top-level directory public ids (no slash) for initial expansion. */
 function topLevelExpandedPaths(paths: readonly string[]): string[] {
@@ -24,6 +34,7 @@ export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps)
   const previousSelectedPathRef = useRef<string | undefined>(undefined);
 
   const { model } = useFileTree({
+    ...fileTreeModelOptions,
     preparedInput,
     initialExpandedPaths,
   });
@@ -42,8 +53,8 @@ export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps)
   }, [selectedPaths, onSelect]);
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <FileTree model={model} style={{ flex: 1, minHeight: 0, height: "100%" }} />
+    <div style={styles.root}>
+      <FileTree model={model} style={fileTreeHostStyle} />
     </div>
   );
 }
