@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState, useEffect, React } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { EditorTab } from "../types/EditorTab";
 
 type EditorTabsContext = {
@@ -28,6 +28,10 @@ export function EditorTabsProvider({ children }: { children: ReactNode }) {
 
   // Opens file and adds to the tabs
   function openFile(filePath: string) {
+    if(filePath.endsWith("/")) {
+      return;
+    }
+
     setActivePath(filePath);
 
     setTabs((tabs: EditorTab[]) => {

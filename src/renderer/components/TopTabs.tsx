@@ -17,7 +17,6 @@ export default function TopTabs({ editor }: TopTabsProps) {
   function handleSelectTab(tabSelected: EditorTab) {
     // Opens file in existing or new model
     openFile(tabSelected.filePath);
-    setActivePath(tabSelected.filePath);
   }
 
   function handleCloseTab(tab: EditorTab) {
