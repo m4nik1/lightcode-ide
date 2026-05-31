@@ -6,8 +6,8 @@ import { createMacApplicationMenu } from './macAppMenu';
 
 const isMac = process.platform === 'darwin';
 const iconFileName = process.platform === 'win32' ? 'icon.ico' : 'Icon.png';
-
-const iconPath = path.join(app.getAppPath(), 'assets', 'appIcon', iconFileName);
+const iconRoot = MAIN_WINDOW_VITE_DEV_SERVER_URL ? process.cwd() : app.getAppPath();
+const iconPath = path.join(iconRoot, 'assets', 'appIcon', iconFileName);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -148,6 +148,7 @@ ipcMain.handle("fs.readDirectory", async (_event, folderPath: string): Promise<F
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   if (isMac) {
+    app.dock.setIcon(iconPath);
     createMacApplicationMenu();
   }
 

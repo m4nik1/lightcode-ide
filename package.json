@@ -1,7 +1,7 @@
 {
-  "name": "lightcode",
-  "productName": "lightcode",
-  "version": "alpha-1",
+  "name": "Lightcode-Alpha",
+  "productName": "Lightcode Alpha",
+  "version": "2.0.0",
   "description": "Code at the speed of light",
   "main": ".vite/build/main.js",
   "private": true,
@@ -43,6 +43,7 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "@pierre/trees": "^1.0.0-beta.4",
     "electron-squirrel-startup": "^1.0.1",
     "modern-monaco": "^0.4.0",
     "react": "^19.2.4",

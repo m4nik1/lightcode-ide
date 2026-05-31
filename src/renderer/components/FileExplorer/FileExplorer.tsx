@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { CSSProperties } from "react";
-import TreeNode from "./TreeNode";
+import { prepareFileTreeInput } from "@pierre/trees";
 import makeTree from "./FileTree/makeTree";
+import { fileTreeNodesToPaths } from "./FileTree/fileTreeNodesToPaths";
 import { FileTreeNode } from "../../types/FileTreeNode";
 import { useEditorTabs } from "../../context/EditorTabsContext";
-
-const INITIAL_EXPANDED_FOLDERS = ["src", "src/renderer"];
+import ModernTree from "./FileTree/newTree";
 
 function FolderIcon() {
   return (
@@ -28,50 +28,42 @@ function getFolderName(path: string): string {
 }
 
 export default function FileExplorer() {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    () => new Set(INITIAL_EXPANDED_FOLDERS),
-  );
   const [tree, setTree] = useState<FileTreeNode[]>([]);
-
   const { activeFolder, openFile } = useEditorTabs();
   const folderName = useMemo(() => getFolderName(activeFolder), [activeFolder]);
   const headerTitle = folderName || "Explorer";
 
   useEffect(() => {
     const folderPath = activeFolder?.trim() ?? "";
+    let cancelled = false;
 
     if (!folderPath) {
       setTree([]);
       return;
     }
 
-    makeTree(folderPath).then((newTree) => {
-      setTree(newTree);
+    makeTree(folderPath).then((nextTree) => {
+      if (!cancelled) setTree(nextTree);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeFolder]);
 
-  const handleToggleFolder = useCallback((path: string) => {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-  }, []);
+  const preparedInput = useMemo(
+    () => prepareFileTreeInput(fileTreeNodesToPaths(tree)),
+    [tree],
+  );
+
 
   const handleSelectItem = useCallback(
-    (fileName: string, isFolder: boolean) => {
+    (fileName: string) => {
       const fullPath = activeFolder + "/" + fileName;
-      console.log("full path:", fullPath);
 
-      if (!isFolder) {
-        openFile(fullPath);
-      }
+      openFile(fullPath);
     },
-    [activeFolder, openFile],
+    [activeFolder],
   );
 
   return (
@@ -82,24 +74,10 @@ export default function FileExplorer() {
           {headerTitle}
         </span>
       </div>
-      <div
-        className="explorer-tree"
-        style={styles.treeContainer}
-        role="tree"
-        aria-label="File explorer"
-      >
-        {tree.map((node) => (
-          <TreeNode
-            key={node.name}
-            node={node}
-            depth={0}
-            path={node.name}
-            expandedFolders={expandedFolders}
-            selectedPath={activeFolder}
-            onToggleFolder={handleToggleFolder}
-            onSelectItem={handleSelectItem}
-          />
-        ))}
+      <div style={styles.treeContainer}>
+        {tree.length > 0 && (
+          <ModernTree key={activeFolder} preparedInput={preparedInput} onSelect={handleSelectItem} />
+        )}
       </div>
     </div>
   );
@@ -138,6 +116,9 @@ const styles: Record<string, CSSProperties> = {
   },
   treeContainer: {
     flex: 1,
+    minHeight: 0,
+    display: "flex",
+    flexDirection: "column",
     overflowY: "auto",
     overflowX: "hidden",
     paddingTop: 6,
