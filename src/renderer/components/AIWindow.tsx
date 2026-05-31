@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import AITextBox from "./AIWindow/AITextBox";
+import AITopTabs from "./AIWindow/AITopTabs";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
@@ -7,6 +8,7 @@ export function AIWindow() {
   return (
     <main style={styles.root}>
       {isMac ? <header style={styles.topBar} /> : null}
+      <AITopTabs />
       <section style={styles.content}>
         <div style={styles.promptWrap}>
           <AITextBox />
