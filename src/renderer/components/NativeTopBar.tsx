@@ -1,11 +1,12 @@
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, FocusEvent, useEffect, useRef, useState } from "react";
 import { useEditorTabs } from "../context/EditorTabsContext";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 export default function NativeTopBar() {
-  const [fileDropDown, setFileDropDown] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [fileDropDown, setFileDropDown] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { openFile, openFolder } = useEditorTabs();
 
   useEffect(() => {
@@ -35,13 +36,20 @@ export default function NativeTopBar() {
     setIsMaximized(maximized);
   }
 
+  function closeDropdownOnBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setFileDropDown(false);
+    }
+  }
+
   return (
     <header style={styles.bar}>
-      <div style={styles.menuArea}>
+      <div ref={menuRef} style={styles.menuArea} onBlur={closeDropdownOnBlur}>
         <button
           className="topbar-trigger"
-          style={styles.item}
+          style={styles.menuTrigger}
           aria-expanded={fileDropDown}
+          aria-haspopup="menu"
           onClick={() => setFileDropDown(!fileDropDown)}
           type="button"
         >
@@ -53,7 +61,15 @@ export default function NativeTopBar() {
             <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuitem" type="button">
               Open File
             </button>
-            <button className="topbar-menu-item" onClick={() => openFolder()} role="menuitem" type="button">
+            <button
+              className="topbar-menu-item"
+              onClick={() => {
+                openFolder();
+                setFileDropDown(false);
+              }}
+              role="menuitem"
+              type="button"
+            >
               Open Folder
             </button>
           </div>
@@ -116,7 +132,7 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     height: "100%",
   },
-  item: {
+  menuTrigger: {
     height: 22,
     padding: "0 8px",
     border: 0,

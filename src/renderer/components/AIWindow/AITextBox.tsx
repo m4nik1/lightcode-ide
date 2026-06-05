@@ -5,6 +5,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
+import Dropdown from "../ui/dropdown/Dropdown";
 
 export type AIModel = {
   id: string;
@@ -13,119 +14,6 @@ export type AIModel = {
   accent: string;
 };
 
-type AITextBoxProps = {
-  modelId: string;
-  onModelChange: (modelId: string) => void;
-};
-
-export const AI_MODELS: AIModel[] = [
-  {
-    id: "auto",
-    label: "Auto",
-    description: "Pick the best model for the prompt",
-    accent: "#a3a3a3",
-  },
-  {
-    id: "claude-4-5-sonnet",
-    label: "Claude 4.5 Sonnet",
-    description: "Balanced coding and reasoning",
-    accent: "#d97757",
-  },
-  {
-    id: "claude-4-1-opus",
-    label: "Claude 4.1 Opus",
-    description: "Deepest reasoning for hard tasks",
-    accent: "#c4a484",
-  },
-  {
-    id: "gpt-5",
-    label: "GPT-5",
-    description: "Capable general-purpose model",
-    accent: "#74aa9c",
-  },
-  {
-    id: "gpt-5-codex",
-    label: "GPT-5 Codex",
-    description: "Optimized for code edits",
-    accent: "#10a37f",
-  },
-  {
-    id: "gemini-2-5-pro",
-    label: "Gemini 2.5 Pro",
-    description: "Long-context multimodal",
-    accent: "#8ab4f8",
-  },
-  {
-    id: "o3",
-    label: "o3",
-    description: "Strong step-by-step reasoning",
-    accent: "#7dd3fc",
-  },
-  {
-    id: "grok-4",
-    label: "Grok 4",
-    description: "Fast, capable alternative",
-    accent: "#e5e5e5",
-  },
-];
-
-export const DEFAULT_AI_MODEL_ID = AI_MODELS[0].id;
-
-function ChevronDownIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-      <path
-        d="M3 4.5L6 7.5L9 4.5"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M8 3.5V12.5M3.5 8H12.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function GlobeIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeWidth="1.3" />
-      <path
-        d="M2.75 8H13.25M8 2.75C6.2 4.6 5.25 6.2 5.25 8C5.25 9.8 6.2 11.4 8 13.25C9.8 11.4 10.75 9.8 10.75 8C10.75 6.2 9.8 4.6 8 2.75Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CodeIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M5.5 5L2.5 8L5.5 11M10.5 5L13.5 8L10.5 11"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function SendIcon() {
   return (
@@ -141,35 +29,15 @@ function SendIcon() {
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path
-        d="M3 7.1L5.75 9.75L11 4.25"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
+export default function AITextBox() {
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isComposerFocused, setIsComposerFocused] = useState(false);
   const [isSendHovered, setIsSendHovered] = useState(false);
-  const [isModelHovered, setIsModelHovered] = useState(false);
-  const [hoveredToolbarIcon, setHoveredToolbarIcon] = useState<string | null>(
-    null,
-  );
 
   const placeholder = "Ask me anything...";
-  const selectedModel =
-    AI_MODELS.find((model) => model.id === modelId) ?? AI_MODELS[0];
   const hasPrompt = value.trim().length > 0;
 
   useEffect(() => {
@@ -232,20 +100,6 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
     }
   }
 
-  function handleModelSelect(model: AIModel) {
-    onModelChange(model.id);
-    setIsPickerOpen(false);
-    textareaRef.current?.focus();
-  }
-
-  function toolbarIconStyle(iconId: string): CSSProperties {
-    return {
-      ...styles.toolbarIconButton,
-      color:
-        hoveredToolbarIcon === iconId ? "#c4c4c4" : styles.toolbarIconButton.color,
-    };
-  }
-
   return (
     <div ref={containerRef} style={styles.root}>
       <div
@@ -270,115 +124,12 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
         />
 
         <div style={styles.footer}>
-          <div style={styles.toolbarLeft}>
-            <button
-              type="button"
-              aria-label="Add attachment"
-              style={toolbarIconStyle("plus")}
-              onMouseEnter={() => setHoveredToolbarIcon("plus")}
-              onMouseLeave={() => setHoveredToolbarIcon(null)}
-            >
-              <PlusIcon />
-            </button>
-            <button
-              type="button"
-              aria-label="Web search"
-              style={toolbarIconStyle("globe")}
-              onMouseEnter={() => setHoveredToolbarIcon("globe")}
-              onMouseLeave={() => setHoveredToolbarIcon(null)}
-            >
-              <GlobeIcon />
-            </button>
-            <button
-              type="button"
-              aria-label="Code mode"
-              style={toolbarIconStyle("code")}
-              onMouseEnter={() => setHoveredToolbarIcon("code")}
-              onMouseLeave={() => setHoveredToolbarIcon(null)}
-            >
-              <CodeIcon />
-            </button>
-          </div>
-
           <div style={styles.toolbarRight}>
             <div
               style={styles.actionsGroup}
               onMouseDown={(event) => event.stopPropagation()}
             >
-              {isPickerOpen ? (
-                <div
-                  style={styles.modelMenu}
-                  role="listbox"
-                  aria-label="AI models"
-                  onMouseDown={(event) => event.stopPropagation()}
-                >
-                  {AI_MODELS.map((model) => {
-                    const isSelected = model.id === selectedModel.id;
-
-                    return (
-                      <button
-                        key={model.id}
-                        type="button"
-                        role="option"
-                        aria-selected={isSelected}
-                        style={{
-                          ...styles.modelOption,
-                          ...(isSelected ? styles.modelOptionSelected : {}),
-                        }}
-                        onClick={() => handleModelSelect(model)}
-                      >
-                        <span style={styles.modelOptionLeading}>
-                          <span
-                            style={{
-                              ...styles.modelDot,
-                              background: model.accent,
-                            }}
-                          />
-                          <span style={styles.modelOptionText}>
-                            <span style={styles.modelOptionLabel}>{model.label}</span>
-                            {model.description ? (
-                              <span style={styles.modelDescription}>
-                                {model.description}
-                              </span>
-                            ) : null}
-                          </span>
-                        </span>
-                        {isSelected ? (
-                          <span
-                            style={{
-                              ...styles.checkMark,
-                              color: model.accent,
-                            }}
-                          >
-                            <CheckIcon />
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                aria-label="Select AI model"
-                aria-haspopup="listbox"
-                aria-expanded={isPickerOpen}
-                style={{
-                  ...styles.modelButton,
-                  ...(isPickerOpen || isModelHovered ? styles.modelButtonActive : {}),
-                }}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setIsPickerOpen((open) => !open);
-                }}
-                onMouseEnter={() => setIsModelHovered(true)}
-                onMouseLeave={() => setIsModelHovered(false)}
-              >
-                <span style={styles.modelLabel}>{selectedModel.label}</span>
-                <ChevronDownIcon />
-              </button>
-
+              <Dropdown />
               <button
                 type="button"
                 aria-label="Send prompt"
@@ -581,7 +332,8 @@ const styles: Record<string, CSSProperties> = {
     transition: "color 120ms ease",
   },
   sendButtonReady: {
-    color: "#d4d4d4",
+    color: "black",
+    backgroundColor: "white",
     cursor: "default",
   },
   sendButtonHover: {
