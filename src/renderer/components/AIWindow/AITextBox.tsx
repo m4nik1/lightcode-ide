@@ -73,9 +73,51 @@ export const DEFAULT_AI_MODEL_ID = AI_MODELS[0].id;
 
 function ChevronDownIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
       <path
-        d="M3.5 5.25L7 8.75L10.5 5.25"
+        d="M3 4.5L6 7.5L9 4.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M8 3.5V12.5M3.5 8H12.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M2.75 8H13.25M8 2.75C6.2 4.6 5.25 6.2 5.25 8C5.25 9.8 6.2 11.4 8 13.25C9.8 11.4 10.75 9.8 10.75 8C10.75 6.2 9.8 4.6 8 2.75Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M5.5 5L2.5 8L5.5 11M10.5 5L13.5 8L10.5 11"
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
@@ -87,11 +129,11 @@ function ChevronDownIcon() {
 
 function SendIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
       <path
-        d="M7.5 11.5V3.5M7.5 3.5L4.25 6.75M7.5 3.5L10.75 6.75"
+        d="M14 2L7.25 8.75M14 2L9.5 14L7.25 8.75M14 2L2 6.5L7.25 8.75"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.35"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -120,6 +162,10 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isComposerFocused, setIsComposerFocused] = useState(false);
   const [isSendHovered, setIsSendHovered] = useState(false);
+  const [isModelHovered, setIsModelHovered] = useState(false);
+  const [hoveredToolbarIcon, setHoveredToolbarIcon] = useState<string | null>(
+    null,
+  );
 
   const placeholder = "Ask me anything...";
   const selectedModel =
@@ -127,7 +173,7 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
   const hasPrompt = value.trim().length > 0;
 
   useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent) {
       const target = event.target;
 
       if (
@@ -145,11 +191,11 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("click", handleClickOutside);
     window.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("click", handleClickOutside);
       window.removeEventListener("keydown", handleEscape);
     };
   }, []);
@@ -192,6 +238,14 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
     textareaRef.current?.focus();
   }
 
+  function toolbarIconStyle(iconId: string): CSSProperties {
+    return {
+      ...styles.toolbarIconButton,
+      color:
+        hoveredToolbarIcon === iconId ? "#c4c4c4" : styles.toolbarIconButton.color,
+    };
+  }
+
   return (
     <div ref={containerRef} style={styles.root}>
       <div
@@ -216,102 +270,137 @@ export default function AITextBox({ modelId, onModelChange }: AITextBoxProps) {
         />
 
         <div style={styles.footer}>
-          <div style={styles.modelWrap}>
+          <div style={styles.toolbarLeft}>
             <button
               type="button"
-              aria-label="Select AI model"
-              aria-haspopup="listbox"
-              aria-expanded={isPickerOpen}
-              style={{
-                ...styles.modelButton,
-                ...(isPickerOpen ? styles.modelButtonActive : {}),
-              }}
-              onClick={() => setIsPickerOpen((open) => !open)}
+              aria-label="Add attachment"
+              style={toolbarIconStyle("plus")}
+              onMouseEnter={() => setHoveredToolbarIcon("plus")}
+              onMouseLeave={() => setHoveredToolbarIcon(null)}
             >
-              <span
-                style={{
-                  ...styles.modelDot,
-                  background: selectedModel.accent,
-                }}
-              />
-              <span style={styles.modelLabel}>{selectedModel.label}</span>
-              <ChevronDownIcon />
+              <PlusIcon />
             </button>
-
-            {isPickerOpen ? (
-              <div style={styles.modelMenu} role="listbox" aria-label="AI models">
-                {AI_MODELS.map((model) => {
-                  const isSelected = model.id === selectedModel.id;
-
-                  return (
-                    <button
-                      key={model.id}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      style={{
-                        ...styles.modelOption,
-                        ...(isSelected ? styles.modelOptionSelected : {}),
-                      }}
-                      onClick={() => handleModelSelect(model)}
-                    >
-                      <span style={styles.modelOptionLeading}>
-                        <span
-                          style={{
-                            ...styles.modelDot,
-                            background: model.accent,
-                          }}
-                        />
-                        <span style={styles.modelOptionText}>
-                          <span style={styles.modelOptionLabel}>{model.label}</span>
-                          {model.description ? (
-                            <span style={styles.modelDescription}>{model.description}</span>
-                          ) : null}
-                        </span>
-                      </span>
-                      {isSelected ? (
-                        <span
-                          style={{
-                            ...styles.checkMark,
-                            color: model.accent,
-                          }}
-                        >
-                          <CheckIcon />
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
+            <button
+              type="button"
+              aria-label="Web search"
+              style={toolbarIconStyle("globe")}
+              onMouseEnter={() => setHoveredToolbarIcon("globe")}
+              onMouseLeave={() => setHoveredToolbarIcon(null)}
+            >
+              <GlobeIcon />
+            </button>
+            <button
+              type="button"
+              aria-label="Code mode"
+              style={toolbarIconStyle("code")}
+              onMouseEnter={() => setHoveredToolbarIcon("code")}
+              onMouseLeave={() => setHoveredToolbarIcon(null)}
+            >
+              <CodeIcon />
+            </button>
           </div>
 
-          <button
-            type="button"
-            aria-label="Send prompt"
-            disabled={!hasPrompt}
-            style={{
-              ...styles.sendButton,
-              ...(hasPrompt ? styles.sendButtonReady : styles.sendButtonDisabled),
-              ...(hasPrompt && isSendHovered ? styles.sendButtonHover : {}),
-            }}
-            onClick={submitPrompt}
-            onMouseEnter={() => setIsSendHovered(true)}
-            onMouseLeave={() => setIsSendHovered(false)}
-          >
-            <SendIcon />
-          </button>
+          <div style={styles.toolbarRight}>
+            <div
+              style={styles.actionsGroup}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              {isPickerOpen ? (
+                <div
+                  style={styles.modelMenu}
+                  role="listbox"
+                  aria-label="AI models"
+                  onMouseDown={(event) => event.stopPropagation()}
+                >
+                  {AI_MODELS.map((model) => {
+                    const isSelected = model.id === selectedModel.id;
+
+                    return (
+                      <button
+                        key={model.id}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        style={{
+                          ...styles.modelOption,
+                          ...(isSelected ? styles.modelOptionSelected : {}),
+                        }}
+                        onClick={() => handleModelSelect(model)}
+                      >
+                        <span style={styles.modelOptionLeading}>
+                          <span
+                            style={{
+                              ...styles.modelDot,
+                              background: model.accent,
+                            }}
+                          />
+                          <span style={styles.modelOptionText}>
+                            <span style={styles.modelOptionLabel}>{model.label}</span>
+                            {model.description ? (
+                              <span style={styles.modelDescription}>
+                                {model.description}
+                              </span>
+                            ) : null}
+                          </span>
+                        </span>
+                        {isSelected ? (
+                          <span
+                            style={{
+                              ...styles.checkMark,
+                              color: model.accent,
+                            }}
+                          >
+                            <CheckIcon />
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                aria-label="Select AI model"
+                aria-haspopup="listbox"
+                aria-expanded={isPickerOpen}
+                style={{
+                  ...styles.modelButton,
+                  ...(isPickerOpen || isModelHovered ? styles.modelButtonActive : {}),
+                }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsPickerOpen((open) => !open);
+                }}
+                onMouseEnter={() => setIsModelHovered(true)}
+                onMouseLeave={() => setIsModelHovered(false)}
+              >
+                <span style={styles.modelLabel}>{selectedModel.label}</span>
+                <ChevronDownIcon />
+              </button>
+
+              <button
+                type="button"
+                aria-label="Send prompt"
+                disabled={!hasPrompt}
+                style={{
+                  ...styles.sendButton,
+                  ...(hasPrompt ? styles.sendButtonReady : styles.sendButtonDisabled),
+                  ...(hasPrompt && isSendHovered ? styles.sendButtonHover : {}),
+                }}
+                onClick={submitPrompt}
+                onMouseEnter={() => setIsSendHovered(true)}
+                onMouseLeave={() => setIsSendHovered(false)}
+              >
+                <SendIcon />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-const glassSurface = {
-  background: "rgba(32, 32, 32, 0.72)",
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-} as CSSProperties;
 
 const styles: Record<string, CSSProperties> = {
   root: {
@@ -321,17 +410,13 @@ const styles: Record<string, CSSProperties> = {
   composer: {
     position: "relative",
     overflow: "visible",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    border: "1px solid #2d2d2d",
     borderRadius: 12,
-    ...glassSurface,
-    boxShadow:
-      "0 12px 32px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04)",
-    transition: "border-color 140ms ease, box-shadow 140ms ease",
+    background: "var(--editor-surface, #121212)",
+    transition: "border-color 140ms ease",
   },
   composerFocused: {
-    borderColor: "rgba(255, 255, 255, 0.14)",
-    boxShadow:
-      "0 16px 40px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+    borderColor: "#3a3a3a",
   },
   textarea: {
     display: "block",
@@ -341,7 +426,7 @@ const styles: Record<string, CSSProperties> = {
     resize: "none",
     border: 0,
     outline: 0,
-    padding: "13px 14px 8px",
+    padding: "14px 14px 6px",
     background: "transparent",
     color: "#f0f0f0",
     fontSize: 14,
@@ -355,39 +440,60 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "space-between",
     gap: 8,
     minHeight: 34,
-    padding: "0 6px 6px 6px",
+    padding: "0 8px 8px",
   },
-  modelWrap: {
+  toolbarLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+  },
+  toolbarRight: {
+    display: "flex",
+    alignItems: "center",
+    marginLeft: "auto",
+    flexShrink: 0,
+  },
+  actionsGroup: {
     position: "relative",
-    minWidth: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  toolbarIconButton: {
+    width: 28,
+    height: 28,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: 0,
+    borderRadius: 6,
+    padding: 0,
+    background: "transparent",
+    color: "#8a8a8a",
+    outline: "none",
+    cursor: "default",
+    transition: "color 120ms ease",
   },
   modelButton: {
-    height: 26,
+    height: 28,
     maxWidth: 200,
     display: "inline-flex",
     alignItems: "center",
-    gap: 6,
-    border: "1px solid transparent",
-    borderRadius: 999,
-    padding: "0 10px 0 8px",
+    gap: 4,
+    border: 0,
+    borderRadius: 4,
+    padding: "0 4px",
     background: "transparent",
-    color: "#c4c4c4",
-    fontSize: 11,
-    fontWeight: 500,
+    color: "#9a9a9a",
+    fontSize: 12,
+    fontWeight: 400,
     cursor: "default",
     outline: "none",
-    transition: "background 120ms ease, border-color 120ms ease, color 120ms ease",
+    transition: "color 120ms ease",
   },
   modelButtonActive: {
-    background: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    color: "#ffffff",
-  },
-  modelDot: {
-    width: 5,
-    height: 5,
-    borderRadius: "50%",
-    flexShrink: 0,
+    color: "#d4d4d4",
   },
   modelLabel: {
     minWidth: 0,
@@ -397,16 +503,14 @@ const styles: Record<string, CSSProperties> = {
   },
   modelMenu: {
     position: "absolute",
-    left: 0,
-    bottom: 32,
+    right: 0,
+    bottom: "calc(100% + 6px)",
     width: 240,
     padding: 4,
-    border: "1px solid rgba(255, 255, 255, 0.1)",
+    border: "1px solid #2d2d2d",
     borderRadius: 10,
-    ...glassSurface,
-    boxShadow:
-      "0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-    zIndex: 20,
+    background: "#1a1a1a",
+    zIndex: 100,
   },
   modelOption: {
     width: "100%",
@@ -432,6 +536,12 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 8,
+  },
+  modelDot: {
+    width: 5,
+    height: 5,
+    borderRadius: "50%",
+    flexShrink: 0,
   },
   modelOptionText: {
     minWidth: 0,
@@ -464,23 +574,21 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     border: 0,
-    borderRadius: 7,
+    borderRadius: 6,
     padding: 0,
-    color: "#0f0f0f",
+    background: "transparent",
     outline: "none",
-    transition: "background 120ms ease, color 120ms ease, opacity 120ms ease",
+    transition: "color 120ms ease",
   },
   sendButtonReady: {
-    background: "#f4f4f5",
+    color: "#d4d4d4",
     cursor: "default",
   },
   sendButtonHover: {
-    background: "#ffffff",
+    color: "#ffffff",
   },
   sendButtonDisabled: {
-    background: "#363636",
-    color: "#838383",
+    color: "#5a5a5a",
     cursor: "default",
-    opacity: 0.86,
   },
 };
