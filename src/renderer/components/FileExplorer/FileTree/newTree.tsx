@@ -17,26 +17,13 @@ const fileTreeModelOptions = {
   unsafeCSS: FILE_TREE_UNSAFE_CSS,
 };
 
-/** Top-level directory public ids (no slash) for initial expansion. */
-function topLevelExpandedPaths(paths: readonly string[]): string[] {
-  return paths
-    .filter((p) => p.endsWith("/"))
-    .map((p) => p.slice(0, -1))
-    .filter((dir) => dir.length > 0 && !dir.includes("/"));
-}
-
 export default function ModernTree({ preparedInput, onSelect }: ModernTreeProps) {
-  const initialExpandedPaths = useMemo(
-    () => topLevelExpandedPaths(preparedInput.paths),
-    [preparedInput],
-  );
-
   const previousSelectedPathRef = useRef<string | undefined>(undefined);
 
   const { model } = useFileTree({
     ...fileTreeModelOptions,
     preparedInput,
-    initialExpandedPaths,
+    initialExpandedPaths: ['src', 'src/renderer'],
   });
 
   const selectedPaths = useFileTreeSelection(model);
