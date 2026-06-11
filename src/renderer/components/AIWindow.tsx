@@ -6,10 +6,12 @@ const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 export type AISession = {
   id: number;
+  title: string;
 };
 
 function createSession(id: number): AISession {
   console.log("Creating session: ", id);
+  return { id, title: `Session ${id}` };
 }
 
 export function AIWindow() {
@@ -20,6 +22,10 @@ export function AIWindow() {
       {isMac ? <header style={styles.topBar} /> : null}
       <AITopTabs
         sessions={sessions}
+        activeSessionId={sessions[0].id}
+        onSelectSession={() => {}}
+        onCreateSession={() => {}}
+        onCloseSession={() => {}}
       />
       <section style={styles.content}>
         <div style={styles.promptWrap}>
