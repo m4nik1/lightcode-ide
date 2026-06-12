@@ -3,7 +3,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ArrowUpIcon, SparklesIcon } from "lucide-react";
+import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "@/lib/utils";
