@@ -46,6 +46,7 @@ const styles: Record<string, CSSProperties> = {
     background: "var(--editor-surface)",
     color: "#cccccc",
     fontFamily: "system-ui, sans-serif",
+    fontSize: 13,
   },
   topBar: {
     height: 38,

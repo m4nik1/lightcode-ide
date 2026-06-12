@@ -3,40 +3,54 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
+import { ArrowUpIcon, SparklesIcon } from "lucide-react";
+import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
+import { cn } from "@/lib/utils";
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
 
-  const placeholder = "Ask me anything...";
+  const canSend = value.trim().length > 0;
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      submitPrompt();
     }
   }
 
   return (
-    <div className="w-full">
-      <div className="relative rounded-xl border border-[#333] bg-[#222] shadow-sm">
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          rows={1}
-          className="w-full resize-none bg-transparent px-3 pt-2.5 pb-10 text-xs text-[#e0e0e0] placeholder:text-[#666] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ minHeight: "42px", maxHeight: "140px" }}
-        />
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between rounded-b-xl px-2 py-1.5">
-          <ModelPicker />
+    <div className="flex w-full flex-col items-center">
+      <div className="relative w-full">
+        <div className="flex flex-col rounded-2xl border border-[#333] bg-[#1a1a1a] shadow-sm transition-[border-color,box-shadow] focus-within:border-[#444] focus-within:ring-1 focus-within:ring-[#444]/40">
+          <Textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder=""
+            rows={3}
+            className="min-h-[88px] text-[13px] w-full resize-none border-0 bg-transparent px-4 pt-4 pb-12 text-[#e0e0e0] shadow-none placeholder:text-[#666] focus-visible:border-0 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-3 pb-2.5">
+            <ModelPicker />
+            <button
+              type="button"
+              disabled={!canSend}
+              aria-label="Send message"
+              className={cn(
+                "inline-flex size-8 items-center justify-center rounded-full border border-[#333] bg-[#2a2a2a] text-[#888] transition-colors",
+                canSend
+                  ? "text-[#e0e0e0] hover:bg-[#333]"
+                  : "cursor-not-allowed opacity-60"
+              )}
+            >
+              <ArrowUpIcon className="size-4" strokeWidth={2} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
