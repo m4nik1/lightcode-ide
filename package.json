@@ -1,66 +1,16 @@
 {
-  "name": "Lightcode-Alpha",
-  "productName": "Lightcode Alpha",
-  "version": "2.0.0",
-  "description": "Code at the speed of light",
-  "main": ".vite/build/main.js",
-  "private": true,
+  "name": "lightcode",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m4nik1/lightcode-ide.git"
+  },
+  "license": "ISC",
+  "author": "Manik Soomro",
   "scripts": {
-    "dev": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "build": "electron-forge package && electron-forge make && electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
-  },
-  "keywords": [],
-  "author": {
-    "name": "m4nik1",
-    "email": "maniksoomro@hotmail.com"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@electron-forge/cli": "^7.11.1",
-    "@electron-forge/maker-deb": "^7.11.1",
-    "@electron-forge/maker-rpm": "^7.11.1",
-    "@electron-forge/maker-squirrel": "^7.11.1",
-    "@electron-forge/maker-zip": "^7.11.1",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
-    "@electron-forge/plugin-fuses": "^7.11.1",
-    "@electron-forge/plugin-vite": "^7.11.1",
-    "@electron/fuses": "^1.8.0",
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/electron-squirrel-startup": "^1.0.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
-    "electron": "41.1.1",
-    "eslint": "^8.57.1",
-    "eslint-plugin-import": "^2.32.0",
-    "tailwindcss": "^4.3.0",
-    "typescript": "~4.5.4",
-    "vite": "^5.4.21"
-  },
-  "dependencies": {
-    "@base-ui/react": "^1.5.0",
-    "@fontsource-variable/geist": "^5.2.9",
-    "@fontsource-variable/inter": "^5.2.8",
-    "@fontsource-variable/jetbrains-mono": "^5.2.8",
-    "@pierre/trees": "^1.0.0-beta.4",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "electron-squirrel-startup": "^1.0.1",
-    "lucide": "^1.3.0",
-    "lucide-react": "^1.17.0",
-    "modern-monaco": "^0.4.0",
-    "next-themes": "^0.4.6",
-    "radix-ui": "^1.5.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "shadcn": "^4.11.0",
-    "tailwind-merge": "^3.6.0",
-    "tw-animate-css": "^1.4.0",
-    "zustand": "^5.0.14"
+    "desktop": "npm --prefix apps/desktop run dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

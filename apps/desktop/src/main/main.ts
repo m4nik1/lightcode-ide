@@ -105,6 +105,7 @@ ipcMain.handle('window.openAIWindow', () => {
     const url = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     url.searchParams.set('window', 'ai');
     void aiWindow.loadURL(url.href);
+    aiWindow.webContents.openDevTools()
   } else {
     void aiWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),

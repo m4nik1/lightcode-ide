@@ -9,6 +9,10 @@ export default function NativeTopBar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const { openFile, openFolder } = useEditorTabs();
 
+  function openAIWindow() {
+    void window.electronAPI.openAIWindow();
+  }
+
   useEffect(() => {
     if (isMac) {
       return;
@@ -44,35 +48,43 @@ export default function NativeTopBar() {
 
   return (
     <header style={styles.bar}>
-      <div ref={menuRef} style={styles.menuArea} onBlur={closeDropdownOnBlur}>
-        <button
-          className="topbar-trigger"
-          style={styles.menuTrigger}
-          aria-expanded={fileDropDown}
-          aria-haspopup="menu"
-          onClick={() => setFileDropDown(!fileDropDown)}
-          type="button"
-        >
-          File
-        </button>
+      <div style={styles.leftGroup}>
+        <div ref={menuRef} style={styles.menuArea} onBlur={closeDropdownOnBlur}>
+          <button
+            className="topbar-trigger"
+            style={styles.menuTrigger}
+            aria-expanded={fileDropDown}
+            aria-haspopup="menu"
+            onClick={() => setFileDropDown(!fileDropDown)}
+            type="button"
+          >
+            File
+          </button>
 
-        {fileDropDown ? (
-          <div role="menu" style={styles.menu}>
-            <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuitem" type="button">
-              Open File
-            </button>
-            <button
-              className="topbar-menu-item"
-              onClick={() => {
-                openFolder();
-                setFileDropDown(false);
-              }}
-              role="menuitem"
-              type="button"
-            >
-              Open Folder
-            </button>
-          </div>
+          {fileDropDown ? (
+            <div role="menu" style={styles.menu}>
+              <button className="topbar-menu-item" onClick={() => readOpenFile()} role="menuitem" type="button">
+                Open File
+              </button>
+              <button
+                className="topbar-menu-item"
+                onClick={() => {
+                  openFolder();
+                  setFileDropDown(false);
+                }}
+                role="menuitem"
+                type="button"
+              >
+                Open Folder
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {!isMac ? (
+          <button className="ai-window-btn" style={styles.aiWindowBtn} onClick={openAIWindow} type="button">
+            AI window
+          </button>
         ) : null}
       </div>
 
@@ -126,6 +138,11 @@ const styles: Record<string, CSSProperties> = {
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",
   },
+  leftGroup: {
+    display: "flex",
+    alignItems: "center",
+    height: "100%",
+  },
   menuArea: {
     position: "relative",
     display: "flex",
@@ -141,6 +158,17 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     borderRadius: 4,
     cursor: "default",
+    ...noDrag,
+  },
+  aiWindowBtn: {
+    height: 22,
+    padding: "0 10px",
+    border: 0,
+    background: "transparent",
+    color: "#cccccc",
+    fontSize: 12,
+    borderRadius: 4,
+    cursor: "pointer",
     ...noDrag,
   },
   menu: {

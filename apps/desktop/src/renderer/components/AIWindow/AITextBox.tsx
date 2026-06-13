@@ -7,6 +7,7 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "@/lib/utils";
+import sendTestMessage from "@/components/AIWindow/AITextBox"
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -17,6 +18,8 @@ export default function AITextBox() {
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
+      console.log("Message: ", value)
+      sendTestMessage(value)
     }
   }
 
