@@ -1,10 +1,10 @@
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from './appRouter.ts'
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './appRouter.ts';
 
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: 'http://localhost:3000'
-    })
-  ]
-})
+createHTTPServer({
+  router: appRouter,
+  createContext() {
+    console.log("Context 3")
+    return {};
+  }
+}).listen(2022)

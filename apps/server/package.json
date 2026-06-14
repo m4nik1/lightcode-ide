@@ -20,6 +20,7 @@
   "type": "module",
   "dependencies": {
     "@trpc/client": "^11.17.0",
-    "@trpc/server": "^11.17.0"
+    "@trpc/server": "^11.17.0",
+    "zod": "^4.4.3"
   }
 }
