@@ -23,9 +23,9 @@ export function AIWindow() {
       <AITopTabs
         sessions={sessions}
         activeSessionId={sessions[0].id}
-        onSelectSession={() => {}}
-        onCreateSession={() => {}}
-        onCloseSession={() => {}}
+        onSelectSession={() => { }}
+        onCreateSession={() => { }}
+        onCloseSession={() => { }}
       />
       <section style={styles.content}>
         <div style={styles.promptWrap}>

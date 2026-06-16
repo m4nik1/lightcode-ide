@@ -4,6 +4,8 @@ import App from './App';
 import './index.css';
 import { ThemeProvider } from './components/ThemeProvider';
 import { EditorTabsProvider } from './context/EditorTabsContext';
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from ''
 
 const rootElement = document.getElementById('root');
 
@@ -12,16 +14,18 @@ if (!rootElement) {
 }
 
 ReactDOM.createRoot(rootElement).render(
-  <ThemeProvider
-    attribute="class"
-    defaultTheme="system"
-    enableSystem
-    disableTransitionOnChange
-  >
-    <EditorTabsProvider>
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    </EditorTabsProvider>
-  </ThemeProvider>,
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <EditorTabsProvider>
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      </EditorTabsProvider>
+    </ThemeProvider>
+  </QueryClientProvider>,
 );
