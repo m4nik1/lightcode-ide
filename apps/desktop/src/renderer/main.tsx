@@ -5,7 +5,7 @@ import './index.css';
 import { ThemeProvider } from './components/ThemeProvider';
 import { EditorTabsProvider } from './context/EditorTabsContext';
 import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from ''
+import { queryClient } from './utils/trpc'
 
 const rootElement = document.getElementById('root');
 

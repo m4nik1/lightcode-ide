@@ -1,14 +1,10 @@
-import {
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
-import { trpc } from '../../utils/trpc'
+import { trpc } from "../../utils/trpc";
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -27,8 +23,8 @@ export default function AITextBox() {
   function messageSend() {
     sendChat.mutate({
       message: "Hello there!",
-      user: "Raj"
-    })
+      user: "Raj",
+    });
   }
 
   return (
@@ -54,7 +50,7 @@ export default function AITextBox() {
                 "inline-flex size-8 items-center justify-center rounded-full border border-[#333] bg-[#2a2a2a] text-[#888] transition-colors",
                 canSend
                   ? "text-[#e0e0e0] hover:bg-[#333]"
-                  : "cursor-not-allowed opacity-60"
+                  : "cursor-not-allowed opacity-60",
               )}
             >
               <ArrowUpIcon className="size-4" strokeWidth={2} />
