@@ -1,3 +1,3 @@
 export function runCodex(message: string, user: string) {
-  console.log("Run codex has been called");
+  console.log("Run codex has been called: ", message, ' and user ', user);
 }

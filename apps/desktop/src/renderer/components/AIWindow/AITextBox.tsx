@@ -8,10 +8,13 @@ import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "@/lib/utils";
 import sendTestMessage from "@/components/AIWindow/AITextBox"
+import { useQuery } from "@tanstack/react-query";
+import { trpc } from '../../utils/trpc'
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
+  const sendChat = useQuery(trpc.sendChat.mutationOptions);
 
   const canSend = value.trim().length > 0;
 
@@ -40,6 +43,7 @@ export default function AITextBox() {
             <ModelPicker />
             <button
               type="button"
+              onClick={sendChat.}
               disabled={!canSend}
               aria-label="Send message"
               className={cn(
