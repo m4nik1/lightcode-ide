@@ -7,23 +7,28 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "@/lib/utils";
-import sendTestMessage from "@/components/AIWindow/AITextBox"
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { trpc } from '../../utils/trpc'
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const sendChat = useQuery(trpc.sendChat.mutationOptions);
+  const sendChat = useMutation(trpc.sendChat.mutationOptions());
 
   const canSend = value.trim().length > 0;
 
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      console.log("Message: ", value)
-      sendTestMessage(value)
-    }
+  // function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+  //   if (event.key === "Enter" && !event.shiftKey) {
+  //     event.preventDefault();
+  //     console.log("Message: ", value)
+  //   }
+  // }
+
+  function messageSend() {
+    sendChat.mutate({
+      message: "Hello there!",
+      user: "Raj"
+    })
   }
 
   return (
@@ -34,7 +39,6 @@ export default function AITextBox() {
             ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder=""
             rows={3}
             className="min-h-[88px] text-[13px] w-full resize-none border-0 bg-transparent px-4 pt-4 pb-12 text-[#e0e0e0] shadow-none placeholder:text-[#666] focus-visible:border-0 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
@@ -43,7 +47,7 @@ export default function AITextBox() {
             <ModelPicker />
             <button
               type="button"
-              onClick={sendChat.}
+              onClick={() => messageSend()}
               disabled={!canSend}
               aria-label="Send message"
               className={cn(
