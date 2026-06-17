@@ -1,26 +1,23 @@
 {
-  "name": "server",
+  "name": "@lightcode/server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "node --watch --experimental-strip-types index.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit --pretty false",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.6.0",
-      "onFail": "download"
-    }
-  },
   "type": "module",
   "dependencies": {
     "@trpc/client": "^11.17.0",
     "@trpc/server": "^11.17.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }

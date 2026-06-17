@@ -2,7 +2,13 @@
   "name": "lightcode",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "type": "module",
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "apps/desktop",
+    "apps/server"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/m4nik1/lightcode-ide.git"
@@ -10,8 +16,8 @@
   "license": "ISC",
   "author": "Manik Soomro",
   "scripts": {
-    "desktop": "npm --prefix apps/desktop run dev",
-    "server": "npm --prefix apps/server run dev",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "desktop": "npm run dev -w @lightcode/desktop",
+    "server": "npm run dev -w @lightcode/server",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }

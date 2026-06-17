@@ -1,17 +1,15 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
     "module": "NodeNext",
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "noImplicitAny": true,
-    "sourceMap": true,
     "strict": true,
     "outDir": "dist",
     "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "lib": ["ESNext", "DOM"]
-  }
+    "noEmit": true,
+    "composite": true,
+    "types": ["node"]
+  },
+  "include": ["*.ts"],
+  "exclude": ["dist", "node_modules"]
 }

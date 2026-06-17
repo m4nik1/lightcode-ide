@@ -1,20 +1,17 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
     "module": "commonjs",
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "noImplicitAny": true,
-    "sourceMap": true,
     "baseUrl": ".",
     "outDir": "dist",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "composite": true,
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"],
     "paths": {
       "@/*": ["./src/renderer/*"]
     }
-  }
+  },
+  "exclude": ["dist", "out", "node_modules", "src/renderer/dist"]
 }

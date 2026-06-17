@@ -1,5 +1,5 @@
 {
-  "name": "Lightcode-Alpha",
+  "name": "@lightcode/desktop",
   "productName": "Lightcode Alpha",
   "version": "2.0.0",
   "description": "Code at the speed of light",
@@ -11,7 +11,8 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "build": "electron-forge package && electron-forge make && electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "lint": "eslint --ext .ts,.tsx .",
+    "typecheck": "tsc --project tsconfig.json --noEmit --pretty false"
   },
   "keywords": [],
   "author": {
@@ -39,7 +40,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "tailwindcss": "^4.3.0",
-    "typescript": "~4.5.4",
+    "typescript": "^6.0.3",
     "vite": "^5.4.21"
   },
   "dependencies": {

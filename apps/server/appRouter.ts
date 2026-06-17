@@ -1,4 +1,5 @@
 import { publicProcedure, router } from "./trpc.ts";
+import { runCodex } from "./codexDriver.ts";
 import { z } from "zod";
 
 export const appRouter = router({
