@@ -64,9 +64,37 @@ function makeMessageId() {
   return Date.now() + Math.floor(Math.random() * 1000);
 }
 
-function getCodexReply(result: unknown) {
+function getCodexReply(result: unknown): string | null {
   if (typeof result === "string" && result.trim().length > 0) {
     return result.trim();
+  }
+
+  if (result && typeof result === "object" && "finalResponse" in result) {
+    const value = (result as { finalResponse?: unknown }).finalResponse;
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  if (result && typeof result === "object" && "items" in result) {
+    const items = (result as { items?: unknown }).items;
+    if (Array.isArray(items)) {
+      const agentMessage = items.find((item): item is { text: string } => {
+        return (
+          item !== null &&
+          typeof item === "object" &&
+          "type" in item &&
+          item.type === "agent_message" &&
+          "text" in item &&
+          typeof item.text === "string" &&
+          item.text.trim().length > 0
+        );
+      });
+
+      if (agentMessage) {
+        return agentMessage.text.trim();
+      }
+    }
   }
 
   if (result && typeof result === "object" && "message" in result) {
@@ -76,7 +104,7 @@ function getCodexReply(result: unknown) {
     }
   }
 
-  return "Codex finished running this prompt.";
+  return null;
 }
 
 export function AIWindow() {
@@ -163,10 +191,27 @@ export function AIWindow() {
       },
       {
         onSuccess: (result) => {
+          const codexReply = getCodexReply(result);
+          if (!codexReply) {
+            const assistantMessage: AIMessage = {
+              id: makeMessageId(),
+              role: "assistant",
+              content: "Codex finished without returning a response.",
+              timestamp: new Date(),
+              status: "error",
+            };
+            updateSessionMessages(sessionId, (session) => [
+              ...session.messages,
+              assistantMessage,
+            ]);
+            setPendingSessionId(null);
+            return;
+          }
+
           const assistantMessage: AIMessage = {
             id: makeMessageId(),
             role: "assistant",
-            content: getCodexReply(result),
+            content: codexReply,
             timestamp: new Date(),
           };
           updateSessionMessages(sessionId, (session) => [
@@ -199,7 +244,12 @@ export function AIWindow() {
   return (
     <main className="ai-window-root" style={styles.root}>
       {isMac ? <header style={styles.topBar} /> : null}
-      <section className="ai-window-body">
+      <section
+        className={cn(
+          "ai-window-body",
+          isSidebarCollapsed && "ai-window-body-sidebar-collapsed",
+        )}
+      >
         <aside
           className={cn(
             "ai-window-sidebar",

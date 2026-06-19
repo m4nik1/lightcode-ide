@@ -301,6 +301,10 @@ div[role='tree']::-webkit-scrollbar-thumb:hover {
   background: #121212;
 }
 
+.ai-window-body-sidebar-collapsed {
+  grid-template-columns: 58px minmax(0, 1fr);
+}
+
 .ai-window-sidebar {
   min-width: 0;
   display: grid;
@@ -462,6 +466,7 @@ div[role='tree']::-webkit-scrollbar-thumb:hover {
 }
 
 .ai-window-thread-row:hover .ai-window-thread-more,
+.ai-window-thread-row:focus-within .ai-window-thread-more,
 .ai-window-thread-row-active .ai-window-thread-more {
   opacity: 1;
 }
