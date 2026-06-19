@@ -13,8 +13,10 @@ const modelOptions = [
   { label: "Claude Fable 5", value: "claude-5-fable", description: "Balanced" },
 ] as const
 
+type ModelValue = (typeof modelOptions)[number]["value"]
+
 export default function ModelPicker() {
-  const [selectedModel, setSelectedModel] = useState(modelOptions[0].value)
+  const [selectedModel, setSelectedModel] = useState<ModelValue>(modelOptions[0].value)
 
   const selectedLabel =
     modelOptions.find((model) => model.value === selectedModel)?.label ??

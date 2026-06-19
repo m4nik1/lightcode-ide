@@ -3,28 +3,33 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
-import { trpc } from "../../utils/trpc";
 
-export default function AITextBox() {
+type AITextBoxProps = {
+  isSending?: boolean;
+  onSubmit: (message: string) => void;
+};
+
+export default function AITextBox({ isSending = false, onSubmit }: AITextBoxProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const sendChat = useMutation(trpc.sendChat.mutationOptions());
 
-  const canSend = value.trim().length > 0;
+  const canSend = value.trim().length > 0 && !isSending;
 
-  // function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-  //   if (event.key === "Enter" && !event.shiftKey) {
-  //     event.preventDefault();
-  //     console.log("Message: ", value)
-  //   }
-  // }
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      messageSend();
+    }
+  }
 
   function messageSend() {
-    sendChat.mutate({
-      message: "Hello there!",
-      user: "Raj",
-    });
+    const message = value.trim();
+    if (!message || isSending) {
+      return;
+    }
+
+    onSubmit(message);
+    setValue("");
   }
 
   return (
@@ -35,9 +40,11 @@ export default function AITextBox() {
             ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder=""
+            onKeyDown={handleKeyDown}
+            placeholder="Message Codex"
             rows={3}
             className="min-h-[88px] text-[13px] w-full resize-none border-0 bg-transparent px-4 pt-4 pb-12 text-[#e0e0e0] shadow-none placeholder:text-[#666] focus-visible:border-0 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSending}
           />
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-3 pb-2.5">
             <ModelPicker />
