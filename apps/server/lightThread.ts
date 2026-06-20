@@ -20,4 +20,8 @@ export default class lightThread {
 
     return result
   }
+
+  getInstance() {
+    return this.codexInstance
+  }
 }
