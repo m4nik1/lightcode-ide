@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from "react";
+import { ChevronDownIcon, FolderIcon } from "lucide-react";
 import AISidebar from "./AIWindow/sidebar/AISidebar";
 import type { AIProject } from "./AIWindow/sidebar/types";
 import AITextBox from "./AIWindow/AITextBox";
@@ -29,18 +30,6 @@ const mockProjects: AIProject[] = [
       { id: "3-2", title: "Benchmark results" },
     ],
   },
-  { id: "4", name: "qwen36-27b", threads: [] },
-  { id: "5", name: "nex-n2-pro", threads: [] },
-  { id: "6", name: "local.ai", threads: [] },
-  { id: "7", name: "sero", threads: [] },
-  { id: "8", name: "content", threads: [] },
-  { id: "9", name: "writing", threads: [] },
-  { id: "10", name: "reasoning", threads: [] },
-  { id: "11", name: "plugins", threads: [] },
-  { id: "12", name: "personal", threads: [] },
-  { id: "13", name: "vllm-studio", threads: [] },
-  { id: "14", name: "deepseek-flash-preview", threads: [] },
-  { id: "15", name: "parchi", threads: [] },
 ];
 
 export function AIWindow() {
@@ -48,16 +37,17 @@ export function AIWindow() {
 
   return (
     <main style={styles.root}>
-      <AISidebar
-        projects={projects}
-        activeProjectId="2"
-        activeThreadId="2-1"
-      />
+      <AISidebar projects={projects} activeProjectId="2" activeThreadId="2-1" />
       <div style={styles.mainColumn}>
         {isMac ? <header style={styles.topBar} /> : null}
         <section style={styles.content}>
-          <div style={styles.promptWrap}>
-            <AITextBox />
+          <div style={styles.emptyState}>
+            Send a message to start the conversation.
+          </div>
+          <div style={styles.composerArea}>
+            <div style={styles.promptWrap}>
+              <AITextBox />
+            </div>
           </div>
         </section>
       </div>
@@ -98,13 +88,62 @@ const styles: Record<string, CSSProperties> = {
   content: {
     flex: 1,
     display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    padding: "0 24px 22px",
+    minHeight: 0,
+    position: "relative",
+  },
+  emptyState: {
+    flex: 1,
+    width: "100%",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "0 24px",
+    color: aiTheme.textDisabled,
+    fontSize: 18,
+    fontWeight: 600,
+    opacity: 0.36,
+    textAlign: "center",
     minHeight: 0,
+  },
+  composerArea: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    flexShrink: 0,
   },
   promptWrap: {
     width: "100%",
-    maxWidth: 560,
+    maxWidth: 1440,
+  },
+  statusRow: {
+    width: "100%",
+    maxWidth: 1360,
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 16,
+    padding: "14px 44px 0",
+    color: aiTheme.textDisabled,
+    fontSize: 15,
+    fontWeight: 600,
+    lineHeight: 1.25,
+  },
+  statusItem: {
+    minWidth: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    overflow: "hidden",
+  },
+  statusLabel: {
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  statusIcon: {
+    flexShrink: 0,
   },
 };

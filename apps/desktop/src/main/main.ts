@@ -17,8 +17,8 @@ if (started) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1500,
+    height: 900,
     icon: iconPath,
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
@@ -91,8 +91,8 @@ ipcMain.handle('window.isMaximized', (event) => {
 
 ipcMain.handle('window.openAIWindow', () => {
   const aiWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1500,
+    height: 900,
     icon: iconPath,
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
