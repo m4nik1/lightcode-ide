@@ -37,6 +37,7 @@ export function ProjectDropdown({
         <button
           type="button"
           onClick={onToggle}
+          aria-expanded={expanded}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-[7px] pr-1 pl-3 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.borderFocus,
@@ -52,7 +53,9 @@ export function ProjectDropdown({
           </span>
           <span className="min-w-0 flex-1 truncate">{project.name}</span>
           {isActiveProject ? (
-            <span className={cn("shrink-0 text-xs", aiThemeClassNames.textMuted)}>
+            <span
+              className={cn("shrink-0 text-xs", aiThemeClassNames.textMuted)}
+            >
               now
             </span>
           ) : null}
