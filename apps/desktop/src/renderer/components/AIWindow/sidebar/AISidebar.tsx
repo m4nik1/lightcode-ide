@@ -88,6 +88,9 @@ export default function AISidebar({
       <SidebarHeader onNewChat={() => handleNewChat()} />
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+        <div>
+          <span className="text-gray-500 pl-2">Projects</span>
+        </div>
         {projectsWithDrafts.map((project) => (
           <ProjectDropdown
             key={project.id}
