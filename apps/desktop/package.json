@@ -11,7 +11,6 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "build": "electron-forge package && electron-forge make && electron-forge publish",
-    "check:ai-theme": "node scripts/check-ai-theme-unified.mjs",
     "lint": "eslint --ext .ts,.tsx .",
     "typecheck": "tsc --project tsconfig.json --noEmit --pretty false"
   },

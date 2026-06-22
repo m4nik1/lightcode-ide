@@ -1,5 +1,4 @@
 import { useState, type CSSProperties } from "react";
-import { ChevronDownIcon, FolderIcon } from "lucide-react";
 import AISidebar from "./AIWindow/sidebar/AISidebar";
 import type { AIProject } from "./AIWindow/sidebar/types";
 import AITextBox from "./AIWindow/AITextBox";
