@@ -6,6 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu"
+import { cn } from "../../lib/utils"
+import { aiThemeClassNames } from "./theme"
 
 const modelOptions = [
   { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
@@ -25,7 +27,14 @@ export default function ModelPicker() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#333] bg-[#2a2a2a] px-2.5 text-xs font-normal text-[#c8c8c8] transition-colors hover:bg-[#333] hover:text-[#e8e8e8] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#555] data-[state=open]:bg-[#333]"
+          className={cn(
+            "inline-flex h-7 items-center gap-1 rounded-lg border px-2.5 text-xs font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#525252]",
+            aiThemeClassNames.border,
+            aiThemeClassNames.surfaceHover,
+            aiThemeClassNames.textMuted,
+            aiThemeClassNames.hoverTextPrimary,
+            aiThemeClassNames.dataOpenSurfaceHover,
+          )}
         >
           {selectedLabel}
           <ChevronDownIcon className="size-3 opacity-60" />
@@ -34,7 +43,11 @@ export default function ModelPicker() {
       <DropdownMenuContent
         align="start"
         sideOffset={8}
-        className="min-w-[280px] rounded-xl border border-[#333] bg-[#1e1e1e]/95 p-1 shadow-lg backdrop-blur-sm ring-0"
+        className={cn(
+          "min-w-[280px] rounded-xl border p-1 shadow-lg ring-0",
+          aiThemeClassNames.border,
+          aiThemeClassNames.surface,
+        )}
       >
         {modelOptions.map((model) => {
           return (
@@ -42,9 +55,15 @@ export default function ModelPicker() {
               key={model.value}
               variant="default"
               onClick={() => setSelectedModel(model.value)}
+              className={cn(
+                "focus:bg-[#171717] focus:text-[#ededed]",
+                aiThemeClassNames.textPrimary,
+              )}
             >
-              <span className="font-normal text-[#f0f0f0]">{model.label}</span>
-              <span className="text-xs text-[#888]">{model.description}</span>
+              <span className="font-normal">{model.label}</span>
+              <span className={cn("text-xs", aiThemeClassNames.textMuted)}>
+                {model.description}
+              </span>
             </DropdownMenuItem>
           )
         })}

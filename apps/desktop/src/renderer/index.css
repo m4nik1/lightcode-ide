@@ -177,6 +177,13 @@ select {
   min-height: 100vh;
 }
 
+/* ── AI Sidebar ─────────────────────────────────────── */
+
+.ai-sidebar-glass {
+  background: #0a0a0a;
+  border-right: 1px solid #262626;
+}
+
 /* ── TopBar ─────────────────────────────────────────── */
 
 .topbar-trigger:hover,

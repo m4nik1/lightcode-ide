@@ -1,19 +1,10 @@
 import { useState, type CSSProperties } from "react";
-import AISidebar from "./AIWindow/AISidebar";
+import AISidebar from "./AIWindow/sidebar/AISidebar";
+import type { AIProject } from "./AIWindow/sidebar/types";
 import AITextBox from "./AIWindow/AITextBox";
+import { aiTheme } from "./AIWindow/theme";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
-
-export type AIThread = {
-  id: string;
-  title: string;
-};
-
-export type AIProject = {
-  id: string;
-  name: string;
-  threads: AIThread[];
-};
 
 const mockProjects: AIProject[] = [
   {
@@ -81,8 +72,9 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     flexDirection: "row",
     boxSizing: "border-box",
-    background: "var(--editor-surface)",
-    color: "#cccccc",
+    position: "relative",
+    background: aiTheme.background,
+    color: aiTheme.textPrimary,
     fontFamily: "system-ui, sans-serif",
     fontSize: 13,
     overflow: "hidden",
@@ -93,12 +85,13 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     minWidth: 0,
     minHeight: 0,
+    background: aiTheme.background,
   },
   topBar: {
     height: 38,
     flexShrink: 0,
-    background: "var(--editor-surface)",
-    borderBottom: "1px solid #2b2b2b",
+    background: aiTheme.background,
+    borderBottom: `1px solid ${aiTheme.border}`,
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",
   },
