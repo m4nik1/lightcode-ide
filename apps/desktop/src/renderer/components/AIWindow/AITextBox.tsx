@@ -3,15 +3,13 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "../../lib/utils";
-import { useMutation } from "@tanstack/react-query";
-import { trpc } from "../../utils/trpc";
+import { trpc, trpcClient } from "../../utils/trpc";
 import { aiThemeClassNames } from "./theme";
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [model, setModel] = useState("")
-  const sendChat = useMutation(trpc.sendChat.mutationOptions());
 
   const canSend = value.trim().length > 0;
 
@@ -23,13 +21,17 @@ export default function AITextBox() {
   // }
 
   async function messageSend() {
-    const result = await sendChat.mutateAsync({
-      message: "Hello there!",
-      user: "Raj",
-      model: model
-    });
+    // const result = await sendChat.query({
+    //   message: "Hello there!",
+    //   user: "Raj",
+    // });
 
-    console.log("AI: ", result.finalResponse);
+    const streamChat = await trpcClient.queryAI.query({ message: value })
+    // await streamChat.refetch()
+
+    for await (const chunk of streamChat) {
+      console.log("Chunk: ", chunk)
+    }
   }
 
   return (

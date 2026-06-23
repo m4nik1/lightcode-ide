@@ -16,9 +16,18 @@ export default class lightThread {
   }
 
   async sendQuery(query: string) {
-    const result = await this.thread.run(query)
+    const result = await this.thread?.run(query)
 
     return result
+  }
+
+  async sendQueryStream(query: string) {
+    if (!this.thread) {
+      throw new Error("Thread has not been created")
+    }
+
+    const { events } = await this.thread.runStreamed(query);
+    return events;
   }
 
   getInstance() {
