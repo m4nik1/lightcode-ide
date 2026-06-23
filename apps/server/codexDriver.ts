@@ -12,5 +12,7 @@ export async function runCodex(message: string, user: string, model: string) {
   thread.createThread()
   const threadResult = await thread.sendQuery(message);
 
+  console.log("Thread result: ", threadResult)
+
   return threadResult
 }

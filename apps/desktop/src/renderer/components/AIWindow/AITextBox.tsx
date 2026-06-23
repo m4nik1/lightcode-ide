@@ -22,12 +22,14 @@ export default function AITextBox() {
   //   }
   // }
 
-  function messageSend() {
-    sendChat.mutate({
+  async function messageSend() {
+    const result = await sendChat.mutateAsync({
       message: "Hello there!",
       user: "Raj",
       model: model
     });
+
+    console.log("AI: ", result.finalResponse);
   }
 
   return (
