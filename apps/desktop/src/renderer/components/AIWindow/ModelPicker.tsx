@@ -13,7 +13,7 @@ const modelOptions = [
   { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
   { label: "Claude 4.8 Opus", value: "claude-4.8-opus", description: "Most capable" },
   { label: "Claude Fable 5", value: "claude-5-fable", description: "Balanced" },
-] as const
+]
 
 export default function ModelPicker() {
   const [selectedModel, setSelectedModel] = useState(modelOptions[0].value)
@@ -21,6 +21,13 @@ export default function ModelPicker() {
   const selectedLabel =
     modelOptions.find((model) => model.value === selectedModel)?.label ??
     modelOptions[0].label
+
+
+  function modelSelected(model: string) {
+    console.log("User Chose ", model)
+
+    setSelectedModel(model)
+  }
 
   return (
     <DropdownMenu>
@@ -54,7 +61,7 @@ export default function ModelPicker() {
             <DropdownMenuItem
               key={model.value}
               variant="default"
-              onClick={() => setSelectedModel(model.value)}
+              onClick={() => modelSelected(model.value)}
               className={cn(
                 "focus:bg-[#171717] focus:text-[#ededed]",
                 aiThemeClassNames.textPrimary,

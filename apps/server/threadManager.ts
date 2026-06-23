@@ -1,24 +1,22 @@
-import { type Thread, type Codex } from "@openai/codex-sdk"
-import { lightThread } from "./lightThread"
+import { type Codex } from "@openai/codex-sdk"
+import LightThread from "./lightThread.ts"
 
-export interface threadManager {
 
-}
+export class ThreadManager {
+  threadList: LightThread[]
+  codexInstance: Codex
 
-export class threadManager {
-  threadList: Thread[]
-  codexInstance: null | Codex
   constructor(instance: Codex) {
     this.codexInstance = instance;
     this.threadList = []
   }
 
-  getThreadList() {
+  getThreadList(): LightThread[] {
     return this.threadList
   }
 
-  createThread() {
-    const newThread = new lightThread(this.codexInstance)
+  createThread(): LightThread {
+    const newThread = new LightThread(this.codexInstance)
 
     this.threadList.push(newThread)
 

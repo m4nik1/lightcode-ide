@@ -21,9 +21,10 @@ export const appRouter = router({
       z.object({
         message: z.string(),
         user: z.string(),
+        model: z.string()
       }),
     )
-    .mutation(({ input }) => runCodex(input.message, input.user)),
+    .mutation(({ input }) => runCodex(input.message, input.user, input.model)),
 });
 
 export type AppRouter = typeof appRouter;

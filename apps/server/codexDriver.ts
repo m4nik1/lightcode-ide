@@ -1,14 +1,16 @@
 import { Codex } from "@openai/codex-sdk";
-import { type threadManager } from "./threadManager.ts";
+import { ThreadManager } from "./threadManager.ts";
 
-export async function runCodex(message: string, user: string) {
-  console.log("Run codex has been called: ", message, ' and user ', user);
+export async function runCodex(message: string, user: string, model: string) {
+  console.log("Run codex has been called: ", message, ' and user ', user, " with model ", model);
 
   const codex = new Codex();
 
-  const threadManager: threadManager = new threadManager(codex)
+  const threadManager: ThreadManager = new ThreadManager(codex)
+  const thread = threadManager.createThread()
 
-  const threadResult = await threadManager.sendQuery(message);
+  thread.createThread()
+  const threadResult = await thread.sendQuery(message);
 
   return threadResult
 }

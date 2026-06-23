@@ -10,6 +10,7 @@ import { aiThemeClassNames } from "./theme";
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
+  const [model, setModel] = useState("")
   const sendChat = useMutation(trpc.sendChat.mutationOptions());
 
   const canSend = value.trim().length > 0;
@@ -25,6 +26,7 @@ export default function AITextBox() {
     sendChat.mutate({
       message: "Hello there!",
       user: "Raj",
+      model: model
     });
   }
 
