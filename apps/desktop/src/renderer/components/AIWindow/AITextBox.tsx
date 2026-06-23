@@ -3,13 +3,12 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "../../lib/utils";
-import { trpc, trpcClient } from "../../utils/trpc";
+import { trpcClient } from "../../utils/trpc";
 import { aiThemeClassNames } from "./theme";
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const [model, setModel] = useState("")
 
   const canSend = value.trim().length > 0;
 
