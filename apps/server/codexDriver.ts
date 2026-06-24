@@ -28,9 +28,8 @@ export async function* runCodexStream(message: string): AsyncGenerator<ThreadEve
   thread.createThread()
   const threadEvents = await thread.sendQueryStream(message)
 
-  console.log("events: ", threadEvents)
-
   for await (const event of threadEvents) {
+    console.log("Event: ", event)
     switch (event.type) {
       case "item.completed":
         console.log("Item: ", event.item)
