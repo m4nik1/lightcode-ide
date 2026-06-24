@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import AISidebar from "./AIWindow/sidebar/AISidebar";
 import type { AIProject } from "./AIWindow/sidebar/types";
 import AITextBox from "./AIWindow/AITextBox";
+import ChatBubbles, { type ChatMessage } from "./AIWindow/ChatBubbles";
 import { aiTheme } from "./AIWindow/theme";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
@@ -33,6 +34,17 @@ const mockProjects: AIProject[] = [
 
 export function AIWindow() {
   const [projects] = useState<AIProject[]>(mockProjects);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  function handleSendMessage(message: string) {
+    const text = message.trim();
+    if (!text) return;
+
+    setMessages((current) => [
+      ...current,
+      { id: crypto.randomUUID(), text },
+    ]);
+  }
 
   return (
     <main style={styles.root}>
@@ -40,12 +52,10 @@ export function AIWindow() {
       <div style={styles.mainColumn}>
         {isMac ? <header style={styles.topBar} /> : null}
         <section style={styles.content}>
-          <div style={styles.emptyState}>
-            Send a message to start the conversation.
-          </div>
+          <ChatBubbles messages={messages} />
           <div style={styles.composerArea}>
             <div style={styles.promptWrap}>
-              <AITextBox />
+              <AITextBox onSendMessage={handleSendMessage} />
             </div>
           </div>
         </section>
@@ -92,19 +102,6 @@ const styles: Record<string, CSSProperties> = {
     padding: "0 24px 22px",
     minHeight: 0,
     position: "relative",
-  },
-  emptyState: {
-    flex: 1,
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: aiTheme.textDisabled,
-    fontSize: 18,
-    fontWeight: 600,
-    opacity: 0.36,
-    textAlign: "center",
-    minHeight: 0,
   },
   composerArea: {
     width: "100%",

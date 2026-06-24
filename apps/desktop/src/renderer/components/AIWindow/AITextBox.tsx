@@ -6,7 +6,11 @@ import { cn } from "../../lib/utils";
 import { trpcClient } from "../../utils/trpc";
 import { aiThemeClassNames } from "./theme";
 
-export default function AITextBox() {
+type AITextBoxProps = {
+  onSendMessage: (message: string) => void;
+};
+
+export default function AITextBox({ onSendMessage }: AITextBoxProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
 
@@ -20,13 +24,14 @@ export default function AITextBox() {
   // }
 
   async function messageSend() {
-    // const result = await sendChat.query({
-    //   message: "Hello there!",
-    //   user: "Raj",
-    // });
+    const message = value.trim();
+    if (!message) return;
+
+    onSendMessage(value);
+    setValue("");
+
 
     const streamChat = await trpcClient.queryAI.query({ message: value })
-    // await streamChat.refetch()
 
     for await (const chunk of streamChat) {
       console.log("Chunk: ", chunk)
