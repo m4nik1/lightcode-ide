@@ -35,6 +35,7 @@ const mockProjects: AIProject[] = [
 export function AIWindow() {
   const [projects] = useState<AIProject[]>(mockProjects);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [AIMessages, setAIMessages] = useState<ChatMessage[]>([])
 
   function handleSendMessage(message: string) {
     const text = message.trim();
@@ -43,6 +44,11 @@ export function AIWindow() {
     setMessages((current) => [
       ...current,
       { id: crypto.randomUUID(), text },
+    ]);
+
+    setAIMessages((current) => [
+      ...current,
+      { id: crypto.randomUUID(), text: "Hello, how are you?" },
     ]);
   }
 
@@ -53,6 +59,7 @@ export function AIWindow() {
         {isMac ? <header style={styles.topBar} /> : null}
         <section style={styles.content}>
           <ChatBubbles messages={messages} />
+          <ChatBubbles messages={AIMessages} />
           <div style={styles.composerArea}>
             <div style={styles.promptWrap}>
               <AITextBox onSendMessage={handleSendMessage} />
