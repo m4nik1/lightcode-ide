@@ -11,16 +11,14 @@ const aiContext = createContext<AIContext | undefined>(undefined);
 export function AiChatProvider({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");
 
-  async function messageSend(value: string) {
-    // const messageSent = value.trim();
-    // if (!message) return;
-
+  async function* messageSend(value: string) {
     setMessage(value);
 
     const streamChat = await trpcClient.queryAI.query({ message: value });
 
     for await (const chunk of streamChat) {
       console.log("Chunk: ", chunk);
+      yield chunk;
     }
   }
 
