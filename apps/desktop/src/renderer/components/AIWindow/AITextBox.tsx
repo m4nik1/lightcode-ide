@@ -48,7 +48,10 @@ export default function AITextBox() {
             <ModelPicker />
             <button
               type="button"
-              onClick={() => void messageSend(value)}
+              onClick={() => {
+                void messageSend(value);
+                setValue("");
+              }}
               disabled={!canSend}
               aria-label="Send message"
               className={cn(
