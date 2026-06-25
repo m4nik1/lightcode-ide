@@ -4,6 +4,7 @@ import type { AIProject } from "./AIWindow/sidebar/types";
 import AITextBox from "./AIWindow/AITextBox";
 import ChatBubbles, { type ChatMessage } from "./AIWindow/ChatBubbles";
 import { aiTheme } from "./AIWindow/theme";
+import { AiChatProvider } from "@/context/useAIChat";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
@@ -42,24 +43,34 @@ export function AIWindow() {
 
     setMessages((current) => [
       ...current,
-      { id: crypto.randomUUID(), query: text, aiResponse: "Hello, how are you?" },
+      {
+        id: crypto.randomUUID(),
+        query: text,
+        aiResponse: "Hello, how are you?",
+      },
     ]);
   }
 
   return (
     <main style={styles.root}>
-      <AISidebar projects={projects} activeProjectId="2" activeThreadId="2-1" />
-      <div style={styles.mainColumn}>
-        {isMac ? <header style={styles.topBar} /> : null}
-        <section style={styles.content}>
-          <ChatBubbles messages={messages} isAIResponse={false} />
-          <div style={styles.composerArea}>
-            <div style={styles.promptWrap}>
-              <AITextBox onSendMessage={handleSendMessage} />
+      <AiChatProvider>
+        <AISidebar
+          projects={projects}
+          activeProjectId="2"
+          activeThreadId="2-1"
+        />
+        <div style={styles.mainColumn}>
+          {isMac ? <header style={styles.topBar} /> : null}
+          <section style={styles.content}>
+            <ChatBubbles messages={messages} isAIResponse={false} />
+            <div style={styles.composerArea}>
+              <div style={styles.promptWrap}>
+                <AITextBox onSendMessage={handleSendMessage} />
+              </div>
             </div>
-          </div>
-        </section>
-      </div>
+          </section>
+        </div>
+      </AiChatProvider>
     </main>
   );
 }

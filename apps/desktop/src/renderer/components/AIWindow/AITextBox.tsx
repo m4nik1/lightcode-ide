@@ -3,16 +3,13 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
 import { cn } from "../../lib/utils";
-import { trpcClient } from "../../utils/trpc";
 import { aiThemeClassNames } from "./theme";
+import { useAIChat } from "@/context/useAIChat";
 
-type AITextBoxProps = {
-  onSendMessage: (message: string) => void;
-};
-
-export default function AITextBox({ onSendMessage }: AITextBoxProps) {
+export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
+  const { messageSend } = useAIChat();
 
   const canSend = value.trim().length > 0;
 
@@ -22,21 +19,6 @@ export default function AITextBox({ onSendMessage }: AITextBoxProps) {
   //     console.log("Message: ", value)
   //   }
   // }
-
-  async function messageSend() {
-    const message = value.trim();
-    if (!message) return;
-
-    onSendMessage(value);
-    setValue("");
-
-
-    const streamChat = await trpcClient.queryAI.query({ message: value })
-
-    for await (const chunk of streamChat) {
-      console.log("Chunk: ", chunk)
-    }
-  }
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -66,7 +48,7 @@ export default function AITextBox({ onSendMessage }: AITextBoxProps) {
             <ModelPicker />
             <button
               type="button"
-              onClick={() => messageSend()}
+              onClick={() => messageSend(value)}
               disabled={!canSend}
               aria-label="Send message"
               className={cn(
@@ -75,7 +57,10 @@ export default function AITextBox({ onSendMessage }: AITextBoxProps) {
                 aiThemeClassNames.surfaceHover,
                 canSend
                   ? cn(aiThemeClassNames.textPrimary, "hover:bg-[#1a1a1a]")
-                  : cn(aiThemeClassNames.textDisabled, "cursor-not-allowed opacity-60"),
+                  : cn(
+                      aiThemeClassNames.textDisabled,
+                      "cursor-not-allowed opacity-60",
+                    ),
               )}
             >
               <ArrowUpIcon className="size-4" strokeWidth={2} />

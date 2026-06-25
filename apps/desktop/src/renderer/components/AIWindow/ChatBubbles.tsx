@@ -9,11 +9,16 @@ export type ChatMessage = {
 
 type ChatBubblesProps = {
   messages: ChatMessage[];
-  isAIResponse: boolean
+  isAIResponse: boolean;
 };
 
-export default function ChatBubbles({ messages, isAIResponse }: ChatBubblesProps) {
-  const bubblePosition = isAIResponse ? "flex justify-start" : "flex justify-end"
+export default function ChatBubbles({
+  messages,
+  isAIResponse,
+}: ChatBubblesProps) {
+  const bubblePosition = isAIResponse
+    ? "flex justify-start"
+    : "flex justify-end";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-6">
@@ -39,9 +44,7 @@ export default function ChatBubbles({ messages, isAIResponse }: ChatBubblesProps
                 aiThemeClassNames.textPrimary,
                 "bg-[#1a1a1a]",
               )}
-            >
-              {message.aiResponse}
-            </div>
+            ></div>
           </div>
         </div>
       ))}
