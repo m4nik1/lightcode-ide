@@ -1,5 +1,6 @@
 import { aiThemeClassNames } from "./theme";
 import { cn } from "../../lib/utils";
+import { useAIChat } from "@/context/useAIChat";
 
 export type ChatMessage = {
   id: string;
@@ -8,17 +9,15 @@ export type ChatMessage = {
 };
 
 type ChatBubblesProps = {
-  messages: ChatMessage[];
   isAIResponse: boolean;
 };
 
-export default function ChatBubbles({
-  messages,
-  isAIResponse,
-}: ChatBubblesProps) {
+export default function ChatBubbles({ isAIResponse }: ChatBubblesProps) {
   const bubblePosition = isAIResponse
     ? "flex justify-start"
     : "flex justify-end";
+
+  const { messages } = useAIChat();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-6">
@@ -44,7 +43,9 @@ export default function ChatBubbles({
                 aiThemeClassNames.textPrimary,
                 "bg-[#1a1a1a]",
               )}
-            ></div>
+            >
+              {message.aiResponse}
+            </div>
           </div>
         </div>
       ))}

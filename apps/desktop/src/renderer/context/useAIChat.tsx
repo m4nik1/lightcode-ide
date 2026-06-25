@@ -1,31 +1,52 @@
 import { createContext, ReactNode, useState, useContext } from "react";
 import { trpcClient } from "@/utils/trpc";
+import { ChatMessage } from "@/components/AIWindow/ChatBubbles";
 
 type AIContext = {
-  message: string;
-  messageSend: (value: string) => Promise<void>;
+  messages: ChatMessage[];
+  messageSend: (value: string) => AsyncGenerator;
 };
 
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
-  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  async function* messageSend(value: string) {
-    setMessage(value);
+  async function messageSend(value: string) {
+    const text = value.trim();
+    if (!text) return;
 
-    const streamChat = await trpcClient.queryAI.query({ message: value });
+    const id = crypto.randomUUID();
+
+    setMessages((current) => [
+      ...current,
+      {
+        id,
+        query: text,
+        aiResponse: "",
+      },
+    ]);
+
+    const streamChat = await trpcClient.queryAI.query({ message: text });
 
     for await (const chunk of streamChat) {
       console.log("Chunk: ", chunk);
-      yield chunk;
+      if (chunk.type == "item.completed") {
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === id
+              ? { ...message, aiResponse: message.aiResponse + chunk.item.text }
+              : message,
+          ),
+        );
+      }
     }
   }
 
   return (
     <aiContext.Provider
       value={{
-        message,
+        messages,
         messageSend,
       }}
     >
