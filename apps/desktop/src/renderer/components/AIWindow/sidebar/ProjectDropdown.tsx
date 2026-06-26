@@ -2,13 +2,11 @@ import { Loader2, SquarePen } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { ChevronIcon, FolderIcon } from "./icons";
 import { ThreadItem } from "./ThreadItem";
-import type { AIProject } from "./types";
+import type { Project } from "@/components/AIWindow/sidebar/AISidebar";
 import { aiThemeClassNames } from "../theme";
 
 type ProjectDropdownProps = {
-  project: AIProject;
-  expanded: boolean;
-  onToggle: () => void;
+  project: Project;
   isActiveProject: boolean;
   activeThreadId: string;
   onCreateThread: () => void;
@@ -17,12 +15,8 @@ type ProjectDropdownProps = {
 
 export function ProjectDropdown({
   project,
-  expanded,
-  onToggle,
   isActiveProject,
-  activeThreadId,
   onCreateThread,
-  onSelectThread,
 }: ProjectDropdownProps) {
   return (
     <div className="py-0.5">
@@ -36,8 +30,7 @@ export function ProjectDropdown({
       >
         <button
           type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
+          s
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-[7px] pr-1 pl-3 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.borderFocus,
@@ -78,7 +71,7 @@ export function ProjectDropdown({
         </button>
       </div>
 
-      {expanded
+      {/* {expanded
         ? project.threads.map((thread) => (
             <ThreadItem
               key={thread.id}
@@ -87,7 +80,7 @@ export function ProjectDropdown({
               onSelect={() => onSelectThread(thread.id)}
             />
           ))
-        : null}
+        : null} */}
     </div>
   );
 }
