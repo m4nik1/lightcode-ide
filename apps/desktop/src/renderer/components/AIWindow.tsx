@@ -53,12 +53,15 @@ export function AIWindow() {
 
   return (
     <main style={styles.root}>
+      <div aria-hidden="true" style={styles.blurBackdrop} />
       <AiChatProvider>
-        <AISidebar
-          projects={projects}
-          activeProjectId="2"
-          activeThreadId="2-1"
-        />
+        <div style={styles.sidebarLayer}>
+          <AISidebar
+            projects={projects}
+            activeProjectId="2"
+            activeThreadId="2-1"
+          />
+        </div>
         <div style={styles.mainColumn}>
           {isMac ? <header style={styles.topBar} /> : null}
           <section style={styles.content}>
@@ -83,11 +86,27 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: "row",
     boxSizing: "border-box",
     position: "relative",
-    background: aiTheme.background,
+    background: "transparent",
     color: aiTheme.textPrimary,
     fontFamily: "system-ui, sans-serif",
     fontSize: 13,
     overflow: "hidden",
+    isolation: "isolate",
+  },
+  blurBackdrop: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 0,
+    pointerEvents: "none",
+    background:
+      "linear-gradient(135deg, rgba(82, 82, 82, 0.22), rgba(0, 0, 0, 0) 38%), linear-gradient(180deg, #101010 0%, #050505 100%)",
+  },
+  sidebarLayer: {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    height: "100%",
+    flexShrink: 0,
   },
   mainColumn: {
     flex: 1,
@@ -96,6 +115,8 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 0,
     minHeight: 0,
     background: aiTheme.background,
+    position: "relative",
+    zIndex: 1,
   },
   topBar: {
     height: 38,

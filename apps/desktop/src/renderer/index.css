@@ -177,12 +177,12 @@ select {
   min-height: 100vh;
 }
 
-/* ── AI Sidebar ─────────────────────────────────────── */
-
-.ai-sidebar-glass {
-  background: #0a0a0a;
-  border-right: 1px solid #262626;
+.chat-composer-shared-blur {
+  background: rgba(10, 10, 10, 0.42);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
 }
+
 
 /* ── TopBar ─────────────────────────────────────────── */
 

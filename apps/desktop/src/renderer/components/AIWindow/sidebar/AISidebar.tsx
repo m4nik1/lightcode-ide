@@ -81,7 +81,7 @@ export default function AISidebar({
   return (
     <aside
       className={cn(
-        "ai-sidebar-glass box-border relative flex h-full w-[260px] shrink-0 flex-col text-[13px]",
+        "chat-composer-shared-blur border-r border-[#262626] box-border relative flex h-full w-[260px] shrink-0 flex-col text-[13px]",
         aiThemeClassNames.textPrimary,
       )}
     >
