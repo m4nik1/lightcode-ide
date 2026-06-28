@@ -13,12 +13,13 @@ export default function AITextBox() {
 
   const canSend = value.trim().length > 0;
 
-  // function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-  //   if (event.key === "Enter" && !event.shiftKey) {
-  //     event.preventDefault();
-  //     console.log("Message: ", value)
-  //   }
-  // }
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      messageSend(value);
+      setValue("");
+    }
+  }
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -38,6 +39,7 @@ export default function AITextBox() {
             onChange={(e) => setValue(e.target.value)}
             placeholder=""
             rows={3}
+            onKeyDown={(e) => handleKeyDown(e)}
             className={cn(
               "min-h-[88px] w-full resize-none border-0 bg-transparent px-4 pt-4 pb-12 text-[13px] shadow-none focus-visible:border-0 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50",
               aiThemeClassNames.textPrimary,
