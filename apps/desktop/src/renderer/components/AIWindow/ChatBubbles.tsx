@@ -42,9 +42,10 @@ export default function ChatBubbles({ isAIResponse }: ChatBubblesProps) {
                 aiThemeClassNames.border,
                 aiThemeClassNames.textPrimary,
                 "bg-[#1a1a1a]",
+                !message.aiResponse && "shimmer"
               )}
             >
-              {message.aiResponse}
+              {message.aiResponse ?  message.aiResponse : "thinking"}
             </div>
           </div>
         </div>
