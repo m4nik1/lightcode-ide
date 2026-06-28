@@ -1,79 +1,47 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { SidebarHeader } from "./SidebarHeader";
-import type { AIThread } from "./types";
+import type { thread } from "./types";
 import { aiThemeClassNames } from "../theme";
 import { cn } from "../../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
 
-type AISidebarProps = {
-  activeProjectId: string;
-  activeThreadId: string;
-};
-
 export interface Project {
   id: string;
   name: string;
   path: string;
+  threads: thread[];
+
 }
 
-export default function AISidebar({
-  activeProjectId,
-  activeThreadId,
-}: AISidebarProps) {
-  // const [expandedProjects, setExpandedProjects] = useState<
-  //   Record<string, boolean>
-  // >(() => createInitialExpandedState(projects));
-
+export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProject, setActiveProject] = useState(activeProjectId);
-  const [activeThread, setActiveThread] = useState(activeThreadId);
-  const [draftThreads, setDraftThreads] = useState<Record<string, AIThread[]>>(
-    {},
-  );
+  const [activeProjectId, setActiveProjectId] = useState<string>();
+  const [activeThread, setActiveThread] = useState();
+
   const draftCount = useRef(0);
 
-  useEffect(() => {
-    setActiveProject(activeProjectId);
-    setActiveThread(activeThreadId);
-  }, [activeProjectId, activeThreadId]);
+  function handleNewChat(projectId = activeProjectId) {
+    if (!projectId) return;
 
-  // const projectsWithDrafts = useMemo(
-  //   () =>
-  //     projects.map((project) => ({
-  //       ...project,
-  //       threads: [...(draftThreads[project.id] ?? []), ...project.threads],
-  //     })),
-  //   [draftThreads, projects],
-  // );
-
-  // function toggleProject(projectId: string) {
-  //   setExpandedProjects((prev) => ({
-  //     ...prev,
-  //     [projectId]: !prev[projectId],
-  //   }));
-  // }
-
-  function handleSelectThread(projectId: string, threadId: string) {
-    setActiveProject(projectId);
-    setActiveThread(threadId);
-  }
-
-  function handleNewChat(projectId = activeProject || activeProjectId) {
     const nextDraftNumber = draftCount.current + 1;
     draftCount.current = nextDraftNumber;
-    const thread: AIThread = {
+
+    const thread: thread = {
       id: `draft-${projectId}-${nextDraftNumber}`,
+      projectId,
       title: "Untitled chat",
     };
 
-    setDraftThreads((prev) => ({
-      ...prev,
-      [projectId]: [thread, ...(prev[projectId] ?? [])],
-    }));
+    setActiveProjectId(projectId);
 
-    setActiveProject(projectId);
-    setActiveThread(thread.id);
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === projectId
+          ? { ...project, threads: [...project.threads, thread] }
+          : project,
+      ),
+    );
   }
 
   async function addProject() {
@@ -96,6 +64,7 @@ export default function AISidebar({
         id: crypto.randomUUID(),
         name: folderName,
         path: projectFolderPath,
+        threads: []
       },
     ]);
 
@@ -135,12 +104,7 @@ export default function AISidebar({
           <ProjectDropdown
             key={project.id}
             project={project}
-            isActiveProject={project.id === activeProject}
-            activeThreadId={activeThread}
             onCreateThread={() => handleNewChat(project.id)}
-            onSelectThread={(threadId) =>
-              handleSelectThread(project.id, threadId)
-            }
           />
         ))}
       </div>

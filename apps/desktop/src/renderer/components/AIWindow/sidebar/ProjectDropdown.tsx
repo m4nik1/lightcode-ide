@@ -1,23 +1,21 @@
-import { Loader2, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import { cn } from "../../../lib/utils";
-import { ChevronIcon, FolderIcon } from "./icons";
-import { ThreadItem } from "./ThreadItem";
+import { ChevronIcon } from "./icons";
+import type { thread } from "./types";
 import type { Project } from "@/components/AIWindow/sidebar/AISidebar";
 import { aiThemeClassNames } from "../theme";
+import { ThreadItem } from "./ThreadItem";
 
 type ProjectDropdownProps = {
   project: Project;
-  isActiveProject: boolean;
-  activeThreadId: string;
   onCreateThread: () => void;
-  onSelectThread: (threadId: string) => void;
 };
 
 export function ProjectDropdown({
   project,
-  isActiveProject,
   onCreateThread,
 }: ProjectDropdownProps) {
+  const expanded = true;
   return (
     <div className="py-0.5">
       <div
@@ -30,7 +28,6 @@ export function ProjectDropdown({
       >
         <button
           type="button"
-          s
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-[7px] pr-1 pl-3 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.borderFocus,
@@ -38,20 +35,8 @@ export function ProjectDropdown({
         >
           <ChevronIcon expanded={expanded} />
           <span className="flex size-3.5 shrink-0 items-center justify-center">
-            {isActiveProject ? (
-              <Loader2 className="size-3.5 animate-spin" strokeWidth={2} />
-            ) : (
-              <FolderIcon />
-            )}
           </span>
           <span className="min-w-0 flex-1 truncate">{project.name}</span>
-          {isActiveProject ? (
-            <span
-              className={cn("shrink-0 text-xs", aiThemeClassNames.textMuted)}
-            >
-              now
-            </span>
-          ) : null}
         </button>
         <button
           type="button"
@@ -71,16 +56,13 @@ export function ProjectDropdown({
         </button>
       </div>
 
-      {/* {expanded
-        ? project.threads.map((thread) => (
-            <ThreadItem
-              key={thread.id}
-              thread={thread}
-              active={thread.id === activeThreadId}
-              onSelect={() => onSelectThread(thread.id)}
-            />
-          ))
-        : null} */}
+      { project.threads.map((t : thread) => (
+        <ThreadItem
+          key={t.id}
+          thread={t}
+        />
+      ))}
+
     </div>
   );
 }

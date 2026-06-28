@@ -7,6 +7,7 @@ type AIContext = {
   messageSend: (value: string) => AsyncGenerator;
 };
 
+
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {

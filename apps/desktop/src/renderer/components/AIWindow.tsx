@@ -56,7 +56,7 @@ export function AIWindow() {
       <div aria-hidden="true" style={styles.blurBackdrop} />
       <AiChatProvider>
         <div style={styles.sidebarLayer}>
-          <AISidebar activeProjectId="2" activeThreadId="2-1" />
+          <AISidebar />
         </div>
         <div style={styles.mainColumn}>
           {isMac ? <header style={styles.topBar} /> : null}

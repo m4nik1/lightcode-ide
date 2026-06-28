@@ -1,42 +1,32 @@
 import { cn } from "../../../lib/utils";
 import { ThreadIcon } from "./icons";
-import type { AIThread } from "./types";
+import type { thread } from "./types";
 import { aiThemeClassNames } from "../theme";
 
 type ThreadItemProps = {
-  thread: AIThread;
-  active: boolean;
-  onSelect: () => void;
+  thread: thread;
 };
 
-export function ThreadItem({ thread, active, onSelect }: ThreadItemProps) {
+export function ThreadItem({ thread }: ThreadItemProps) {
   return (
     <button
       type="button"
-      onClick={onSelect}
+      onClick={() => console.log("Thread has been selected")}
       className={cn(
         "group relative flex min-h-7 w-full select-none items-center gap-1.5 rounded-xl py-1 pr-3 pl-[30px] text-left text-xs transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
         aiThemeClassNames.borderFocus,
-        active
-          ? cn(aiThemeClassNames.surfaceActive, aiThemeClassNames.textPrimary)
-          : cn(
-              aiThemeClassNames.textMuted,
-              aiThemeClassNames.surfaceHover,
-              aiThemeClassNames.hoverTextPrimary,
-            ),
+        cn(aiThemeClassNames.surfaceActive, aiThemeClassNames.textPrimary)
       )}
     >
       <span
         className={cn(
           "flex size-3 shrink-0 items-center justify-center transition-colors",
-          active
-            ? aiThemeClassNames.textPrimary
-            : cn(aiThemeClassNames.textMuted, "group-hover:text-[#ededed]"),
+          cn(aiThemeClassNames.textMuted, "group-hover:text-[#ededed]"),
         )}
       >
         <ThreadIcon />
       </span>
-      <span className="min-w-0 truncate">{thread.title}</span>
+      <span className="min-w-0 truncate">New Thread</span>
     </button>
   );
 }
