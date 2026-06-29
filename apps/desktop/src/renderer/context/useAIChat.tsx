@@ -4,9 +4,8 @@ import { ChatMessage } from "@/components/AIWindow/ChatBubbles";
 
 type AIContext = {
   messages: ChatMessage[];
-  messageSend: (value: string) => AsyncGenerator;
+  messageSend: (value: string) => Promise<void>;
 };
-
 
 const aiContext = createContext<AIContext | undefined>(undefined);
 
