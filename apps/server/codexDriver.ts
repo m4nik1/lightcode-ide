@@ -1,7 +1,12 @@
-import { Codex, type ThreadEvent } from "@openai/codex-sdk";
+import { Codex, type ModelReasoningEffort, type ThreadEvent } from "@openai/codex-sdk";
 import { ThreadManager } from "./threadManager.ts";
 
-export async function runCodex(message: string, user: string) {
+interface modelConfig {
+  model: string,
+  thinking: string;
+}
+
+export async function runCodex(message: string, user: string, model : modelConfig) {
   console.log("Run codex has been called: ", message, ' and user ', user);
 
   const codex = new Codex();
@@ -9,7 +14,7 @@ export async function runCodex(message: string, user: string) {
   const threadManager: ThreadManager = new ThreadManager(codex)
   const thread = threadManager.createThread()
 
-  thread.createThread()
+  thread.createThread(model.model, model.thinking as ModelReasoningEffort)
   const threadResult = await thread.sendQuery(message);
 
   console.log("Thread result: ", threadResult)
@@ -17,7 +22,7 @@ export async function runCodex(message: string, user: string) {
   return threadResult
 }
 
-export async function* runCodexStream(message: string): AsyncGenerator<ThreadEvent> {
+export async function* runCodexStream(message: string, model : modelConfig): AsyncGenerator<ThreadEvent> {
   console.log("Running the codex stream")
 
   const codex = new Codex()
@@ -25,7 +30,7 @@ export async function* runCodexStream(message: string): AsyncGenerator<ThreadEve
   const threadManager: ThreadManager = new ThreadManager(codex)
   const thread = threadManager.createThread()
 
-  thread.createThread()
+  thread.createThread(model.model, model.thinking as ModelReasoningEffort)
   const threadEvents = await thread.sendQueryStream(message)
 
   for await (const event of threadEvents) {

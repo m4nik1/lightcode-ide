@@ -5,12 +5,22 @@ import { ChatMessage } from "@/components/AIWindow/ChatBubbles";
 type AIContext = {
   messages: ChatMessage[];
   messageSend: (value: string) => Promise<void>;
+  modelSet: (model: string, thinking: string) => void;
+};
+
+type AIModel = {
+  model: string;
+  thinking: string;
 };
 
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [model, setModel] = useState<AIModel>({
+    model: "gpt-5.5",
+    thinking: "low",
+  });
 
   async function messageSend(value: string) {
     const text = value.trim();
@@ -27,7 +37,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       },
     ]);
 
-    const streamChat = await trpcClient.queryAI.query({ message: text });
+    const streamChat = await trpcClient.queryAI.query({
+      message: text,
+      model: model,
+    });
 
     for await (const chunk of streamChat) {
       console.log("Chunk: ", chunk);
@@ -43,11 +56,16 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function modelSet(model: string, thinking: string) {
+    setModel({ model, thinking });
+  }
+
   return (
     <aiContext.Provider
       value={{
         messages,
         messageSend,
+        modelSet,
       }}
     >
       {children}
