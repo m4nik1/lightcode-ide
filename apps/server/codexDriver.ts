@@ -25,7 +25,7 @@ export async function runCodex(message: string, user: string, model : modelConfi
 export async function* runCodexStream(message: string, model : modelConfig): AsyncGenerator<ThreadEvent> {
   console.log("Running the codex stream")
 
-  const codex = new Codex()
+  const codex = new Codex({config: { show_raw_agent_reasoning: true }})
 
   const threadManager: ThreadManager = new ThreadManager(codex)
   const thread = threadManager.createThread()
