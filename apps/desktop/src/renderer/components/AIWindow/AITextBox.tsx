@@ -23,7 +23,7 @@ export default function AITextBox() {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="relative w-full">
+      <div className="relative w-[65%] min-h-22 min-w-22">
         <div
           className={cn(
             "flex flex-col rounded-2xl border shadow-sm transition-[border-color,box-shadow] focus-within:ring-1",
@@ -63,9 +63,9 @@ export default function AITextBox() {
                 canSend
                   ? cn(aiThemeClassNames.textPrimary, "hover:bg-[#1a1a1a]")
                   : cn(
-                      aiThemeClassNames.textDisabled,
-                      "cursor-not-allowed opacity-60",
-                    ),
+                    aiThemeClassNames.textDisabled,
+                    "cursor-not-allowed opacity-60",
+                  ),
               )}
             >
               <ArrowUpIcon className="size-4" strokeWidth={2} />
