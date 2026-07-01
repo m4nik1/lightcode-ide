@@ -28,6 +28,10 @@ function applyCorsHeaders(req: Parameters<typeof trpcHandler>[0], res: Parameter
   }
 }
 
+function createDB() {
+  const database 
+}
+
 createServer((req, res) => {
   applyCorsHeaders(req, res);
 
