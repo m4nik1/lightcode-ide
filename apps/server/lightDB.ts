@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite'
 import os from 'node:os'
 import path from 'node:path'
 
-
+// TODO: create a handling function create the .lightcode directory
 const database = new DatabaseSync(path.join(os.homedir(), '.lightcode')+'/state.db')
 
 const initDatabase = `
@@ -16,5 +16,3 @@ const initDatabase = `
 database.exec(initDatabase);
 
 export default database;
-
-

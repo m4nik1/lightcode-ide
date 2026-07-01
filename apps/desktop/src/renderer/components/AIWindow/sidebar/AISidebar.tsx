@@ -1,23 +1,25 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SidebarHeader } from "./SidebarHeader";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../theme";
 import { cn } from "../../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
+import { trpc, trpcClient } from "@/utils/trpc";
+import { useQuery } from "@tanstack/react-query";
 
 export interface Project {
   id: string;
   name: string;
   path: string;
   threads: thread[];
-
 }
 
 export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>();
   const [activeThread, setActiveThread] = useState();
+  const projectsQuery = useQuery(trpc.getProjects.queryOptions());
 
   const draftCount = useRef(0);
 
@@ -44,6 +46,19 @@ export default function AISidebar() {
     );
   }
 
+  useEffect(() => {
+    if (!projectsQuery.data) return;
+
+    setProjects(
+      projectsQuery.data.map((project) => ({
+        id: project.id,
+        name: project.name,
+        path: project.path,
+        threads: [],
+      })),
+    );
+  }, [projectsQuery.data]);
+
   async function addProject() {
     const projectFolder = await window.electronAPI.openFolder();
     const projectFolderPath = projectFolder.filePaths[0];
@@ -58,13 +73,18 @@ export default function AISidebar() {
       return;
     }
 
+    await trpcClient.addProject.mutate({
+      projectName: folderName,
+      path: projectFolderPath,
+    });
+
     setProjects((current) => [
       ...current,
       {
         id: crypto.randomUUID(),
         name: folderName,
         path: projectFolderPath,
-        threads: []
+        threads: [],
       },
     ]);
 

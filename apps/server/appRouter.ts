@@ -1,6 +1,9 @@
 import { publicProcedure, router } from "./trpc.ts";
 import { runCodexStream } from "./codexDriver.ts";
 import { z } from "zod";
+import lightProject from "./lightProject.ts";
+
+const lightProjects = new lightProject()
 
 export const appRouter = router({
   greeting: publicProcedure
@@ -22,6 +25,17 @@ export const appRouter = router({
       for await (const event of runCodexStream(input.message, input.model)) {
         yield event;
       }
+    }),
+  addProject: publicProcedure
+    .input(z.object({ projectName: z.string(), path: z.string() }))
+    .mutation(({ input }) => {
+      console.log("project: ", input);
+      lightProjects.createProject(input.projectName, input.path);
+    }),
+  getProjects: publicProcedure
+    .query(() => {
+      console.log("projects: ", lightProjects.getProjects())
+      return lightProjects.getProjects()
     })
 
 });
