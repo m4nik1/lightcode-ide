@@ -13,6 +13,7 @@ interface modelConfig {
 export async function* runCodexStream(
   message: string,
   model: modelConfig,
+  path: string
 ): AsyncGenerator<ThreadEvent> {
   console.log("Running the codex stream");
 
@@ -21,7 +22,7 @@ export async function* runCodexStream(
   const threadManager: ThreadManager = new ThreadManager(codex);
   const thread = threadManager.createThread();
 
-  thread.createThread(model.model, model.thinking as ModelReasoningEffort);
+  thread.createThread(model.model, model.thinking as ModelReasoningEffort, path);
   const threadEvents = await thread.sendQueryStream(message);
 
   for await (const event of threadEvents) {

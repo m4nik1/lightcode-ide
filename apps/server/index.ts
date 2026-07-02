@@ -1,7 +1,6 @@
 import { createServer } from 'node:http';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { appRouter } from './appRouter.ts';
-import { getProjects } from './lightQueries.ts';
 
 const PORT = 2024;
 const ALLOWED_ORIGINS = new Set([
@@ -39,5 +38,4 @@ createServer((req, res) => {
   }
 
   trpcHandler(req, res);
-  console.log(getProjects.get())
 }).listen(PORT);

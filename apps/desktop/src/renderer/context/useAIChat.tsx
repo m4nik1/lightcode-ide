@@ -40,6 +40,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const streamChat = await trpcClient.queryAI.query({
       message: text,
       model: model,
+      path: "/Users/maniksoomro/Documents/t3code",
     });
 
     for await (const chunk of streamChat) {

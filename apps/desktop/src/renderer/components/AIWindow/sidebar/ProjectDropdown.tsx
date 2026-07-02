@@ -34,8 +34,7 @@ export function ProjectDropdown({
           )}
         >
           <ChevronIcon expanded={expanded} />
-          <span className="flex size-3.5 shrink-0 items-center justify-center">
-          </span>
+          <span className="flex size-3.5 shrink-0 items-center justify-center"></span>
           <span className="min-w-0 flex-1 truncate">{project.name}</span>
         </button>
         <button
@@ -56,13 +55,9 @@ export function ProjectDropdown({
         </button>
       </div>
 
-      { project.threads.map((t : thread) => (
-        <ThreadItem
-          key={t.id}
-          thread={t}
-        />
+      {project.threads.map((t: thread) => (
+        <ThreadItem key={t.id} thread={t} />
       ))}
-
     </div>
   );
 }

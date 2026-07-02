@@ -1,12 +1,12 @@
 import crypto from 'node:crypto'
 import { ThreadManager } from './threadManager.ts';
 import { Codex } from '@openai/codex-sdk';
+import { createProject, getProjects } from './lightQueries.ts';
 
 type project = {
     id: string;
     name: string;
     path: string;
-    threadManager: ThreadManager
 }
 
 class lightProject {
@@ -19,20 +19,22 @@ class lightProject {
 
     createProject(name : string, path : string) {
         const codex = new Codex()
-        const threadManager = new ThreadManager(codex)
+        this.threadManager = new ThreadManager(codex)
+        const id = crypto.randomUUID();
 
         const newProject : project = {
-            id: crypto.randomUUID(),
+            id,
             name,
             path,
-            threadManager
         }
 
         this.projects.push(newProject);
+
+        createProject.get(id, name, path)
     }
 
-    getProjects() : project[] {
-        return this.projects;
+    getProjects() {
+        return getProjects.all();
     }
 
     getThreadManager() {

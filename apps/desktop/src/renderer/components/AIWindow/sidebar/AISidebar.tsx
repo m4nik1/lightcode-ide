@@ -78,15 +78,9 @@ export default function AISidebar() {
       path: projectFolderPath,
     });
 
-    setProjects((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        name: folderName,
-        path: projectFolderPath,
-        threads: [],
-      },
-    ]);
+    console.log("Project path: ", projectFolderPath);
+
+    await projectsQuery.refetch();
 
     console.log("Project folder found: ", projectFolderPath);
   }

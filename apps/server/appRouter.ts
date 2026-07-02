@@ -20,9 +20,9 @@ export const appRouter = router({
       };
     }),
   queryAI: publicProcedure
-    .input(z.object({ message: z.string(), model: z.object({ model: z.string(), thinking: z.string() }) }))
+    .input(z.object({ message: z.string(), model: z.object({ model: z.string(), thinking: z.string() }), path: z.string() }))
     .query(async function* ({ input }) {
-      for await (const event of runCodexStream(input.message, input.model)) {
+      for await (const event of runCodexStream(input.message, input.model, input.path)) {
         yield event;
       }
     }),
@@ -37,7 +37,6 @@ export const appRouter = router({
       console.log("projects: ", lightProjects.getProjects())
       return lightProjects.getProjects()
     })
-
 });
 
 export type AppRouter = typeof appRouter;
