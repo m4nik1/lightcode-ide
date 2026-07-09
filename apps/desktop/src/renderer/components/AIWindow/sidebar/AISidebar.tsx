@@ -18,7 +18,6 @@ export interface Project {
 export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>();
-  const [activeThread, setActiveThread] = useState();
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
 
   const draftCount = useRef(0);
@@ -47,6 +46,7 @@ export default function AISidebar() {
   }
 
   useEffect(() => {
+    console.log("projects: ", projectsQuery.data)
     if (!projectsQuery.data) return;
 
     setProjects(

@@ -3,7 +3,6 @@ import {
   type ModelReasoningEffort,
   type ThreadEvent,
 } from "@openai/codex-sdk";
-import { ThreadManager } from "./threadManager.ts";
 
 interface modelConfig {
   model: string;
@@ -19,22 +18,22 @@ export async function* runCodexStream(
 
   const codex = new Codex({ config: { show_raw_agent_reasoning: true } });
 
-  const threadManager: ThreadManager = new ThreadManager(codex);
-  const thread = threadManager.createThread();
+  // const threadManager: ThreadManager = new ThreadManager(codex);
+  // const thread = threadManager.createThread();
 
-  thread.createThread(model.model, model.thinking as ModelReasoningEffort, path);
-  const threadEvents = await thread.sendQueryStream(message);
+  // thread.createThread(model.model, model.thinking as ModelReasoningEffort, path);
+  // const threadEvents = await thread.sendQueryStream(message);
 
-  for await (const event of threadEvents) {
-    console.log("Event: ", event);
-    switch (event.type) {
-      case "item.completed":
-        console.log("Item: ", event.item);
-        break;
-      case "turn.completed":
-        console.log("usage", event.usage);
-        break;
-    }
-    yield event;
-  }
+  // for await (const event of threadEvents) {
+  //   console.log("Event: ", event);
+  //   switch (event.type) {
+  //     case "item.completed":
+  //       console.log("Item: ", event.item);
+  //       break;
+  //     case "turn.completed":
+  //       console.log("usage", event.usage);
+  //       break;
+  //   }
+  //   yield event;
+  // }
 }

@@ -1,6 +1,6 @@
 import database from "./lightDB.ts";
 
-const createProject = database.prepare(`
+const createProjectStatement = database.prepare(`
     INSERT INTO projects (id, project_name, path)
     VALUES (?, ?, ?)
     RETURNING id, project_name as name, path
@@ -11,7 +11,19 @@ const getProjects = database.prepare(`
     FROM projects
 `)
 
+const getProjectsID = database.prepare(`
+    SELECT * FROM projects WHERE id = ?
+`)
+
+export function createProject(input: {
+    id: string;
+    name: string;
+    path: string;
+}) {
+    return createProjectStatement.get(input.id, input.name, input.path);
+}
+
 export {
-    createProject,
+    getProjectsID,
     getProjects
 }
