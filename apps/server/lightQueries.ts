@@ -1,5 +1,11 @@
 import database from "./lightDB.ts";
 
+export type ProjectRecord = {
+    id: string;
+    name: string;
+    path: string;
+};
+
 const createProjectStatement = database.prepare(`
     INSERT INTO projects (id, project_name, path)
     VALUES (?, ?, ?)
@@ -20,7 +26,7 @@ export function createProject(input: {
     name: string;
     path: string;
 }) {
-    return createProjectStatement.get(input.id, input.name, input.path);
+    return createProjectStatement.get(input.id, input.name, input.path) as ProjectRecord;
 }
 
 export {

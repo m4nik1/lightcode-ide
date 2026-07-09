@@ -5,8 +5,9 @@ import { aiThemeClassNames } from "../theme";
 import { cn } from "../../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
-import { trpc, trpcClient } from "@/utils/trpc";
+import { trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
+import { useAIChat } from "@/context/useAIChat";
 
 export interface Project {
   id: string;
@@ -19,6 +20,7 @@ export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>();
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
+  const { createProject } = useAIChat();
 
   const draftCount = useRef(0);
 
@@ -46,49 +48,27 @@ export default function AISidebar() {
   }
 
   useEffect(() => {
-    console.log("projects: ", projectsQuery.data)
-    if (!projectsQuery.data) return;
+    console.log("projects: ", projectsQuery.data);
+    if (projectsQuery.data == null) return;
 
-    setProjects(
-      projectsQuery.data.map((project) => ({
-        id: project.id,
-        name: project.name,
-        path: project.path,
-        threads: [],
-      })),
+    setProjects((current) =>
+      projectsQuery.data.map((project) => {
+        const existingProject = current.find(({ id }) => id === project.id);
+
+        return {
+          id: project.id,
+          name: project.name,
+          path: project.path,
+          threads: existingProject?.threads ?? [],
+        };
+      }),
     );
   }, [projectsQuery.data]);
-
-  async function addProject() {
-    const projectFolder = await window.electronAPI.openFolder();
-    const projectFolderPath = projectFolder.filePaths[0];
-
-    if (!projectFolderPath) {
-      return;
-    }
-
-    const folderName = projectFolderPath.split("/")?.at(-1);
-
-    if (!folderName) {
-      return;
-    }
-
-    await trpcClient.addProject.mutate({
-      projectName: folderName,
-      path: projectFolderPath,
-    });
-
-    console.log("Project path: ", projectFolderPath);
-
-    await projectsQuery.refetch();
-
-    console.log("Project folder found: ", projectFolderPath);
-  }
 
   return (
     <aside
       className={cn(
-        "chat-composer-shared-blur border-r border-[#262626] box-border relative flex h-full w-[260px] shrink-0 flex-col text-[13px]",
+        "chat-composer-shared-blur border-r border-[#262626] box-border relative flex h-full w-65 shrink-0 flex-col text-[13px]",
         aiThemeClassNames.textPrimary,
       )}
     >
@@ -109,9 +89,9 @@ export default function AISidebar() {
               aiThemeClassNames.focusVisibleTextPrimary,
               aiThemeClassNames.borderFocus,
             )}
-            onClick={() => addProject()}
+            onClick={() => createProject()}
           >
-            <FolderPlus className="size-[13px]" />
+            <FolderPlus className="size-3.25" />
           </button>
         </div>
         {projects.map((project) => (

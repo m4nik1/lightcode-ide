@@ -1,11 +1,13 @@
 import { createContext, ReactNode, useState, useContext } from "react";
-import { trpcClient } from "@/utils/trpc";
+import { trpcClient, trpc } from "@/utils/trpc";
+import { useQuery } from "@tanstack/react-query";
 import { ChatMessage } from "@/components/AIWindow/ChatBubbles";
 
 type AIContext = {
   messages: ChatMessage[];
   messageSend: (value: string) => Promise<void>;
   modelSet: (model: string, thinking: string) => void;
+  createProject: () => void;
 };
 
 type AIModel = {
@@ -21,6 +23,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     model: "gpt-5.5",
     thinking: "low",
   });
+  const [activeProjectID, setActiveProjectID] = useState("");
+  const projectsQuery = useQuery(trpc.getProjects.queryOptions());
 
   async function messageSend(value: string) {
     const text = value.trim();
@@ -57,6 +61,32 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function createProject() {
+    const projectFolder = await window.electronAPI.openFolder();
+    const projectFolderPath = projectFolder.filePaths[0];
+
+    if (!projectFolderPath) {
+      return;
+    }
+
+    const folderName = projectFolderPath.split("/")?.at(-1);
+
+    if (!folderName) {
+      return;
+    }
+
+    await trpcClient.addProject.mutate({
+      projectName: folderName,
+      path: projectFolderPath,
+    });
+
+    console.log("Project path: ", projectFolderPath);
+
+    await projectsQuery.refetch();
+
+    console.log("Project folder found: ", projectFolderPath);
+  }
+
   function modelSet(model: string, thinking: string) {
     setModel({ model, thinking });
   }
@@ -67,6 +97,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         messages,
         messageSend,
         modelSet,
+        createProject,
       }}
     >
       {children}

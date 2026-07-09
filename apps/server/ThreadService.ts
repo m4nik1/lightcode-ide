@@ -25,7 +25,8 @@ export class ThreadService {
     this.codexInstance = AIDriver;
   }
 
-  async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {
+  async sendMessage(input: AIMessage) {
+  // : AsyncGenerator<ThreadEvent> {
     console.log("We got the message: ", input);
 
     // const getProjectPath = getProjectsID.get(input.projectID);
