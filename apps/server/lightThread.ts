@@ -13,6 +13,8 @@ export default class lightThread {
     console.log("Creating thread, model: ", model, " thinking: ", thinking)
 
     this.thread = this.codexInstance.startThread({model, modelReasoningEffort: thinking, workingDirectory: path});
+
+    return this;
   }
 
   async sendQuery(query: string) {
