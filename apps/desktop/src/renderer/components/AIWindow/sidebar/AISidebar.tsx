@@ -68,7 +68,7 @@ export default function AISidebar() {
   return (
     <aside
       className={cn(
-        "chat-composer-shared-blur border-r border-[#262626] box-border relative flex h-full w-65 shrink-0 flex-col text-[13px]",
+        "relative box-border flex h-full w-65 shrink-0 flex-col border-r border-[#262626] bg-[rgba(10,10,10,0.42)] text-[13px] backdrop-blur-[16px] backdrop-saturate-[140%]",
         aiThemeClassNames.textPrimary,
       )}
     >

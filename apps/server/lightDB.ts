@@ -10,7 +10,24 @@ const initDatabase = `
         id TEXT PRIMARY KEY,
         project_name TEXT NOT NULL,
         path TEXT NOT NULL
-    )
+    );
+    
+    CREATE TABLE IF NOT EXISTS threads (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS threads (
+        id TEXT PRIMARY KEY,
+        thread_id TEXT NOT NULL,
+        text TEXT NOT NULL,
+        model TEXT NOT NULL,
+        thinking_level TEXT,
+        role TEXT,
+        SEQ INTEGER NOT NULL
+    );
 `
 
 database.exec(initDatabase);
