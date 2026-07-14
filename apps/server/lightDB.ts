@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 // TODO: create a handling function create the .lightcode directory
-const database = new DatabaseSync(path.join(os.homedir(), '.lightcode')+'/state.db')
+const database = new DatabaseSync(path.join(os.homedir(), '.lightcode') + '/state.db')
 
 const initDatabase = `
     CREATE TABLE IF NOT EXISTS projects (
@@ -14,6 +14,7 @@ const initDatabase = `
     
     CREATE TABLE IF NOT EXISTS threads (
         id TEXT PRIMARY KEY,
+        project_id STRING,
         name TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL

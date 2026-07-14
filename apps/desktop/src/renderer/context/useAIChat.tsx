@@ -1,13 +1,23 @@
-import { createContext, ReactNode, useState, useContext } from "react";
+import {
+  createContext,
+  ReactNode,
+  useState,
+  useContext,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import { ChatMessage } from "@/components/AIWindow/ChatBubbles";
+import type { thread } from "@/components/AIWindow/sidebar/types";
 
 type AIContext = {
   messages: ChatMessage[];
   messageSend: (value: string) => Promise<void>;
   modelSet: (model: string, thinking: string) => void;
   createProject: () => void;
+  currentThread: thread | null;
+  setCurrentThread: Dispatch<SetStateAction<thread | null>>;
 };
 
 type AIModel = {
@@ -19,16 +29,16 @@ const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [currentThread, setCurrentThread] = useState<thread | null>(null);
   const [model, setModel] = useState<AIModel>({
     model: "gpt-5.5",
     thinking: "low",
   });
-  const [activeProjectID, setActiveProjectID] = useState("");
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
 
   async function messageSend(value: string) {
     const text = value.trim();
-    if (!text) return;
+    if (!text || !currentThread) return;
 
     const id = crypto.randomUUID();
 
@@ -42,9 +52,9 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     ]);
 
     const streamChat = await trpcClient.queryAI.query({
+      threadID: currentThread.id,
       message: text,
       model: model,
-      path: "/Users/maniksoomro/Documents/t3code",
     });
 
     for await (const chunk of streamChat) {
@@ -98,6 +108,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         messageSend,
         modelSet,
         createProject,
+        currentThread,
+        setCurrentThread,
       }}
     >
       {children}

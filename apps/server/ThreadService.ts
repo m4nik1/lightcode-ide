@@ -1,51 +1,56 @@
 import {
   type Codex,
+  type ModelReasoningEffort,
   type ThreadEvent,
 } from "@openai/codex-sdk";
 import lightThread from "./lightThread.ts";
-import { getProjectsID } from './lightQueries.ts'
+import { getProjectByThreadID } from "./lightQueries.ts";
 
 type AIMessage = {
-  threadID?: string;
+  threadID: string;
   projectID?: string;
   message: string;
   model: {
     model: string;
     thinking: string;
   };
-  path: string;
   sequence?: string;
 };
 
 export class ThreadService {
   recentThreads: lightThread[];
+  threads: Map<string, lightThread>;
   codexInstance: Codex;
   constructor(AIDriver: Codex) {
     this.recentThreads = [];
+    this.threads = new Map();
     this.codexInstance = AIDriver;
   }
 
-  async sendMessage(input: AIMessage) {
-  // : AsyncGenerator<ThreadEvent> {
-    console.log("We got the message: ", input);
+  async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {
+    let thread = this.threads.get(input.threadID);
 
-    // const getProjectPath = getProjectsID.get(input.projectID);
+    if (!thread) {
+      const project = getProjectByThreadID(input.threadID);
 
-    // const thread = new lightThread(this.codexInstance).createThread(
-    //   input.model.model,
-    //   input.model.thinking as ModelReasoningEffort,
-    //   input.path,
-    // );
+      if (!project) {
+        throw new Error(`No project found for thread ${input.threadID}`);
+      }
 
+      thread = new lightThread(this.codexInstance).createThread(
+        input.model.model,
+        input.model.thinking as ModelReasoningEffort,
+        project.path,
+      );
+      this.threads.set(input.threadID, thread);
+      this.recentThreads.push(thread);
+    }
 
+    const events = await thread.sendQueryStream(input.message);
 
-
-    // this.recentThreads.push(thread);
-    // const events = await thread.sendQueryStream(input.message);
-
-    // for await (const event of events) {
-    //   yield event;
-    // }
+    for await (const event of events) {
+      yield event;
+    }
   }
 
   getRecentThreads() {

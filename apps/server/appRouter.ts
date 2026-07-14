@@ -5,7 +5,10 @@ import { ThreadService } from "./ThreadService.ts";
 import {
   createProject,
   getProjects,
+  createThread,
   type ProjectRecord,
+  type ThreadRecord,
+  getThreads,
 } from "./lightQueries.ts";
 
 const threadService = new ThreadService(
@@ -27,12 +30,19 @@ export const appRouter = router({
       };
     }),
   queryAI: publicProcedure
-    .input(z.object({ message: z.string(), model: z.object({ model: z.string(), thinking: z.string() }), path: z.string() }))
-    .query(async function*({ input }) {
-      // for await (const event of threadService.sendMessage(input)) {
-      //   yield event;
-      // }
+    .input(
+      z.object({
+        threadID: z.string(),
+        message: z.string(),
+        model: z.object({ model: z.string(), thinking: z.string() }),
+      }),
+    )
+    .query(async function* ({ input }) {
+      for await (const event of threadService.sendMessage(input)) {
+        yield event;
+      }
     }),
+
   addProject: publicProcedure
     .input(z.object({ projectName: z.string(), path: z.string() }))
     .mutation(({ input }) => {
@@ -42,6 +52,29 @@ export const appRouter = router({
         path: input.path
       })
     }),
+
+  addThread: publicProcedure
+    .input(z.object({ threadName: z.string(), projectId: z.string() }))
+    .mutation(({ input }) => {
+      const timestamp = Date.now();
+
+      return createThread.get(
+        crypto.randomUUID(),
+        input.projectId,
+        input.threadName,
+        timestamp,
+        timestamp,
+      ) as Pick<ThreadRecord, "id" | "name">;
+    }),
+
+  getThreads: publicProcedure
+    .input(z.object({ projectID: z.string() }))
+    .query(({ input }) => {
+      const threads = getThreads.all(input.projectID) as ThreadRecord[];
+
+      return threads
+    }),
+
   getProjects: publicProcedure
     .query(() => {
       const projects = getProjects.all() as ProjectRecord[];

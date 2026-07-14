@@ -5,7 +5,7 @@ import { aiThemeClassNames } from "../theme";
 import { cn } from "../../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
-import { trpc } from "@/utils/trpc";
+import { trpc, trpcClient } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import { useAIChat } from "@/context/useAIChat";
 
@@ -20,12 +20,15 @@ export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>();
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
-  const { createProject } = useAIChat();
+  const { createProject, setCurrentThread } = useAIChat();
 
   const draftCount = useRef(0);
 
-  function handleNewChat(projectId = activeProjectId) {
+  async function handleNewChat(projectId = activeProjectId) {
     if (!projectId) return;
+
+    const project = projects.find(({ id }) => id === projectId);
+    if (!project) return;
 
     const nextDraftNumber = draftCount.current + 1;
     draftCount.current = nextDraftNumber;
@@ -34,35 +37,70 @@ export default function AISidebar() {
       id: `draft-${projectId}-${nextDraftNumber}`,
       projectId,
       title: "Untitled chat",
+      projectPath: project.path,
     };
 
     setActiveProjectId(projectId);
 
+    const threadCreate = await trpcClient.addThread.mutate({
+      threadName: thread.title,
+      projectId: thread.projectId,
+    });
+    const createdThread = {
+      ...thread,
+      id: threadCreate.id,
+      title: threadCreate.name,
+    };
+
+    console.log("Create thread: ", threadCreate);
+
     setProjects((current) =>
       current.map((project) =>
         project.id === projectId
-          ? { ...project, threads: [...project.threads, thread] }
+          ? { ...project, threads: [...project.threads, createdThread] }
           : project,
       ),
     );
+    setCurrentThread(createdThread);
   }
 
   useEffect(() => {
-    console.log("projects: ", projectsQuery.data);
     if (projectsQuery.data == null) return;
+    const projectRows = projectsQuery.data;
 
-    setProjects((current) =>
-      projectsQuery.data.map((project) => {
-        const existingProject = current.find(({ id }) => id === project.id);
+    let cancelled = false;
 
-        return {
-          id: project.id,
-          name: project.name,
-          path: project.path,
-          threads: existingProject?.threads ?? [],
-        };
-      }),
-    );
+    async function loadProjectsWithThreads() {
+      const projectsWithThreads = await Promise.all(
+        projectRows.map(async (project) => {
+          const threadRows = await trpcClient.getThreads.query({
+            projectID: project.id,
+          });
+
+          return {
+            id: project.id,
+            name: project.name,
+            path: project.path,
+            threads: threadRows.map((row) => ({
+              id: row.id,
+              projectId: row.project_id,
+              title: row.name,
+              projectPath: project.path,
+            })),
+          };
+        }),
+      );
+
+      if (!cancelled) {
+        setProjects(projectsWithThreads);
+      }
+    }
+
+    void loadProjectsWithThreads();
+
+    return () => {
+      cancelled = true;
+    };
   }, [projectsQuery.data]);
 
   return (

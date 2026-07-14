@@ -2,20 +2,31 @@ import { cn } from "../../../lib/utils";
 import { ThreadIcon } from "./icons";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../theme";
+import { useAIChat } from "@/context/useAIChat";
 
 type ThreadItemProps = {
   thread: thread;
 };
 
 export function ThreadItem({ thread }: ThreadItemProps) {
+  const { currentThread, setCurrentThread } = useAIChat();
+  const isSelected = currentThread?.id === thread.id;
+
   return (
     <button
       type="button"
-      onClick={() => console.log("Thread has been selected")}
+      aria-pressed={isSelected}
+      onClick={() => setCurrentThread(thread)}
       className={cn(
         "group relative flex min-h-7 w-full select-none items-center gap-1.5 rounded-xl py-1 pr-3 pl-[30px] text-left text-xs transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
         aiThemeClassNames.borderFocus,
-        cn(aiThemeClassNames.surfaceActive, aiThemeClassNames.textPrimary),
+        isSelected
+          ? cn(aiThemeClassNames.surfaceActive, aiThemeClassNames.textPrimary)
+          : cn(
+              aiThemeClassNames.textMuted,
+              aiThemeClassNames.surfaceHover,
+              aiThemeClassNames.hoverTextPrimary,
+            ),
       )}
     >
       <span
@@ -26,7 +37,7 @@ export function ThreadItem({ thread }: ThreadItemProps) {
       >
         <ThreadIcon />
       </span>
-      <span className="min-w-0 truncate">New Thread</span>
+      <span className="min-w-0 truncate">{thread.title}</span>
     </button>
   );
 }
