@@ -4,6 +4,9 @@ import { appRouter } from './appRouter.ts';
 
 const PORT = 2024;
 const ALLOWED_ORIGINS = new Set([
+  // Packaged Electron renderers loaded from file:// have an opaque origin,
+  // which Chromium serializes as "null" for CORS requests.
+  'null',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ]);

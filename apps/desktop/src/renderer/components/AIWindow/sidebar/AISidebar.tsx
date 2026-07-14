@@ -18,13 +18,12 @@ export interface Project {
 
 export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string>();
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
-  const { createProject, setCurrentThread } = useAIChat();
+  const { createProject, currentThread, setCurrentThread } = useAIChat();
 
   const draftCount = useRef(0);
 
-  async function handleNewChat(projectId = activeProjectId) {
+  async function handleNewChat(projectId = currentThread?.projectId) {
     if (!projectId) return;
 
     const project = projects.find(({ id }) => id === projectId);
@@ -39,8 +38,6 @@ export default function AISidebar() {
       title: "Untitled chat",
       projectPath: project.path,
     };
-
-    setActiveProjectId(projectId);
 
     const threadCreate = await trpcClient.addThread.mutate({
       threadName: thread.title,

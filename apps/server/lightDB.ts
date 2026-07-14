@@ -20,7 +20,7 @@ const initDatabase = `
         updated_at INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS threads (
+    CREATE TABLE IF NOT EXISTS messages (
         id TEXT PRIMARY KEY,
         thread_id TEXT NOT NULL,
         text TEXT NOT NULL,
