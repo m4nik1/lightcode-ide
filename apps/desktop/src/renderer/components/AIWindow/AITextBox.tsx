@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import ModelPicker from "./ModelPicker";
@@ -16,7 +16,7 @@ export default function AITextBox() {
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      messageSend(value);
+      void messageSend(value);
       setValue("");
     }
   }

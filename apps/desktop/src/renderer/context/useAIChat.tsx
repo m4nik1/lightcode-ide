@@ -1,14 +1,14 @@
 import {
   createContext,
-  ReactNode,
   useState,
   useContext,
+  type ReactNode,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
-import { ChatMessage } from "@/components/AIWindow/ChatBubbles";
+import type { ChatMessage } from "@/components/AIWindow/ChatBubbles";
 import type { thread } from "@/components/AIWindow/sidebar/types";
 
 type AIContext = {
@@ -28,45 +28,63 @@ type AIModel = {
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messagesByThread, setMessagesByThread] = useState<
+    Record<string, ChatMessage[]>
+  >({});
   const [currentThread, setCurrentThread] = useState<thread | null>(null);
   const [model, setModel] = useState<AIModel>({
     model: "gpt-5.5",
     thinking: "low",
   });
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
+  const messages = currentThread
+    ? (messagesByThread[currentThread.id] ?? [])
+    : [];
 
   async function messageSend(value: string) {
     const text = value.trim();
     if (!text || !currentThread) return;
 
+    const threadID = currentThread.id;
     const id = crypto.randomUUID();
 
-    setMessages((current) => [
+    setMessagesByThread((current) => ({
       ...current,
-      {
-        id,
-        query: text,
-        aiResponse: "",
-      },
-    ]);
+      [threadID]: [
+        ...(current[threadID] ?? []),
+        {
+          id,
+          query: text,
+          aiResponse: "",
+        },
+      ],
+    }));
 
     const streamChat = await trpcClient.queryAI.query({
-      threadID: currentThread.id,
+      threadID,
       message: text,
       model: model,
     });
 
     for await (const chunk of streamChat) {
       console.log("Chunk: ", chunk);
-      if (chunk.type == "item.completed") {
-        setMessages((current) =>
-          current.map((message) =>
+      if (
+        chunk.type === "item.completed" &&
+        chunk.item.type === "agent_message"
+      ) {
+        const responseText = chunk.item.text;
+
+        setMessagesByThread((current) => ({
+          ...current,
+          [threadID]: (current[threadID] ?? []).map((message) =>
             message.id === id
-              ? { ...message, aiResponse: message.aiResponse + chunk.item.text }
+              ? {
+                ...message,
+                  aiResponse: message.aiResponse + responseText,
+                }
               : message,
           ),
-        );
+        }));
       }
     }
   }

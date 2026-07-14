@@ -1,56 +1,13 @@
-import { useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import AISidebar from "./AIWindow/sidebar/AISidebar";
-import type { AIProject } from "./AIWindow/sidebar/types";
 import AITextBox from "./AIWindow/AITextBox";
-import ChatBubbles, { type ChatMessage } from "./AIWindow/ChatBubbles";
+import ChatBubbles from "./AIWindow/ChatBubbles";
 import { aiTheme } from "./AIWindow/theme";
 import { AiChatProvider } from "@/context/useAIChat";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
-const mockProjects: AIProject[] = [
-  {
-    id: "1",
-    name: "glm-5.2-demos",
-    threads: [{ id: "1-1", title: "Demo setup guide" }],
-  },
-  {
-    id: "2",
-    name: "please build me a frontend for...",
-    threads: [
-      { id: "2-1", title: "Initial layout wireframe" },
-      { id: "2-2", title: "Component structure" },
-      { id: "2-3", title: "Styling pass" },
-    ],
-  },
-  {
-    id: "3",
-    name: "minimax-m3",
-    threads: [
-      { id: "3-1", title: "Model comparison" },
-      { id: "3-2", title: "Benchmark results" },
-    ],
-  },
-];
-
 export function AIWindow() {
-  const [projects] = useState<AIProject[]>(mockProjects);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-
-  function handleSendMessage(message: string) {
-    const text = message.trim();
-    if (!text) return;
-
-    setMessages((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        query: text,
-        aiResponse: "Hello, how are you?",
-      },
-    ]);
-  }
-
   return (
     <main style={styles.root}>
       <div aria-hidden="true" style={styles.blurBackdrop} />
@@ -61,10 +18,10 @@ export function AIWindow() {
         <div style={styles.mainColumn}>
           {isMac ? <header style={styles.topBar} /> : null}
           <section style={styles.content}>
-            <ChatBubbles messages={messages} isAIResponse={false} />
+            <ChatBubbles isAIResponse={false} />
             <div style={styles.composerArea}>
               <div style={styles.promptWrap}>
-                <AITextBox onSendMessage={handleSendMessage} />
+                <AITextBox />
               </div>
             </div>
           </section>
