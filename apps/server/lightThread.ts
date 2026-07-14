@@ -1,4 +1,4 @@
-import { type Codex, type Thread } from "@openai/codex-sdk";
+import { type ModelReasoningEffort, type Codex, type Thread } from "@openai/codex-sdk";
 
 
 export default class lightThread {
@@ -9,16 +9,27 @@ export default class lightThread {
     this.thread = null;
   }
 
-  createThread() {
-    console.log("Creating thread")
+  createThread(model: string, thinking: ModelReasoningEffort, path : string) {
+    console.log("Creating thread, model: ", model, " thinking: ", thinking)
 
-    this.thread = this.codexInstance.startThread();
+    this.thread = this.codexInstance.startThread({model, modelReasoningEffort: thinking, workingDirectory: path});
+
+    return this;
   }
 
   async sendQuery(query: string) {
-    const result = await this.thread.run(query)
+    const result = await this.thread?.run(query)
 
     return result
+  }
+
+  async sendQueryStream(query: string) {
+    if (!this.thread) {
+      throw new Error("Thread has not been created")
+    }
+
+    const { events } = await this.thread.runStreamed(query);
+    return events;
   }
 
   getInstance() {

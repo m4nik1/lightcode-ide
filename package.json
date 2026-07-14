@@ -17,7 +17,16 @@
   "author": "Manik Soomro",
   "scripts": {
     "desktop": "npm run dev -w @lightcode/desktop",
+    "ai-window": "npm run dev:ai -w @lightcode/desktop",
     "server": "npm run dev -w @lightcode/server",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "allowScripts": {
+    "electron@41.1.1": true,
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.21.5": true
+  },
+  "dependencies": {
+    "shadcn": "^4.12.0"
   }
 }

@@ -8,6 +8,7 @@ const isMac = process.platform === 'darwin';
 const iconFileName = process.platform === 'win32' ? 'icon.ico' : 'Icon.png';
 const iconRoot = MAIN_WINDOW_VITE_DEV_SERVER_URL ? process.cwd() : app.getAppPath();
 const iconPath = path.join(iconRoot, 'assets', 'appIcon', iconFileName);
+const shouldOpenAIWindowOnly = process.argv.includes('--ai-window');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -17,8 +18,8 @@ if (started) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1500,
+    height: 900,
     icon: iconPath,
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
@@ -39,6 +40,31 @@ const createWindow = () => {
     );
   }
 };
+
+function createAIWindow() {
+  const aiWindow = new BrowserWindow({
+    width: 1500,
+    height: 900,
+    icon: iconPath,
+    autoHideMenuBar: true,
+    ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    const url = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    url.searchParams.set('window', 'ai');
+    void aiWindow.loadURL(url.href);
+    aiWindow.webContents.openDevTools()
+  } else {
+    void aiWindow.loadFile(
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+      { query: { window: 'ai' } },
+    );
+  }
+}
 
 ipcMain.handle("dialog.openFile", () => {
   return dialog.showOpenDialog({ properties: ['openFile'] })
@@ -90,28 +116,7 @@ ipcMain.handle('window.isMaximized', (event) => {
 });
 
 ipcMain.handle('window.openAIWindow', () => {
-  const aiWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    icon: iconPath,
-    autoHideMenuBar: true,
-    ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-    },
-  });
-
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    const url = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-    url.searchParams.set('window', 'ai');
-    void aiWindow.loadURL(url.href);
-    aiWindow.webContents.openDevTools()
-  } else {
-    void aiWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-      { query: { window: 'ai' } },
-    );
-  }
+  createAIWindow();
 });
 
 type FileTreeNode = {
@@ -151,6 +156,11 @@ app.on('ready', () => {
   if (isMac) {
     app.dock.setIcon(iconPath);
     createMacApplicationMenu();
+  }
+
+  if (shouldOpenAIWindowOnly) {
+    createAIWindow();
+    return;
   }
 
   createWindow();

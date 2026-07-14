@@ -63,7 +63,7 @@ export default function FileExplorer() {
 
       openFile(fullPath);
     },
-    [activeFolder],
+    [activeFolder, openFile],
   );
 
   return (
