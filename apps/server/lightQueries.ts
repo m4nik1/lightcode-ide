@@ -46,6 +46,12 @@ const getProjectByThreadIDStatement = database.prepare(`
     WHERE threads.id = ?
 `);
 
+const storeMessage = database.prepare(`
+  INSERT INTO messages (id, thread_id, text, model, thinking_level, role, SEQ)
+  VALUES (?, ?, ?, ?, ?)
+  RETURNING text, model, thinking_level
+`)
+
 export function createProject(input: {
   id: string;
   name: string;
@@ -64,5 +70,6 @@ export {
   getProjectsID,
   getProjects,
   createThread,
-  getThreads
+  getThreads,
+  storeMessage
 }

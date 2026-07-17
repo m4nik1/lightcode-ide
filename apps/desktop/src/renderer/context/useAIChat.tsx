@@ -79,7 +79,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
           [threadID]: (current[threadID] ?? []).map((message) =>
             message.id === id
               ? {
-                ...message,
+                  ...message,
                   aiResponse: message.aiResponse + responseText,
                 }
               : message,

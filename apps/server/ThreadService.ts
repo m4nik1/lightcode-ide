@@ -4,7 +4,7 @@ import {
   type ThreadEvent,
 } from "@openai/codex-sdk";
 import lightThread from "./lightThread.ts";
-import { getProjectByThreadID } from "./lightQueries.ts";
+import { getProjectByThreadID, storeMessage } from "./lightQueries.ts";
 
 type AIMessage = {
   threadID: string;
@@ -49,6 +49,11 @@ export class ThreadService {
     const events = await thread.sendQueryStream(input.message);
 
     for await (const event of events) {
+      if (event.type == 'item.completed' && event.item.type == 'agent_message') {
+        console.log("Text has been complete: ", event.item.text);
+        // Stored the message in db
+        storeMessage.get(event.item.id, input.threadID, event.item.text, input.model.model, input.model.thinking, 'AI', 1)
+      }
       yield event;
     }
   }
