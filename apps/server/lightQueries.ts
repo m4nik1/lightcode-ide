@@ -30,6 +30,10 @@ const getThreads = database.prepare(
   `SELECT * FROM threads WHERE project_id = ?`
 )
 
+const getMessagesFromThread = database.prepare(`
+  SELECT * FROM messages where thread_id = ?
+`)
+
 const getProjects = database.prepare(`
     SELECT id, project_name as name, path
     FROM projects
@@ -71,5 +75,6 @@ export {
   getProjects,
   createThread,
   getThreads,
-  storeMessage
+  storeMessage,
+  getMessagesFromThread
 }

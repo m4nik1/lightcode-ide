@@ -9,6 +9,7 @@ import {
   type ProjectRecord,
   type ThreadRecord,
   getThreads,
+  getMessagesFromThread,
 } from "./lightQueries.ts";
 
 const threadService = new ThreadService(
@@ -41,6 +42,19 @@ export const appRouter = router({
       for await (const event of threadService.sendMessage(input)) {
         yield event;
       }
+    }),
+
+  loadMessages: publicProcedure
+    .input(
+      z.object({
+        threadID: z.string(),
+      }),
+    )
+    .query(({ input }) => {
+      console.log("Querying messages with: ", input.threadID)
+      const messagesFound = getMessagesFromThread.get(input.threadID);
+
+      return messagesFound
     }),
 
   addProject: publicProcedure
