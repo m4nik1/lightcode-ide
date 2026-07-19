@@ -18,18 +18,14 @@ type PickerOption = {
 
 const modelOptions: PickerOption[] = [
   { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
-  {
-    label: "Claude 4.8 Opus",
-    value: "claude-4.8-opus",
-    description: "Most capable",
-  },
-  { label: "Claude Fable 5", value: "claude-5-fable", description: "Balanced" },
+  { label: "GPT-5.6-Sol", value: "gpt-5.6-Sol", description: "Latest and greatest" },
+  { label: "GPT-5.6-Terra", value: "gpt-5.6-terra", description: "Small but mighty" },
 ];
 
 const thinkingOptions: PickerOption[] = [
-  { label: "low", value: "low" },
-  { label: "medium", value: "medium" },
-  { label: "high", value: "high" },
+  { label: "Low", value: "low" },
+  { label: "Medium", value: "medium" },
+  { label: "High", value: "high" },
 ];
 
 const itemFocusClassName = "focus:bg-[#171717] focus:text-[#ededed]";
@@ -124,12 +120,16 @@ export default function ModelPicker() {
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center">
       <PickerDropdown
         options={modelOptions}
         value={selectedModel}
         onSelect={modelSelected}
         menuWidth="min-w-56"
+      />
+      <span
+        aria-hidden="true"
+        className="mx-1.5 h-4 w-px shrink-0 bg-white/10"
       />
       <PickerDropdown
         options={thinkingOptions}

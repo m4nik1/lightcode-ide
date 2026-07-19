@@ -61,6 +61,8 @@ export class ThreadService {
 
     const events = await thread.sendQueryStream(input.message);
 
+    console.log("events: ", events)
+
     for await (const event of events) {
       if (
         event.type === "item.completed" &&
