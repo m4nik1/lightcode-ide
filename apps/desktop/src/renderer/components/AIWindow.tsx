@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import AISidebar from "./AIWindow/sidebar/AISidebar";
 import AITextBox from "./AIWindow/AITextBox";
 import ChatBubbles from "./AIWindow/ChatBubbles";
@@ -18,7 +18,7 @@ export function AIWindow() {
         <div style={styles.mainColumn}>
           {isMac ? <header style={styles.topBar} /> : null}
           <section style={styles.content}>
-            <ChatBubbles isAIResponse={false} />
+            <ChatBubbles />
             <div style={styles.composerArea}>
               <div style={styles.promptWrap}>
                 <AITextBox />

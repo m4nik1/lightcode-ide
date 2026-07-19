@@ -4,7 +4,11 @@ import {
   type ThreadEvent,
 } from "@openai/codex-sdk";
 import lightThread from "./lightThread.ts";
-import { getProjectByThreadID, storeMessage } from "./lightQueries.ts";
+import {
+  getProjectByThreadID,
+  nextMessageSequence,
+  storeMessage,
+} from "./lightQueries.ts";
 
 type AIMessage = {
   threadID: string;
@@ -14,7 +18,6 @@ type AIMessage = {
     model: string;
     thinking: string;
   };
-  sequence?: string;
 };
 
 export class ThreadService {
@@ -46,13 +49,32 @@ export class ThreadService {
       this.recentThreads.push(thread);
     }
 
+    storeMessage.get(
+      crypto.randomUUID(),
+      input.threadID,
+      input.message,
+      input.model.model,
+      input.model.thinking,
+      "user",
+      nextMessageSequence(input.threadID),
+    );
+
     const events = await thread.sendQueryStream(input.message);
 
     for await (const event of events) {
-      if (event.type == 'item.completed' && event.item.type == 'agent_message') {
-        console.log("Text has been complete: ", event.item.text);
-        // Stored the message in db
-        storeMessage.get(event.item.id, input.threadID, event.item.text, input.model.model, input.model.thinking, 'AI', 1)
+      if (
+        event.type === "item.completed" &&
+        event.item.type === "agent_message"
+      ) {
+        storeMessage.get(
+          crypto.randomUUID(),
+          input.threadID,
+          event.item.text,
+          input.model.model,
+          input.model.thinking,
+          "assistant",
+          nextMessageSequence(input.threadID),
+        );
       }
       yield event;
     }

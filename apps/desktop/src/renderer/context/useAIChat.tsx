@@ -2,9 +2,8 @@ import {
   createContext,
   useState,
   useContext,
+  useRef,
   type ReactNode,
-  type Dispatch,
-  type SetStateAction,
 } from "react";
 import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +16,7 @@ type AIContext = {
   modelSet: (model: string, thinking: string) => void;
   createProject: () => void;
   currentThread: thread | null;
-  setCurrentThread: Dispatch<SetStateAction<thread | null>>;
+  setCurrentThread: (thread: thread) => void;
 };
 
 type AIModel = {
@@ -31,7 +30,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const [messagesByThread, setMessagesByThread] = useState<
     Record<string, ChatMessage[]>
   >({});
-  const [currentThread, setCurrentThread] = useState<thread | null>(null);
+  const [currentThread, setThread] = useState<thread | null>(null);
+  // Reuse thread loads so revisiting a thread cannot overwrite a response in progress.
+  const loadedThreadIDs = useRef(new Set<string>());
+  const threadLoadPromises = useRef(new Map<string, Promise<void>>());
   const [model, setModel] = useState<AIModel>({
     model: "gpt-5.5",
     thinking: "low",
@@ -46,16 +48,24 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     if (!text || !currentThread) return;
 
     const threadID = currentThread.id;
-    const id = crypto.randomUUID();
+    await loadThreadMessages(threadID);
+
+    const userMessageID = crypto.randomUUID();
+    const assistantMessageID = crypto.randomUUID();
 
     setMessagesByThread((current) => ({
       ...current,
       [threadID]: [
         ...(current[threadID] ?? []),
         {
-          id,
-          query: text,
-          aiResponse: "",
+          id: userMessageID,
+          text,
+          role: "user",
+        },
+        {
+          id: assistantMessageID,
+          text: "",
+          role: "assistant",
         },
       ],
     }));
@@ -67,7 +77,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     });
 
     for await (const chunk of streamChat) {
-      console.log("Chunk: ", chunk);
       if (
         chunk.type === "item.completed" &&
         chunk.item.type === "agent_message"
@@ -77,10 +86,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         setMessagesByThread((current) => ({
           ...current,
           [threadID]: (current[threadID] ?? []).map((message) =>
-            message.id === id
+            message.id === assistantMessageID
               ? {
                   ...message,
-                  aiResponse: message.aiResponse + responseText,
+                  text: message.text + responseText,
                 }
               : message,
           ),
@@ -117,6 +126,38 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
 
   function modelSet(model: string, thinking: string) {
     setModel({ model, thinking });
+  }
+
+  function loadThreadMessages(threadID: string) {
+    if (loadedThreadIDs.current.has(threadID)) {
+      return Promise.resolve();
+    }
+
+    const existingLoad = threadLoadPromises.current.get(threadID);
+    if (existingLoad) return existingLoad;
+
+    const load = trpcClient.loadMessages
+      .query({ threadID })
+      .then((loadedMessages) => {
+        setMessagesByThread((current) => ({
+          ...current,
+          [threadID]: loadedMessages,
+        }));
+        loadedThreadIDs.current.add(threadID);
+      })
+      .finally(() => {
+        threadLoadPromises.current.delete(threadID);
+      });
+
+    threadLoadPromises.current.set(threadID, load);
+    return load;
+  }
+
+  async function setCurrentThread(thread: thread) {
+    if (thread.id === currentThread?.id) return;
+
+    setThread(thread);
+    await loadThreadMessages(thread.id);
   }
 
   return (

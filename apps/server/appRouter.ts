@@ -9,7 +9,7 @@ import {
   type ProjectRecord,
   type ThreadRecord,
   getThreads,
-  getMessagesFromThread,
+  loadMessagesFromThread,
 } from "./lightQueries.ts";
 
 const threadService = new ThreadService(
@@ -51,10 +51,14 @@ export const appRouter = router({
       }),
     )
     .query(({ input }) => {
-      console.log("Querying messages with: ", input.threadID)
-      const messagesFound = getMessagesFromThread.get(input.threadID);
-
-      return messagesFound
+      return loadMessagesFromThread(input.threadID).map((message) => ({
+        id: message.id,
+        text: message.text,
+        role:
+          message.role?.toLowerCase() === "user"
+            ? ("user" as const)
+            : ("assistant" as const),
+      }));
     }),
 
   addProject: publicProcedure

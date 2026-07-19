@@ -14,6 +14,16 @@ export type ThreadRecord = {
   updated_at: number;
 };
 
+export type MessageRecord = {
+  id: string;
+  thread_id: string;
+  text: string;
+  model: string;
+  thinking_level: string | null;
+  role: string | null;
+  SEQ: number;
+};
+
 const createProjectStatement = database.prepare(`
     INSERT INTO projects (id, project_name, path)
     VALUES (?, ?, ?)
@@ -24,15 +34,24 @@ const createThread = database.prepare(`
   INSERT INTO threads (id, project_id, name, created_at, updated_at)
   VALUES (?, ?, ?, ?, ?)
   RETURNING id, name
-`)
+`);
 
 const getThreads = database.prepare(
-  `SELECT * FROM threads WHERE project_id = ?`
-)
+  `SELECT * FROM threads WHERE project_id = ?`,
+);
 
 const getMessagesFromThread = database.prepare(`
-  SELECT * FROM messages where thread_id = ?
-`)
+  SELECT *
+  FROM messages
+  WHERE thread_id = ?
+  ORDER BY SEQ ASC, rowid ASC
+`);
+
+const getNextMessageSequence = database.prepare(`
+  SELECT COALESCE(MAX(SEQ), 0) + 1 AS sequence
+  FROM messages
+  WHERE thread_id = ?
+`);
 
 const getProjects = database.prepare(`
     SELECT id, project_name as name, path
@@ -52,16 +71,20 @@ const getProjectByThreadIDStatement = database.prepare(`
 
 const storeMessage = database.prepare(`
   INSERT INTO messages (id, thread_id, text, model, thinking_level, role, SEQ)
-  VALUES (?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
   RETURNING text, model, thinking_level
-`)
+`);
 
 export function createProject(input: {
   id: string;
   name: string;
   path: string;
 }) {
-  return createProjectStatement.get(input.id, input.name, input.path) as ProjectRecord;
+  return createProjectStatement.get(
+    input.id,
+    input.name,
+    input.path,
+  ) as ProjectRecord;
 }
 
 export function getProjectByThreadID(threadID: string) {
@@ -70,11 +93,22 @@ export function getProjectByThreadID(threadID: string) {
     | undefined;
 }
 
+export function loadMessagesFromThread(threadID: string) {
+  return getMessagesFromThread.all(threadID) as MessageRecord[];
+}
+
+export function nextMessageSequence(threadID: string) {
+  const result = getNextMessageSequence.get(threadID) as {
+    sequence: number;
+  };
+
+  return result.sequence;
+}
+
 export {
   getProjectsID,
   getProjects,
   createThread,
   getThreads,
   storeMessage,
-  getMessagesFromThread
 }

@@ -1,55 +1,60 @@
 import { aiThemeClassNames } from "./theme";
+import { Shimmer } from "../ai-elements/shimmer";
 import { cn } from "../../lib/utils";
-import { useAIChat } from "@/context/useAIChat";
+import { useAIChat } from "../../context/useAIChat";
 
 export type ChatMessage = {
   id: string;
-  query: string;
-  aiResponse: string;
+  text: string;
+  role: "user" | "assistant";
 };
 
-type ChatBubblesProps = {
-  isAIResponse: boolean;
-};
-
-export default function ChatBubbles({ isAIResponse }: ChatBubblesProps) {
-  const bubblePosition = isAIResponse
-    ? "flex justify-start"
-    : "flex justify-end";
-
+export default function ChatBubbles() {
   const { messages } = useAIChat();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-6">
-      {messages.map((message) => (
-        <div>
-          <div key={message.id} className={bubblePosition}>
-            <div
-              className={cn(
-                "max-w-[78%] whitespace-pre-wrap rounded-2xl border px-4 py-2.5 text-[13px] leading-5",
-                aiThemeClassNames.border,
-                aiThemeClassNames.textPrimary,
-                "bg-[#1a1a1a]",
-              )}
-            >
-              {message.query}
-            </div>
+      {messages.map((message) => {
+        const isUser = message.role === "user";
+
+        return (
+          <div
+            key={message.id}
+            className={cn("flex", isUser ? "justify-end" : "justify-start")}
+          >
+            {isUser ? (
+              <div
+                className={cn(
+                  "max-w-[78%] whitespace-pre-wrap rounded-2xl border px-4 py-2.5 text-[13px] leading-5",
+                  aiThemeClassNames.border,
+                  aiThemeClassNames.textPrimary,
+                  "bg-[#1a1a1a]",
+                )}
+              >
+                {message.text}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "max-w-[78%] whitespace-pre-wrap text-[13px] leading-5",
+                  aiThemeClassNames.textPrimary,
+                )}
+              >
+                {message.text || (
+                  <Shimmer
+                    as="span"
+                    className="text-sm [--color-background:#ededed] [--color-muted-foreground:#737373]"
+                    duration={1}
+                    spread={4}
+                  >
+                    Thinking
+                  </Shimmer>
+                )}
+              </div>
+            )}
           </div>
-          <div key={message.id} className="flex justify-start">
-            <div
-              className={cn(
-                "max-w-[78%] whitespace-pre-wrap rounded-2xl border px-4 py-2.5 text-[13px] leading-5",
-                aiThemeClassNames.border,
-                aiThemeClassNames.textPrimary,
-                "bg-[#1a1a1a]",
-                !message.aiResponse && "shimmer"
-              )}
-            >
-              {message.aiResponse ?  message.aiResponse : "thinking"}
-            </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
