@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { aiThemeClassNames } from "./theme";
 import { Shimmer } from "../ai-elements/shimmer";
 import { cn } from "../../lib/utils";
@@ -11,9 +12,23 @@ export type ChatMessage = {
 
 export default function ChatBubbles() {
   const { messages } = useAIChat();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTo({
+      top: scrollContainer.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-6">
+    <div
+      ref={scrollContainerRef}
+      className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-6"
+    >
       {messages.map((message) => {
         const isUser = message.role === "user";
 
