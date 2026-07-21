@@ -54,7 +54,7 @@ export default function AISidebar() {
     setProjects((current) =>
       current.map((project) =>
         project.id === projectId
-          ? { ...project, threads: [...project.threads, createdThread] }
+          ? { ...project, threads: [createdThread, ...project.threads] }
           : project,
       ),
     );

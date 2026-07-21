@@ -37,7 +37,10 @@ const createThread = database.prepare(`
 `);
 
 const getThreads = database.prepare(
-  `SELECT * FROM threads WHERE project_id = ?`,
+  `SELECT *
+   FROM threads
+   WHERE project_id = ?
+   ORDER BY created_at DESC, rowid DESC`,
 );
 
 const renameThread = database.prepare(
