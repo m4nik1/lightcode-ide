@@ -30,6 +30,18 @@ export class ThreadService {
     this.codexInstance = AIDriver;
   }
 
+  async generateThreadTitle(userMessage: string): Promise<string> {
+    const thread = this.codexInstance.startThread({
+      model: "gpt-5.4-mini",
+      modelReasoningEffort: "low",
+    });
+    const result = await thread.run(
+      `Generate a short title only for this user message:\n${userMessage}`,
+    );
+
+    return result.finalResponse.trim();
+  }
+
   async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {
     let thread = this.threads.get(input.threadID);
 

@@ -40,6 +40,10 @@ const getThreads = database.prepare(
   `SELECT * FROM threads WHERE project_id = ?`,
 );
 
+const renameThread = database.prepare(
+  `UPDATE threads SET name = ? WHERE id = ? RETURNING id, name`,
+);
+
 const getMessagesFromThread = database.prepare(`
   SELECT *
   FROM messages
@@ -111,4 +115,5 @@ export {
   createThread,
   getThreads,
   storeMessage,
+  renameThread
 }
