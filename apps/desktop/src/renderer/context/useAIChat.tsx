@@ -62,6 +62,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const userMessageID = crypto.randomUUID();
     const assistantMessageID = crypto.randomUUID();
 
+    console.log(`Sending message to ${model.model} with ${model.thinking} thinking`)
+
     setMessagesByThread((current) => ({
       ...current,
       [threadID]: [
@@ -129,7 +131,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         : current,
     );
 
-    
+
     await projectsQuery.refetch()
   }
 
