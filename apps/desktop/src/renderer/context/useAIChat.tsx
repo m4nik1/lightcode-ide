@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useState,
-  useContext,
-  useRef,
-  type ReactNode,
-} from "react";
+import { createContext, useState, useContext, type ReactNode } from "react";
 import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import type { ChatMessage } from "@/components/AIWindow/ChatMessages";
@@ -17,6 +11,7 @@ type AIContext = {
   createProject: () => void;
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
+  isTurning: boolean;
 };
 
 type AIModel = {
@@ -31,10 +26,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     Record<string, ChatMessage[]>
   >({});
   const [currentThread, setThread] = useState<thread | null>(null);
-  // Reuse thread loads so revisiting a thread cannot overwrite a response in progress.
-  const loadedThreadIDs = useRef(new Set<string>());
-  const threadLoadPromises = useRef(new Map<string, Promise<void>>());
-  const titleGenerationAttemptedThreadIDs = useRef(new Set<string>());
+  const [isTurning, setTurn] = useState<boolean>(false);
+
   const [model, setModel] = useState<AIModel>({
     model: "gpt-5.5",
     thinking: "low",
@@ -51,18 +44,12 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const threadID = currentThread.id;
     await loadThreadMessages(threadID);
 
-    const shouldGenerateTitle =
-      !titleGenerationAttemptedThreadIDs.current.has(threadID);
-    if (shouldGenerateTitle) {
-      // Reserve the first-message title generation before awaiting the response so
-      // rapid sends cannot schedule a second rename for the same thread.
-      titleGenerationAttemptedThreadIDs.current.add(threadID);
-    }
-
     const userMessageID = crypto.randomUUID();
     const assistantMessageID = crypto.randomUUID();
 
-    console.log(`Sending message to ${model.model} with ${model.thinking} thinking`)
+    console.log(
+      `Sending message to ${model.model} with ${model.thinking} thinking`,
+    );
 
     setMessagesByThread((current) => ({
       ...current,
@@ -105,7 +92,9 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
               : message,
           ),
         }));
+        setTurn(false);
       }
+      if (!isTurning) setTurn(true);
     }
 
     const threadTitle = await trpcClient.generateThreadMessage.mutate({
@@ -118,7 +107,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       typeof threadTitle.id !== "string" ||
       typeof threadTitle.name !== "string"
     ) {
-      console.error("Generated thread title has an invalid response:", threadTitle);
+      console.error(
+        "Generated thread title has an invalid response:",
+        threadTitle,
+      );
       return;
     }
 
@@ -126,13 +118,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const title = threadTitle.name;
 
     setThread((current) =>
-      current?.id === titleThreadID
-        ? { ...current, title }
-        : current,
+      current?.id === titleThreadID ? { ...current, title } : current,
     );
 
-
-    await projectsQuery.refetch()
+    await projectsQuery.refetch();
   }
 
   async function createProject() {
@@ -165,39 +154,22 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     setModel({ model, thinking });
   }
 
-  function loadThreadMessages(threadID: string) {
-    if (loadedThreadIDs.current.has(threadID)) {
-      return Promise.resolve();
-    }
+  async function loadThreadMessages(threadID: string) {
+    const messages = await trpcClient.loadMessages.query({ threadID });
 
-    const existingLoad = threadLoadPromises.current.get(threadID);
-    if (existingLoad) return existingLoad;
-
-    const load = trpcClient.loadMessages
-      .query({ threadID })
-      .then((loadedMessages) => {
-        if (loadedMessages.some((message) => message.role === "user")) {
-          titleGenerationAttemptedThreadIDs.current.add(threadID);
-        }
-        setMessagesByThread((current) => ({
-          ...current,
-          [threadID]: loadedMessages,
-        }));
-        loadedThreadIDs.current.add(threadID);
-      })
-      .finally(() => {
-        threadLoadPromises.current.delete(threadID);
-      });
-
-    threadLoadPromises.current.set(threadID, load);
-    return load;
+    return messages;
   }
 
   async function setCurrentThread(thread: thread) {
     if (thread.id === currentThread?.id) return;
 
     setThread(thread);
-    await loadThreadMessages(thread.id);
+    const threadMessages = await loadThreadMessages(thread.id);
+
+    setMessagesByThread((current) => ({
+      ...current,
+      [thread.id]: threadMessages,
+    }));
   }
 
   return (
@@ -209,6 +181,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         createProject,
         currentThread,
         setCurrentThread,
+        isTurning,
       }}
     >
       {children}

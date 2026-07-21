@@ -44,7 +44,7 @@ export default function ChatMessages() {
                     "max-w-[78%] whitespace-pre-wrap rounded-2xl border px-4 py-2.5 text-[13px] leading-5",
                     aiThemeClassNames.border,
                     aiThemeClassNames.textPrimary,
-                    "bg-[#1a1a1a]",
+                    aiThemeClassNames.messageSurface,
                   )}
                 >
                   {message.text}
@@ -59,7 +59,7 @@ export default function ChatMessages() {
                   {message.text || (
                     <Shimmer
                       as="span"
-                      className="text-sm [--color-background:#ededed] [--color-muted-foreground:#737373]"
+                      className={cn("text-sm", aiThemeClassNames.shimmer)}
                       duration={1}
                       spread={4}
                     >

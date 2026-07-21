@@ -21,7 +21,7 @@ export function ThreadItem({ thread }: ThreadItemProps) {
         "group relative flex min-h-7 w-full select-none items-center gap-1.5 rounded-xl py-1 pr-3 pl-[30px] text-left text-xs transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
         aiThemeClassNames.borderFocus,
         isSelected
-          ? cn(aiThemeClassNames.surfaceActive, aiThemeClassNames.textPrimary)
+          ? cn(aiThemeClassNames.selectedSurface, aiThemeClassNames.textPrimary)
           : cn(
               aiThemeClassNames.textMuted,
               aiThemeClassNames.surfaceHover,
@@ -32,7 +32,8 @@ export function ThreadItem({ thread }: ThreadItemProps) {
       <span
         className={cn(
           "flex size-3 shrink-0 items-center justify-center transition-colors",
-          cn(aiThemeClassNames.textMuted, "group-hover:text-[#ededed]"),
+          aiThemeClassNames.textMuted,
+          aiThemeClassNames.hoverTextPrimary,
         )}
       >
         <ThreadIcon />

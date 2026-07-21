@@ -103,7 +103,10 @@ export default function AISidebar() {
   return (
     <aside
       className={cn(
-        "relative box-border flex h-full w-65 shrink-0 flex-col border-r border-[#262626] bg-[rgba(10,10,10,0.42)] text-[13px] backdrop-blur-[16px] backdrop-saturate-[140%]",
+        "relative box-border flex h-full w-65 shrink-0 flex-col border-r text-[13px]",
+        aiThemeClassNames.sidebar,
+        aiThemeClassNames.border,
+        aiThemeClassNames.sidebarDepth,
         aiThemeClassNames.textPrimary,
       )}
     >
@@ -111,7 +114,9 @@ export default function AISidebar() {
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         <div className="flex">
-          <span className="text-gray-500 pl-2">Projects</span>
+          <span className={cn("pl-2", aiThemeClassNames.textMuted)}>
+            Projects
+          </span>
           <button
             type="button"
             aria-label="Create project"

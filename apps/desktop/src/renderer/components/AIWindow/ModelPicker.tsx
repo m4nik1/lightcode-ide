@@ -18,8 +18,16 @@ type PickerOption = {
 
 const modelOptions: PickerOption[] = [
   { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
-  { label: "GPT-5.6-Sol", value: "gpt-5.6-Sol", description: "Latest and greatest" },
-  { label: "GPT-5.6-Terra", value: "gpt-5.6-terra", description: "Small but mighty" },
+  {
+    label: "GPT-5.6-Sol",
+    value: "gpt-5.6-sol",
+    description: "Latest and greatest",
+  },
+  {
+    label: "GPT-5.6-Terra",
+    value: "gpt-5.6-terra",
+    description: "Small but mighty",
+  },
 ];
 
 const thinkingOptions: PickerOption[] = [
@@ -27,8 +35,6 @@ const thinkingOptions: PickerOption[] = [
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" },
 ];
-
-const itemFocusClassName = "focus:bg-[#171717] focus:text-[#ededed]";
 
 type PickerDropdownProps = {
   options: PickerOption[];
@@ -44,8 +50,7 @@ function PickerDropdown({
   menuWidth,
 }: PickerDropdownProps) {
   const selectedLabel =
-    options.find((option) => option.value === value)?.label ??
-    options[0].label;
+    options.find((option) => option.value === value)?.label ?? options[0].label;
 
   return (
     <DropdownMenu>
@@ -53,7 +58,7 @@ function PickerDropdown({
         <button
           type="button"
           className={cn(
-            "group/trigger inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-normal transition-colors focus-visible:outline-none",
+            "group/trigger inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-normal transition-[background-color,color,transform] focus-visible:outline-none active:translate-y-px",
             aiThemeClassNames.surfaceHover,
             aiThemeClassNames.textMuted,
             aiThemeClassNames.hoverTextPrimary,
@@ -68,10 +73,10 @@ function PickerDropdown({
         align="start"
         sideOffset={8}
         className={cn(
-          "rounded-xl border p-1 shadow-lg ring-0",
+          "rounded-xl border p-1 ring-0",
           menuWidth,
           aiThemeClassNames.border,
-          aiThemeClassNames.surface,
+          aiThemeClassNames.menuSurface,
         )}
       >
         {options.map((option) => {
@@ -81,7 +86,10 @@ function PickerDropdown({
               key={option.value}
               variant="default"
               onClick={() => onSelect(option.value)}
-              className={cn(itemFocusClassName, aiThemeClassNames.textPrimary)}
+              className={cn(
+                aiThemeClassNames.menuItemFocus,
+                aiThemeClassNames.textPrimary,
+              )}
             >
               {isSelected ? (
                 <CheckIcon className="size-3.5" />
@@ -129,7 +137,7 @@ export default function ModelPicker() {
       />
       <span
         aria-hidden="true"
-        className="mx-1.5 h-4 w-px shrink-0 bg-white/10"
+        className={cn("mx-1.5 h-4 w-px shrink-0", aiThemeClassNames.divider)}
       />
       <PickerDropdown
         options={thinkingOptions}

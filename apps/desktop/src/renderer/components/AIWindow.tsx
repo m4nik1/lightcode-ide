@@ -52,7 +52,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 0,
     pointerEvents: "none",
     background:
-      "linear-gradient(135deg, rgba(82, 82, 82, 0.22), rgba(0, 0, 0, 0) 38%), linear-gradient(180deg, #101010 0%, #050505 100%)",
+      `linear-gradient(135deg, ${aiTheme.surface} 0%, ${aiTheme.sidebar} 36%, ${aiTheme.background} 72%)`,
   },
   sidebarLayer: {
     position: "relative",
