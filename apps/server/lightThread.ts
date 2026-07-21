@@ -14,6 +14,8 @@ export default class lightThread {
 
     this.thread = this.codexInstance.startThread({model, modelReasoningEffort: thinking, workingDirectory: path});
 
+    console.log("Started new thread: ", this.thread)
+
     return this;
   }
 

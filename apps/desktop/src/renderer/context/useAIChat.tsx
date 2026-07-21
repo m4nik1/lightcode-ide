@@ -7,7 +7,7 @@ import {
 } from "react";
 import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
-import type { ChatMessage } from "@/components/AIWindow/ChatBubbles";
+import type { ChatMessage } from "@/components/AIWindow/ChatMessages";
 import type { thread } from "@/components/AIWindow/sidebar/types";
 
 type AIContext = {
@@ -34,6 +34,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   // Reuse thread loads so revisiting a thread cannot overwrite a response in progress.
   const loadedThreadIDs = useRef(new Set<string>());
   const threadLoadPromises = useRef(new Map<string, Promise<void>>());
+  const titleGenerationAttemptedThreadIDs = useRef(new Set<string>());
   const [model, setModel] = useState<AIModel>({
     model: "gpt-5.5",
     thinking: "low",
@@ -49,6 +50,14 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
 
     const threadID = currentThread.id;
     await loadThreadMessages(threadID);
+
+    const shouldGenerateTitle =
+      !titleGenerationAttemptedThreadIDs.current.has(threadID);
+    if (shouldGenerateTitle) {
+      // Reserve the first-message title generation before awaiting the response so
+      // rapid sends cannot schedule a second rename for the same thread.
+      titleGenerationAttemptedThreadIDs.current.add(threadID);
+    }
 
     const userMessageID = crypto.randomUUID();
     const assistantMessageID = crypto.randomUUID();
@@ -96,6 +105,32 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         }));
       }
     }
+
+    const threadTitle = await trpcClient.generateThreadMessage.mutate({
+      id: threadID,
+      message: text,
+    });
+
+    if (
+      !threadTitle ||
+      typeof threadTitle.id !== "string" ||
+      typeof threadTitle.name !== "string"
+    ) {
+      console.error("Generated thread title has an invalid response:", threadTitle);
+      return;
+    }
+
+    const titleThreadID = threadTitle.id;
+    const title = threadTitle.name;
+
+    setThread((current) =>
+      current?.id === titleThreadID
+        ? { ...current, title }
+        : current,
+    );
+
+    
+    await projectsQuery.refetch()
   }
 
   async function createProject() {
@@ -139,6 +174,9 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const load = trpcClient.loadMessages
       .query({ threadID })
       .then((loadedMessages) => {
+        if (loadedMessages.some((message) => message.role === "user")) {
+          titleGenerationAttemptedThreadIDs.current.add(threadID);
+        }
         setMessagesByThread((current) => ({
           ...current,
           [threadID]: loadedMessages,

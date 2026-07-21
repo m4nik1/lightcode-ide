@@ -33,7 +33,9 @@ export class ThreadService {
   async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {
     let thread = this.threads.get(input.threadID);
 
+    // Making new thread...
     if (!thread) {
+      console.log("A thread does not exist making a new one...")
       const project = getProjectByThreadID(input.threadID);
 
       if (!project) {
@@ -49,6 +51,7 @@ export class ThreadService {
       this.recentThreads.push(thread);
     }
 
+    // A thread already exists
     storeMessage.get(
       crypto.randomUUID(),
       input.threadID,
@@ -62,6 +65,7 @@ export class ThreadService {
     const events = await thread.sendQueryStream(input.message);
 
     console.log("events: ", events)
+    console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
     for await (const event of events) {
       if (
