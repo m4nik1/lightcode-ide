@@ -143,11 +143,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       path: projectFolderPath,
     });
 
-    console.log("Project path: ", projectFolderPath);
-
     await projectsQuery.refetch();
-
-    console.log("Project folder found: ", projectFolderPath);
   }
 
   function modelSet(model: string, thinking: string) {
