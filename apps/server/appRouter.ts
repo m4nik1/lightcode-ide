@@ -51,7 +51,7 @@ export const appRouter = router({
     )
     .query(function ({input}) {
       threadService.stopTurn(input.threadID)
-    })
+    }),
 
   loadMessages: publicProcedure
     .input(
