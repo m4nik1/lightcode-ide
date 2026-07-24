@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Architecture and implementation research for connecting a tRPC AI coding server to Codex app-server without an SDK.">
+  <title>Codex app-server x tRPC Integration Research</title>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --muted: #71717a;
+      --muted-foreground: #52525b;
+      --surface: #fafafa;
+      --surface-strong: #f4f4f5;
+      --border: #e4e4e7;
+      --border-strong: #d4d4d8;
+      --code: #18181b;
+      --code-foreground: #fafafa;
+      --accent: #18181b;
+      --accent-foreground: #fafafa;
+      --success: #15803d;
+      --warning: #a16207;
+      --danger: #b91c1c;
+      --radius: 10px;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 30px rgb(0 0 0 / 0.035);
+    }
+
+    html[data-theme="dark"] {
+      --background: #09090b;
+      --foreground: #fafafa;
+      --muted: #a1a1aa;
+      --muted-foreground: #d4d4d8;
+      --surface: #0f0f12;
+      --surface-strong: #18181b;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --code: #050506;
+      --code-foreground: #fafafa;
+      --accent: #fafafa;
+      --accent-foreground: #18181b;
+      --success: #4ade80;
+      --warning: #facc15;
+      --danger: #f87171;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 16px 40px rgb(0 0 0 / 0.25);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.68;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: inherit; text-decoration-color: var(--border-strong); text-underline-offset: 4px; }
+    a:hover { text-decoration-color: var(--foreground); }
+    button { font: inherit; }
+    .shell { width: min(1440px, 100%); margin: 0 auto; }
+    .topbar {
+      position: sticky;
+      z-index: 50;
+      top: 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+      background: color-mix(in srgb, var(--background) 88%, transparent);
+      backdrop-filter: blur(14px);
+    }
+    .topbar-inner {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 650; letter-spacing: -0.02em; }
+    .mark {
+      width: 28px; height: 28px; display: grid; place-items: center;
+      border-radius: 7px; background: var(--foreground); color: var(--background);
+      font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .actions { display: flex; gap: 8px; }
+    .icon-button {
+      width: 36px; height: 36px; display: grid; place-items: center;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--background); color: var(--foreground); cursor: pointer;
+    }
+    .icon-button:hover { background: var(--surface-strong); }
+
+    .layout { display: grid; grid-template-columns: 248px minmax(0, 820px) 220px; gap: 44px; padding: 56px 28px 96px; justify-content: center; }
+    .sidebar, .rail { position: sticky; top: 96px; align-self: start; max-height: calc(100vh - 120px); overflow: auto; }
+    .sidebar-label, .eyebrow {
+      color: var(--muted); font-size: 11px; line-height: 1.2; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+    }
+    .toc { display: grid; gap: 2px; margin-top: 12px; }
+    .toc a { padding: 6px 10px; color: var(--muted); font-size: 13px; text-decoration: none; border-radius: 6px; }
+    .toc a:hover, .toc a.active { color: var(--foreground); background: var(--surface-strong); }
+    .rail-card { border-left: 1px solid var(--border); padding-left: 18px; }
+    .rail-card + .rail-card { margin-top: 28px; }
+    .rail-title { margin: 0 0 8px; font-size: 12px; font-weight: 650; }
+    .rail-copy { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+
+    main { min-width: 0; }
+    .hero { padding-bottom: 56px; border-bottom: 1px solid var(--border); }
+    .hero h1 { margin: 18px 0 18px; max-width: 760px; font-size: clamp(38px, 6vw, 68px); line-height: .98; letter-spacing: -.055em; font-weight: 700; }
+    .lede { max-width: 690px; margin: 0; color: var(--muted-foreground); font-size: 18px; line-height: 1.62; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 3px 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted-foreground); font-size: 12px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+    section { padding: 60px 0; border-bottom: 1px solid var(--border); }
+    section:last-child { border-bottom: 0; }
+    h2 { margin: 8px 0 16px; font-size: 30px; line-height: 1.16; letter-spacing: -.035em; }
+    h3 { margin: 36px 0 10px; font-size: 18px; line-height: 1.3; letter-spacing: -.018em; }
+    h4 { margin: 24px 0 8px; font-size: 14px; }
+    p { margin: 12px 0; }
+    .section-intro { max-width: 720px; color: var(--muted-foreground); font-size: 16px; }
+    ul, ol { padding-left: 20px; }
+    li + li { margin-top: 6px; }
+    strong { font-weight: 650; }
+    code:not(pre code) { padding: 2px 5px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-strong); font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .verdict { margin: 28px 0 0; padding: 20px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--foreground); color: var(--background); box-shadow: var(--shadow); }
+    .verdict-label { opacity: .62; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .verdict p { margin: 8px 0 0; font-size: 16px; line-height: 1.55; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 18px; }
+    .card h3 { margin: 0 0 6px; font-size: 15px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .number { width: 26px; height: 26px; display: grid; place-items: center; margin-bottom: 18px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--background); font: 600 11px/1 ui-monospace, monospace; }
+
+    .callout { margin: 22px 0; padding: 16px 18px; border: 1px solid var(--border); border-left: 3px solid var(--foreground); border-radius: 8px; background: var(--surface); }
+    .callout.warning { border-left-color: var(--warning); }
+    .callout.danger { border-left-color: var(--danger); }
+    .callout-title { margin: 0 0 4px; font-weight: 650; font-size: 13px; }
+    .callout p { margin: 0; color: var(--muted-foreground); font-size: 13px; }
+
+    .diagram { margin: 24px 0; padding: 26px; border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; background-image: radial-gradient(var(--border) .65px, transparent .65px); background-size: 12px 12px; }
+    .diagram-flow { min-width: 660px; display: grid; grid-template-columns: 1fr 40px 1.25fr 40px 1.1fr; align-items: center; }
+    .node { min-height: 112px; padding: 16px; display: flex; flex-direction: column; justify-content: center; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--background); box-shadow: var(--shadow); }
+    .node strong { font-size: 13px; }
+    .node span { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .arrow { color: var(--muted); text-align: center; font: 18px/1 ui-monospace, monospace; }
+
+    .code-wrap { position: relative; margin: 22px 0; }
+    .code-head { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border: 1px solid #27272a; border-bottom: 0; border-radius: 9px 9px 0 0; background: #18181b; color: #a1a1aa; font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .copy { border: 0; background: transparent; color: #a1a1aa; cursor: pointer; font: inherit; }
+    .copy:hover { color: #fafafa; }
+    pre { margin: 0; padding: 18px; overflow-x: auto; border: 1px solid #27272a; border-radius: 0 0 9px 9px; background: var(--code); color: var(--code-foreground); font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; tab-size: 2; }
+    .token-comment { color: #71717a; }
+    .token-key { color: #c4b5fd; }
+    .token-string { color: #86efac; }
+    .token-type { color: #7dd3fc; }
+
+    .table-wrap { margin: 22px 0; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    th { background: var(--surface); color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+    td:first-child { white-space: nowrap; font-weight: 600; }
+    .status { display: inline-flex; align-items: center; border-radius: 999px; padding: 1px 7px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .stable { color: var(--success); background: color-mix(in srgb, var(--success) 10%, transparent); }
+    .experimental { color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, transparent); }
+
+    .sequence { display: grid; gap: 0; margin: 26px 0; }
+    .step { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 14px; padding-bottom: 22px; }
+    .step:not(:last-child)::before { content: ""; position: absolute; left: 15px; top: 30px; bottom: 0; width: 1px; background: var(--border-strong); }
+    .step-marker { z-index: 1; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--background); font: 600 11px/1 ui-monospace, monospace; }
+    .step h3 { margin: 3px 0 4px; font-size: 14px; }
+    .step p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { position: relative; padding: 10px 0 10px 30px; border-bottom: 1px solid var(--border); }
+    .checklist li::before { content: "\2713"; position: absolute; left: 3px; top: 10px; color: var(--success); font-weight: 800; }
+    .sources { counter-reset: source; list-style: none; padding: 0; }
+    .sources li { counter-increment: source; position: relative; padding: 14px 0 14px 42px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .sources li::before { content: counter(source, decimal-leading-zero); position: absolute; left: 0; color: var(--muted); font: 11px/1.7 ui-monospace, monospace; }
+    .sources span { display: block; color: var(--muted); font-size: 12px; }
+    footer { padding-top: 32px; color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 210px minmax(0, 800px); gap: 34px; }
+      .rail { display: none; }
+    }
+    @media (max-width: 820px) {
+      .topbar-inner { padding: 0 18px; }
+      .layout { display: block; padding: 36px 18px 72px; }
+      .sidebar { display: none; }
+      .hero h1 { font-size: clamp(40px, 13vw, 62px); }
+      .grid { grid-template-columns: 1fr; }
+      section { padding: 48px 0; }
+      .diagram { padding: 16px; }
+    }
+    @media print {
+      .topbar, .sidebar, .rail, .copy { display: none !important; }
+      .layout { display: block; padding: 0; }
+      body { font-size: 11pt; }
+      section { break-inside: avoid; }
+      pre { white-space: pre-wrap; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand"><span class="mark">C&lt;&gt;T</span><span>Integration Research</span></div>
+      <div class="actions">
+        <button class="icon-button" id="theme-toggle" aria-label="Toggle color theme" title="Toggle color theme">&#9680;</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <aside class="sidebar" aria-label="Table of contents">
+      <div class="sidebar-label">On this page</div>
+      <nav class="toc">
+        <a href="#recommendation">Recommendation</a>
+        <a href="#protocol">Protocol facts</a>
+        <a href="#jsonrpc">How JSON-RPC works</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#lifecycle">Lifecycle</a>
+        <a href="#transport">Transport layer</a>
+        <a href="#trpc">tRPC surface</a>
+        <a href="#events">Events &amp; state</a>
+        <a href="#approvals">Approvals &amp; tools</a>
+        <a href="#reliability">Reliability</a>
+        <a href="#security">Security</a>
+        <a href="#delivery">Delivery plan</a>
+        <a href="#sources">Sources</a>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="hero">
+        <div class="eyebrow">Technical research &middot; July 24, 2026</div>
+        <h1>Codex app-server behind tRPC.</h1>
+        <p class="lede">A no-SDK integration design for an AI agent coding app: raw stdio JSONL at the process boundary, a typed bidirectional RPC multiplexer, and a stable domain API exposed through tRPC.</p>
+        <div class="meta">
+          <span class="badge"><span class="dot"></span> Recommended architecture</span>
+          <span class="badge">TypeScript</span>
+          <span class="badge">JSON-RPC-like</span>
+          <span class="badge">tRPC subscriptions</span>
+          <span class="badge">No app-server SDK</span>
+        </div>
+      </div>
+
+      <section id="recommendation">
+        <div class="eyebrow">Executive decision</div>
+        <h2>Use a process adapter, not a protocol pass-through.</h2>
+        <p class="section-intro">Run <code>codex app-server</code> as a supervised child process using its default stdio transport. Keep its protocol private to your backend, translate it into a deliberately smaller tRPC contract, and stream normalized domain events to the app.</p>
+        <div class="verdict">
+          <div class="verdict-label">Recommended topology</div>
+          <p>Browser/Desktop UI &rarr; tRPC API + subscription &rarr; Agent Session Service &rarr; AppServerClient &rarr; <code>codex app-server</code> child process over newline-delimited JSON.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><div class="number">01</div><h3>Production transport</h3><p>Use stdio JSONL. WebSocket is explicitly experimental and unsupported for production.</p></article>
+          <article class="card"><div class="number">02</div><h3>Protocol ownership</h3><p>Generate TypeScript from the exact Codex binary in CI, but expose your own stable frontend DTOs.</p></article>
+          <article class="card"><div class="number">03</div><h3>Process boundary</h3><p>One long-lived process per isolation boundary, not one process per turn or per tRPC request.</p></article>
+          <article class="card"><div class="number">04</div><h3>Streaming model</h3><p>Mutations initiate work; subscriptions carry ordered events. Terminal notifications settle app-level workflows.</p></article>
+        </div>
+        <div class="callout warning">
+          <div class="callout-title">What &quot;no SDK&quot; should mean</div>
+          <p>Do not hand-maintain hundreds of wire types. Using <code>codex app-server generate-ts</code> or <code>generate-json-schema</code> is schema generation, not an SDK dependency. It is the safest way to match the installed binary.</p>
+        </div>
+      </section>
+
+      <section id="protocol">
+        <div class="eyebrow">Ground truth</div>
+        <h2>Protocol facts that shape the design.</h2>
+        <p class="section-intro">App-server resembles JSON-RPC 2.0 but intentionally omits <code>"jsonrpc":"2.0"</code>. Every stdio message is one compact JSON object followed by a newline.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Concern</th><th>Observed contract</th><th>Design consequence</th></tr></thead>
+            <tbody>
+              <tr><td>Framing</td><td>One JSON message per line on stdin/stdout.</td><td>Use line-based parsing; never parse arbitrary stdout chunks as complete JSON.</td></tr>
+              <tr><td>Requests</td><td><code>{ id, method, params? }</code></td><td>Maintain a pending-request map keyed by string or integer IDs.</td></tr>
+              <tr><td>Success</td><td><code>{ id, result }</code></td><td>Resolve exactly one pending promise.</td></tr>
+              <tr><td>Error</td><td><code>{ id, error: { code, message, data? } }</code></td><td>Preserve code/data in a typed internal error before mapping to tRPC.</td></tr>
+              <tr><td>Notification</td><td><code>{ method, params? }</code>, no <code>id</code>.</td><td>Publish to an event bus; never await a response.</td></tr>
+              <tr><td>Server request</td><td><code>{ id, method, params }</code> sent by app-server.</td><td>The client must route and answer approvals, user input, elicitations, and dynamic tools.</td></tr>
+              <tr><td>Backpressure</td><td>Ingress overload is <code>-32001</code>; slow outbound connections may be disconnected.</td><td>Bound queues and retry only safe operations with exponential backoff + jitter.</td></tr>
+              <tr><td>Types</td><td>Schema is generated for each binary version.</td><td>Pin the binary and generated artifacts together.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head"><span>wire.jsonl</span><button class="copy">Copy</button></div>
+          <pre><code>{"method":"initialize","id":1,"params":{"clientInfo":{"name":"my_agent_server","title":"My Agent Server","version":"1.0.0"}}}
+{"id":1,"result":{"userAgent":"...","codexHome":"/.../.codex","platformFamily":"unix","platformOs":"macos"}}
+{"method":"initialized"}
+{"method":"thread/start","id":2,"params":{"cwd":"/workspace/repo","approvalPolicy":"unlessTrusted","sandbox":"workspaceWrite"}}
+{"id":2,"result":{"thread":{"id":"thr_123"},"model":"...","cwd":"/workspace/repo"}}</code></pre>
+        </div>
+
+        <h3>Generate, pin, validate</h3>
+        <div class="code-wrap">
+          <div class="code-head"><span>schema-generation.sh</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-comment"># Stable protocol only. Generate with the same binary deployed in production.</span>
+codex app-server generate-ts --out ./src/generated/codex-app-server
+codex app-server generate-json-schema --out ./schemas/codex-app-server
+
+<span class="token-comment"># Only if your product deliberately accepts unstable API churn:</span>
+codex app-server generate-ts --out ./src/generated/codex-app-server --experimental</code></pre>
+        </div>
+        <p>Commit the generated types or create them during a reproducible build. Add the Codex binary version and a schema hash to deployment metadata. Use JSON Schema with Ajv, Zod facades, or focused type guards at trust boundaries; TypeScript types alone do not validate runtime data.</p>
+      </section>
+
+      <section id="jsonrpc">
+        <div class="eyebrow">Primer</div>
+        <h2>How the app-server JSON-RPC actually works.</h2>
+        <p class="section-intro">If the previous section is the legal contract, this one is the guided tour. App-server speaks JSON-RPC 2.0 in everything but the version header: both sides exchange small JSON objects over one shared pipe, and four message shapes cover every conversation.</p>
+
+        <h3>The mental model: a deli counter with ticket numbers</h3>
+        <p>Think of the connection as a single phone line to a busy deli. There is no HTTP request/response pairing to lean on — just one stream of messages in each direction — so correlation is done with ticket numbers:</p>
+        <ul>
+          <li><strong>Request</strong> (<code>{ id, method, params }</code>): you place an order and take ticket <code>id</code>. Exactly one reply will eventually come back bearing that same ticket number. IDs can be strings or integers; the reply echoes whatever you sent.</li>
+          <li><strong>Response</strong> (<code>{ id, result }</code> or <code>{ id, error }</code>): your order arrives — or the counter tells you why it can't be filled. Never both, and never more than once per ticket.</li>
+          <li><strong>Notification</strong> (<code>{ method, params }</code>, no <code>id</code>): the kitchen shouting status over the counter — "order 456 is on the grill". No ticket, no reply expected, and you cannot answer it.</li>
+          <li><strong>Server request</strong> (<code>{ id, method, params }</code>, sent <em>to</em> you): the cook walks out and asks <em>you</em> a question — "this needs peanut oil, is that okay?" It carries the server's own ticket number, and the server blocks that piece of work until you write back <code>{ id, result }</code>. This is how approvals work.</li>
+        </ul>
+        <p>The one deliberate deviation from the JSON-RPC 2.0 spec: neither side sends the <code>"jsonrpc":"2.0"</code> field (<a href="codex-rs/app-server-protocol/src/rpc.rs">rpc.rs</a> states this in its first line). If your JSON-RPC library insists on adding or requiring it, don't use that library for this wire.</p>
+
+        <h3>Framing: one JSON object, one line</h3>
+        <p>Over the default stdio transport, the framing is newline-delimited JSON (JSONL) — like a chat where every message must be a single sentence with a period at the end. One compact JSON object, then <code>\n</code>. There are no <code>Content-Length</code> headers (unlike LSP), so a parser is just "split on newline, <code>JSON.parse</code> each line". The corollary: never pretty-print JSON when writing to stdin, because embedded newlines would split one message into several garbage lines.</p>
+
+        <h3>A complete conversation, annotated</h3>
+        <p>Here is an entire minimal session — handshake, thread, one turn — with direction markers. Everything marked <code>&rarr;</code> is written to app-server's stdin; <code>&larr;</code> arrives on its stdout.</p>
+        <div class="code-wrap">
+          <div class="code-head"><span>annotated-session.jsonl</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-comment">// 1. Handshake: one initialize request per connection, then the initialized notification.</span>
+&rarr; {"method":"initialize","id":1,"params":{"clientInfo":{"name":"my_agent_server","title":"My Agent Server","version":"1.0.0"}}}
+&larr; {"id":1,"result":{"userAgent":"codex/…","codexHome":"/Users/me/.codex","platformFamily":"unix","platformOs":"macos"}}
+&rarr; {"method":"initialized"}   <span class="token-comment">// notification: no id, no reply will come</span>
+
+<span class="token-comment">// 2. Open a conversation. The response answers ticket 2; the notification is a broadcast.</span>
+&rarr; {"method":"thread/start","id":2,"params":{"cwd":"/workspace/repo"}}
+&larr; {"id":2,"result":{"thread":{"id":"thr_123"},"model":"gpt-5.1-codex","cwd":"/workspace/repo"}}
+&larr; {"method":"thread/started","params":{"threadId":"thr_123"}}
+
+<span class="token-comment">// 3. Send a user message. The ticket-3 reply comes back immediately with an</span>
+<span class="token-comment">//    in-progress turn — the actual work streams afterward as notifications.</span>
+&rarr; {"method":"turn/start","id":3,"params":{"threadId":"thr_123","input":[{"type":"text","text":"What does this repo do?"}]}}
+&larr; {"id":3,"result":{"turn":{"id":"turn_456","status":"inProgress","items":[]}}}
+&larr; {"method":"turn/started","params":{"threadId":"thr_123","turn":{"id":"turn_456","status":"inProgress"}}}
+&larr; {"method":"item/started","params":{"threadId":"thr_123","turnId":"turn_456","item":{"type":"agentMessage","id":"item_1","text":""}}}
+&larr; {"method":"item/agentMessage/delta","params":{"threadId":"thr_123","turnId":"turn_456","itemId":"item_1","delta":"This repo is"}}
+&larr; {"method":"item/agentMessage/delta","params":{"threadId":"thr_123","turnId":"turn_456","itemId":"item_1","delta":" a CLI tool that…"}}
+&larr; {"method":"item/completed","params":{"threadId":"thr_123","turnId":"turn_456","item":{"type":"agentMessage","id":"item_1","text":"This repo is a CLI tool that…"}}}
+&larr; {"method":"turn/completed","params":{"threadId":"thr_123","turn":{"id":"turn_456","status":"completed"}}}</code></pre>
+        </div>
+        <p>Notice the shape of the choreography: <strong>requests start things, notifications tell the story, and a terminal notification ends it.</strong> The <code>turn/start</code> response is a receipt, not a result — like a food-delivery app confirming your order was placed, while the courier updates stream in separately. Your code should <em>resolve</em> on <code>turn/completed</code>, not on the RPC response.</p>
+
+        <h3>When the server asks you a question</h3>
+        <p>The bidirectional part is what makes this feel different from a normal API. Mid-turn, app-server can send you a request with its own <code>id</code>, and the turn pauses until you answer:</p>
+        <div class="code-wrap">
+          <div class="code-head"><span>server-initiated-request.jsonl</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-comment">// Server -&gt; client: note it has an id, so it is a request, not an event.</span>
+&larr; {"method":"item/commandExecution/requestApproval","id":61,"params":{"threadId":"thr_123","turnId":"turn_456","itemId":"item_9","command":"npm install","cwd":"/workspace/repo","reason":"Needs network access"}}
+
+<span class="token-comment">// Client -&gt; server: a plain response envelope, echoing the server's id 61.</span>
+&rarr; {"id":61,"result":{"decision":"accept"}}</code></pre>
+        </div>
+        <p>Because both sides hand out ticket numbers independently, your ID counter and the server's can overlap without conflict — <code>id: 61</code> from the server and <code>id: 61</code> from you are different tickets, distinguished by who issued them. Classify each incoming line by shape: <code>id + result/error</code> is a response to you; <code>id + method</code> is a question for you; <code>method</code> alone is a broadcast.</p>
+
+        <h3>Errors on the wire</h3>
+        <div class="code-wrap">
+          <div class="code-head"><span>error-examples.jsonl</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-comment">// Skipping the handshake: any request before initialize is rejected.</span>
+&rarr; {"method":"thread/start","id":1,"params":{"cwd":"/workspace/repo"}}
+&larr; {"id":1,"error":{"code":-32603,"message":"Not initialized"}}
+
+<span class="token-comment">// Initializing twice on one connection also fails.</span>
+&larr; {"id":9,"error":{"code":-32603,"message":"Already initialized"}}
+
+<span class="token-comment">// Bounded ingress queues are full: retryable, back off with jitter.</span>
+&larr; {"id":14,"error":{"code":-32001,"message":"Server overloaded; retry later."}}</code></pre>
+        </div>
+
+        <h3>Ways to poke at it</h3>
+        <p>Because the transport is just lines of JSON on stdio, you can explore the protocol with nothing but a terminal before writing any client code.</p>
+        <h4>1. Literally type at it</h4>
+        <p>Run <code>codex app-server</code> in a terminal and paste JSON lines by hand. It is the fastest way to build intuition — the responses print right back at you. The process exits when stdin closes, so keep the terminal open.</p>
+        <div class="code-wrap">
+          <div class="code-head"><span>interactive.sh</span><button class="copy">Copy</button></div>
+          <pre><code>$ codex app-server
+{"method":"initialize","id":1,"params":{"clientInfo":{"name":"probe","title":"Probe","version":"0.0.1"}}}
+{"id":1,"result":{"userAgent":"…","codexHome":"…","platformFamily":"unix","platformOs":"macos"}}
+{"method":"initialized"}
+{"method":"thread/list","id":2,"params":{}}
+{"id":2,"result":{"threads":[…],"nextCursor":null}}</code></pre>
+        </div>
+        <h4>2. Pipe a scripted exchange</h4>
+        <div class="code-wrap">
+          <div class="code-head"><span>scripted-probe.sh</span><button class="copy">Copy</button></div>
+          <pre><code>printf '%s\n' \
+  '{"method":"initialize","id":1,"params":{"clientInfo":{"name":"probe","title":"Probe","version":"0.0.1"}}}' \
+  '{"method":"initialized"}' \
+  '{"method":"model/list","id":2,"params":{}}' \
+| codex app-server 2&gt;/dev/null | jq .</code></pre>
+        </div>
+        <p>This works for read-only probes, but stdin closes as soon as <code>printf</code> finishes, so it can't wait out a streaming turn. For that, use the interactive form or a real client.</p>
+        <h4>3. A real client: spawn and correlate</h4>
+        <p>Spawn the process from your backend, split stdout on newlines, and keep a <code>Map</code> of pending tickets — the full implementation is the <code>AppServerRpc</code> class in the <a href="#transport">transport section</a>. The essential loop fits in a few lines:</p>
+        <div class="code-wrap">
+          <div class="code-head"><span>essence.ts</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-key">const</span> child = spawn(<span class="token-string">"codex"</span>, [<span class="token-string">"app-server"</span>]);
+createInterface({ input: child.stdout }).on(<span class="token-string">"line"</span>, (line) =&gt; {
+  <span class="token-key">const</span> msg = JSON.parse(line);
+  <span class="token-key">if</span> (msg.id !== undefined &amp;&amp; msg.method === undefined) settlePending(msg);   <span class="token-comment">// response to us</span>
+  <span class="token-key">else if</span> (msg.id !== undefined) answerServerRequest(msg);                    <span class="token-comment">// question for us</span>
+  <span class="token-key">else</span> handleNotification(msg);                                               <span class="token-comment">// broadcast</span>
+});
+child.stdin.write(JSON.stringify({ id: 1, method: <span class="token-string">"initialize"</span>, params }) + <span class="token-string">"\n"</span>);</code></pre>
+        </div>
+        <h4>4. Other transports</h4>
+        <ul>
+          <li><strong>Unix socket:</strong> <code>codex app-server proxy</code> bridges stdin/stdout to a running server's control socket at <code>$CODEX_HOME/app-server-control/app-server-control.sock</code> — useful for attaching a second tool to an already-running server.</li>
+          <li><strong>WebSocket:</strong> <code>--listen ws://IP:PORT</code> puts one JSON-RPC message per text frame and serves <code>/readyz</code>/<code>/healthz</code> probes, but it is explicitly experimental and unsupported — fine for a spike, wrong for production.</li>
+          <li><strong>Typed exploration:</strong> <code>codex app-server generate-ts --out DIR</code> dumps the full method/notification catalog as TypeScript unions for the exact binary you have installed — the closest thing to browsable API docs, generated from source of truth.</li>
+        </ul>
+
+        <div class="callout">
+          <div class="callout-title">The four-question triage for any incoming line</div>
+          <p>Has <code>result</code> or <code>error</code> plus <code>id</code>? It settles one of your tickets. Has <code>method</code> plus <code>id</code>? The server is asking; you must eventually write back that <code>id</code>. Has only <code>method</code>? File it as an event. None of the above? Log it as a protocol fault — don't guess.</p>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <div class="eyebrow">System design</div>
+        <h2>Four boundaries, each with one job.</h2>
+        <div class="diagram" role="img" aria-label="Architecture from UI through tRPC and adapter to app-server">
+          <div class="diagram-flow">
+            <div class="node"><strong>Agent UI</strong><span>Messages, timeline, command output, diffs, approval dialogs</span></div>
+            <div class="arrow">&harr;</div>
+            <div class="node"><strong>tRPC Agent API</strong><span>AuthZ, stable DTOs, mutations, resumable subscriptions, tenancy</span></div>
+            <div class="arrow">&harr;</div>
+            <div class="node"><strong>AppServer Gateway</strong><span>Process supervisor, RPC correlation, event normalization, server-request router</span></div>
+          </div>
+        </div>
+        <div class="grid">
+          <article class="card"><h3>1. Process supervisor</h3><p>Spawn, initialize, monitor, restart, capture stderr, and reject pending work on exit.</p></article>
+          <article class="card"><h3>2. Wire client</h3><p>Serialize writes, parse JSONL, correlate responses, classify notifications and inbound requests.</p></article>
+          <article class="card"><h3>3. Session service</h3><p>Own thread mappings, event sequence numbers, snapshots, approvals, and tenant authorization.</p></article>
+          <article class="card"><h3>4. tRPC router</h3><p>Expose product operations rather than arbitrary app-server method execution.</p></article>
+        </div>
+
+        <h3>Suggested source layout</h3>
+        <div class="code-wrap">
+          <div class="code-head"><span>server/src</span><button class="copy">Copy</button></div>
+          <pre><code>agent/
+  app-server/
+    AppServerProcess.ts      <span class="token-comment"># child lifecycle + JSONL streams</span>
+    AppServerRpc.ts          <span class="token-comment"># ids, pending requests, timeouts</span>
+    inboundRequests.ts       <span class="token-comment"># approvals, input, dynamic tools</span>
+    protocol.ts              <span class="token-comment"># envelope guards + internal errors</span>
+    generated/               <span class="token-comment"># output of generate-ts</span>
+  sessions/
+    AgentSessionService.ts   <span class="token-comment"># product orchestration</span>
+    AgentEventStore.ts       <span class="token-comment"># append/replay/snapshot</span>
+    eventNormalizer.ts       <span class="token-comment"># Codex events -&gt; product events</span>
+  trpc/
+    agentRouter.ts           <span class="token-comment"># procedures and subscriptions</span></code></pre>
+        </div>
+
+        <h3>Process granularity</h3>
+        <p>The right process boundary depends on whose credentials, config, and filesystem the process can see:</p>
+        <ul>
+          <li><strong>Single-user local/desktop app:</strong> one process for the backend lifetime is simplest.</li>
+          <li><strong>Hosted workspace product:</strong> one process per isolated workspace, container, VM, or user security boundary.</li>
+          <li><strong>Do not share across untrusted tenants:</strong> <code>CODEX_HOME</code>, login state, config, stored threads, MCP configuration, and filesystem authority make a globally shared process unsafe.</li>
+          <li><strong>Do not spawn per turn:</strong> initialization, loaded threads, subscriptions, credentials, MCP startup, and session state are process-oriented.</li>
+        </ul>
+      </section>
+
+      <section id="lifecycle">
+        <div class="eyebrow">Connection choreography</div>
+        <h2>Initialize once, then drive threads and turns.</h2>
+        <div class="sequence">
+          <div class="step"><div class="step-marker">1</div><div><h3>Spawn</h3><p>Start <code>codex app-server</code> with piped stdin/stdout. Keep stderr separate for logs; never merge it into protocol stdout.</p></div></div>
+          <div class="step"><div class="step-marker">2</div><div><h3>Initialize</h3><p>Send exactly one <code>initialize</code> request with honest client metadata. Wait for its response.</p></div></div>
+          <div class="step"><div class="step-marker">3</div><div><h3>Acknowledge</h3><p>Send the <code>initialized</code> notification. Requests before initialization fail; repeated initialization fails.</p></div></div>
+          <div class="step"><div class="step-marker">4</div><div><h3>Start or resume thread</h3><p><code>thread/start</code> creates and auto-subscribes. <code>thread/resume</code> reloads persisted history and subscribes the connection.</p></div></div>
+          <div class="step"><div class="step-marker">5</div><div><h3>Start turn</h3><p><code>turn/start</code> immediately returns an in-progress turn; actual execution streams asynchronously.</p></div></div>
+          <div class="step"><div class="step-marker">6</div><div><h3>Settle on event</h3><p>Use <code>turn/completed</code>, not the <code>turn/start</code> response, as the terminal outcome.</p></div></div>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head"><span>minimum-turn-flow.json</span><button class="copy">Copy</button></div>
+          <pre><code>{"method":"turn/start","id":30,"params":{"threadId":"thr_123","clientUserMessageId":"ui_msg_7","input":[{"type":"text","text":"Run the tests and fix failures"}]}}
+{"id":30,"result":{"turn":{"id":"turn_456","status":"inProgress","items":[],"error":null}}}
+{"method":"turn/started","params":{"threadId":"thr_123","turn":{"id":"turn_456","status":"inProgress","items":[],"error":null}}}
+{"method":"item/started","params":{"threadId":"thr_123","turnId":"turn_456","item":{"type":"agentMessage","id":"item_1","text":""},"startedAtMs":1784900000000}}
+{"method":"item/agentMessage/delta","params":{"threadId":"thr_123","turnId":"turn_456","itemId":"item_1","delta":"I'll inspect the test suite."}}
+{"method":"item/completed","params":{"threadId":"thr_123","turnId":"turn_456","item":{"type":"agentMessage","id":"item_1","text":"I'll inspect the test suite."}}}
+{"method":"turn/completed","params":{"threadId":"thr_123","turn":{"id":"turn_456","status":"completed","items":[],"error":null}}}</code></pre>
+        </div>
+        <div class="callout">
+          <div class="callout-title">Current protocol caveat</div>
+          <p>The documented <code>turn/started</code> and <code>turn/completed</code> payloads may contain empty <code>items</code> even when item events streamed. Build the canonical item timeline from <code>item/*</code> events and use completed items as authoritative.</p>
+        </div>
+      </section>
+
+      <section id="transport">
+        <div class="eyebrow">Implementation blueprint</div>
+        <h2>A minimal bidirectional RPC client.</h2>
+        <p class="section-intro">This is intentionally a thin wire layer. It knows envelopes and correlation, but not product policy.</p>
+
+        <div class="code-wrap">
+          <div class="code-head"><span>AppServerRpc.ts</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-key">import</span> { spawn, <span class="token-key">type</span> ChildProcessWithoutNullStreams } <span class="token-key">from</span> <span class="token-string">"node:child_process"</span>;
+<span class="token-key">import</span> { createInterface } <span class="token-key">from</span> <span class="token-string">"node:readline"</span>;
+<span class="token-key">import</span> { EventEmitter } <span class="token-key">from</span> <span class="token-string">"node:events"</span>;
+
+<span class="token-key">type</span> <span class="token-type">Id</span> = string | number;
+<span class="token-key">type</span> <span class="token-type">Pending</span> = {
+  resolve(value: unknown): void;
+  reject(error: Error): void;
+  timer: NodeJS.Timeout;
+};
+
+<span class="token-key">export class</span> <span class="token-type">AppServerRpc</span> <span class="token-key">extends</span> EventEmitter {
+  <span class="token-key">private</span> child!: ChildProcessWithoutNullStreams;
+  <span class="token-key">private</span> nextId = 1;
+  <span class="token-key">private</span> pending = <span class="token-key">new</span> Map&lt;Id, Pending&gt;();
+  <span class="token-key">private</span> writeChain = Promise.resolve();
+
+  <span class="token-key">async</span> start(codexBinary = <span class="token-string">"codex"</span>) {
+    <span class="token-comment">// The default app-server listener is stdio://.</span>
+    <span class="token-key">this</span>.child = spawn(codexBinary, [<span class="token-string">"app-server"</span>], {
+      stdio: [<span class="token-string">"pipe"</span>, <span class="token-string">"pipe"</span>, <span class="token-string">"pipe"</span>],
+      env: { ...process.env },
+    });
+
+    createInterface({ input: <span class="token-key">this</span>.child.stdout }).on(<span class="token-string">"line"</span>, (line) =&gt; {
+      <span class="token-key">if</span> (!line.trim()) <span class="token-key">return</span>;
+      <span class="token-key">this</span>.onMessage(JSON.parse(line));
+    });
+    <span class="token-key">this</span>.child.stderr.on(<span class="token-string">"data"</span>, (chunk) =&gt;
+      <span class="token-key">this</span>.emit(<span class="token-string">"log"</span>, chunk.toString()),
+    );
+    <span class="token-key">this</span>.child.once(<span class="token-string">"exit"</span>, (code, signal) =&gt;
+      <span class="token-key">this</span>.failAll(<span class="token-key">new</span> Error(`app-server exited: ${code ?? signal}`)),
+    );
+
+    <span class="token-key">await this</span>.request(<span class="token-string">"initialize"</span>, {
+      clientInfo: { name: <span class="token-string">"my_agent_server"</span>, title: <span class="token-string">"My Agent Server"</span>, version: <span class="token-string">"1.0.0"</span> },
+      capabilities: { experimentalApi: false },
+    });
+    <span class="token-key">await this</span>.notify(<span class="token-string">"initialized"</span>);
+  }
+
+  request&lt;T&gt;(method: string, params?: unknown, timeoutMs = 30_000): Promise&lt;T&gt; {
+    <span class="token-key">const</span> id = <span class="token-key">this</span>.nextId++;
+    <span class="token-key">return new</span> Promise&lt;T&gt;((resolve, reject) =&gt; {
+      <span class="token-key">const</span> timer = setTimeout(() =&gt; {
+        <span class="token-key">this</span>.pending.delete(id);
+        reject(<span class="token-key">new</span> Error(`app-server timeout: ${method}`));
+      }, timeoutMs);
+      <span class="token-key">this</span>.pending.set(id, { resolve: resolve <span class="token-key">as</span> (v: unknown) =&gt; void, reject, timer });
+      <span class="token-key">this</span>.write({ id, method, ...(params === undefined ? {} : { params }) }).catch(reject);
+    });
+  }
+
+  notify(method: string, params?: unknown) {
+    <span class="token-key">return this</span>.write({ method, ...(params === undefined ? {} : { params }) });
+  }
+
+  respond(id: Id, result: unknown) { <span class="token-key">return this</span>.write({ id, result }); }
+  respondError(id: Id, code: number, message: string, data?: unknown) {
+    <span class="token-key">return this</span>.write({ id, error: { code, message, ...(data === undefined ? {} : { data }) } });
+  }
+
+  <span class="token-key">private</span> onMessage(message: any) {
+    <span class="token-key">if</span> (<span class="token-string">"id"</span> <span class="token-key">in</span> message &amp;&amp; (<span class="token-string">"result"</span> <span class="token-key">in</span> message || <span class="token-string">"error"</span> <span class="token-key">in</span> message)) {
+      <span class="token-key">const</span> pending = <span class="token-key">this</span>.pending.get(message.id);
+      <span class="token-key">if</span> (!pending) <span class="token-key">return this</span>.emit(<span class="token-string">"orphanResponse"</span>, message);
+      clearTimeout(pending.timer);
+      <span class="token-key">this</span>.pending.delete(message.id);
+      <span class="token-key">return</span> message.error
+        ? pending.reject(Object.assign(<span class="token-key">new</span> Error(message.error.message), message.error))
+        : pending.resolve(message.result);
+    }
+    <span class="token-key">if</span> (<span class="token-string">"id"</span> <span class="token-key">in</span> message &amp;&amp; message.method)
+      <span class="token-key">return this</span>.emit(<span class="token-string">"serverRequest"</span>, message);
+    <span class="token-key">if</span> (message.method) <span class="token-key">return this</span>.emit(<span class="token-string">"notification"</span>, message);
+    <span class="token-key">this</span>.emit(<span class="token-string">"protocolError"</span>, message);
+  }
+
+  <span class="token-key">private</span> write(message: unknown) {
+    <span class="token-comment">// Serialize writers so JSON lines cannot interleave.</span>
+    <span class="token-key">this</span>.writeChain = <span class="token-key">this</span>.writeChain.then(() =&gt; <span class="token-key">new</span> Promise&lt;void&gt;((resolve, reject) =&gt; {
+      <span class="token-key">this</span>.child.stdin.write(`${JSON.stringify(message)}\n`, (error) =&gt; error ? reject(error) : resolve());
+    }));
+    <span class="token-key">return this</span>.writeChain;
+  }
+
+  <span class="token-key">private</span> failAll(error: Error) {
+    <span class="token-key">for</span> (<span class="token-key">const</span> pending <span class="token-key">of this</span>.pending.values()) {
+      clearTimeout(pending.timer); pending.reject(error);
+    }
+    <span class="token-key">this</span>.pending.clear();
+    <span class="token-key">this</span>.emit(<span class="token-string">"exit"</span>, error);
+  }
+}</code></pre>
+        </div>
+
+        <div class="callout danger">
+          <div class="callout-title">Production hardening omitted from the sample</div>
+          <p>Add envelope validation, maximum line size, startup/idle/operation-specific timeouts, abort signals, graceful shutdown, process-group termination, secret redaction, metrics, and restart policy. If a write fails after adding a pending entry, remove and reject that entry immediately.</p>
+        </div>
+      </section>
+
+      <section id="trpc">
+        <div class="eyebrow">Product API</div>
+        <h2>Expose intent, not arbitrary methods.</h2>
+        <p class="section-intro">A generic tRPC procedure such as <code>codex.call({ method, params })</code> would leak unstable protocol details, bypass authorization, and expose dangerous filesystem/config/account methods. Prefer an allowlisted domain router.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>tRPC procedure</th><th>Kind</th><th>App-server mapping</th></tr></thead>
+            <tbody>
+              <tr><td>agent.createSession</td><td>mutation</td><td><code>thread/start</code></td></tr>
+              <tr><td>agent.resumeSession</td><td>mutation/query</td><td><code>thread/resume</code> or <code>thread/read</code></td></tr>
+              <tr><td>agent.listSessions</td><td>query</td><td><code>thread/list</code> with cursor pagination</td></tr>
+              <tr><td>agent.sendMessage</td><td>mutation</td><td><code>turn/start</code></td></tr>
+              <tr><td>agent.steerTurn</td><td>mutation</td><td><code>turn/steer</code> with expected turn ID</td></tr>
+              <tr><td>agent.interruptTurn</td><td>mutation</td><td><code>turn/interrupt</code></td></tr>
+              <tr><td>agent.resolveRequest</td><td>mutation</td><td>Response to server-originated request ID</td></tr>
+              <tr><td>agent.events</td><td>subscription</td><td>Normalized notifications and pending server requests</td></tr>
+              <tr><td>agent.models</td><td>query</td><td><code>model/list</code></td></tr>
+              <tr><td>agent.account</td><td>query</td><td><code>account/read</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head"><span>agentRouter.ts</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-key">export const</span> agentRouter = router({
+  createSession: protectedProcedure
+    .input(z.object({ workspaceId: z.string(), model: z.string().optional() }))
+    .mutation(<span class="token-key">async</span> ({ ctx, input }) =&gt; {
+      <span class="token-key">const</span> workspace = <span class="token-key">await</span> ctx.workspaces.requireAccess(ctx.user.id, input.workspaceId);
+      <span class="token-key">return</span> ctx.agents.createSession({
+        ownerId: ctx.user.id,
+        workspaceId: workspace.id,
+        cwd: workspace.canonicalRoot,
+        model: input.model,
+      });
+    }),
+
+  sendMessage: protectedProcedure
+    .input(z.object({
+      sessionId: z.string(),
+      clientMessageId: z.string().uuid(),
+      text: z.string().min(1).max(100_000),
+    }))
+    .mutation(<span class="token-key">async</span> ({ ctx, input }) =&gt; {
+      <span class="token-key">await</span> ctx.agents.requireOwner(input.sessionId, ctx.user.id);
+      <span class="token-key">return</span> ctx.agents.startTurn(input);
+    }),
+
+  events: protectedProcedure
+    .input(z.object({ sessionId: z.string(), after: z.number().int().nonnegative().optional() }))
+    .subscription(<span class="token-key">async function*</span> ({ ctx, input, signal }) {
+      <span class="token-key">await</span> ctx.agents.requireOwner(input.sessionId, ctx.user.id);
+      <span class="token-key">for await</span> (<span class="token-key">const</span> event <span class="token-key">of</span> ctx.agentEvents.subscribe(input.sessionId, input.after, signal))
+        <span class="token-key">yield</span> event;
+    }),
+
+  resolveRequest: protectedProcedure
+    .input(resolveRequestSchema)
+    .mutation(({ ctx, input }) =&gt;
+      ctx.agents.resolveRequest(ctx.user.id, input.sessionId, input.requestId, input.response)),
+});</code></pre>
+        </div>
+        <p>Use a separate public session ID instead of exposing <code>threadId</code> as your authorization boundary. Store the mapping <code>{ publicSessionId, tenantId, workspaceId, appServerInstanceId, threadId }</code> server-side.</p>
+      </section>
+
+      <section id="events">
+        <div class="eyebrow">Streaming and projection</div>
+        <h2>Normalize once; replay by sequence.</h2>
+        <p class="section-intro">Raw notifications are transport events, not a durable frontend state model. Convert them into a compact product event union and assign a monotonically increasing sequence number per session.</p>
+
+        <div class="code-wrap">
+          <div class="code-head"><span>AgentEvent.ts</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-key">type</span> <span class="token-type">AgentEvent</span> =
+  | { seq: number; type: <span class="token-string">"turn.started"</span>; turnId: string }
+  | { seq: number; type: <span class="token-string">"item.started"</span>; turnId: string; item: AgentItem }
+  | { seq: number; type: <span class="token-string">"item.delta"</span>; turnId: string; itemId: string; channel: <span class="token-string">"message"</span> | <span class="token-string">"reasoning"</span> | <span class="token-string">"command"</span>; delta: string }
+  | { seq: number; type: <span class="token-string">"item.completed"</span>; turnId: string; item: AgentItem }
+  | { seq: number; type: <span class="token-string">"approval.requested"</span>; request: ApprovalRequest }
+  | { seq: number; type: <span class="token-string">"request.resolved"</span>; requestId: string | number }
+  | { seq: number; type: <span class="token-string">"turn.completed"</span>; turnId: string; status: <span class="token-string">"completed"</span> | <span class="token-string">"interrupted"</span> | <span class="token-string">"failed"</span>; error?: AgentError }
+  | { seq: number; type: <span class="token-string">"session.resyncRequired"</span>; reason: string };</code></pre>
+        </div>
+
+        <h3>Projection rules</h3>
+        <ul>
+          <li>On <code>item/started</code>, insert the item by <code>item.id</code>.</li>
+          <li>Append deltas in arrival order, keyed by <code>threadId + turnId + itemId</code>.</li>
+          <li>On <code>item/completed</code>, replace the in-progress item with the full final item.</li>
+          <li>Use <code>turn/diff/updated</code> as the latest full diff snapshot; do not concatenate these values.</li>
+          <li>Use <code>turn/plan/updated</code> as the current plan snapshot.</li>
+          <li>On <code>turn/completed</code>, finalize the turn even if an earlier <code>error</code> notification was shown.</li>
+          <li>Deduplicate by your event sequence, not by payload equality. Delta text may legitimately repeat.</li>
+        </ul>
+
+        <h3>Reconnect strategy</h3>
+        <p>The tRPC subscription input should include <code>after</code>, the last sequence applied by the client. Replay buffered/persisted events newer than that cursor, then switch to live delivery. If the cursor is too old, send a snapshot plus a new base sequence or emit <code>session.resyncRequired</code>.</p>
+        <div class="callout warning">
+          <div class="callout-title">Do not let a slow browser backpressure app-server stdout</div>
+          <p>The gateway must continuously drain app-server output into bounded internal queues. Coalesce high-volume deltas or disconnect/resync a slow subscriber. A browser's network speed must never block protocol reading.</p>
+        </div>
+      </section>
+
+      <section id="approvals">
+        <div class="eyebrow">Bidirectional flows</div>
+        <h2>Approvals are pending RPCs, not events alone.</h2>
+        <p class="section-intro">When app-server asks the client a question, retain the original app-server request ID. Publish a safe UI representation, then use the user's tRPC mutation to answer that exact ID.</p>
+
+        <div class="sequence">
+          <div class="step"><div class="step-marker">1</div><div><h3>Receive inbound request</h3><p>Classify by method, validate params, and associate it with the owning thread/session.</p></div></div>
+          <div class="step"><div class="step-marker">2</div><div><h3>Store pending state</h3><p>Persist an opaque public request token mapped to the raw app-server request ID. Never trust a client-supplied thread mapping.</p></div></div>
+          <div class="step"><div class="step-marker">3</div><div><h3>Publish UI event</h3><p>Send the proposed command/diff, reason, available decisions, and timeout metadata through the session subscription.</p></div></div>
+          <div class="step"><div class="step-marker">4</div><div><h3>Authorize and answer</h3><p>Check ownership, allowed choice, single-resolution state, and request freshness; then write <code>{ id, result }</code>.</p></div></div>
+          <div class="step"><div class="step-marker">5</div><div><h3>Close pending UI</h3><p>Consume <code>serverRequest/resolved</code>. It can also arrive when turn start/completion/interruption clears an unanswered request.</p></div></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Inbound method</th><th>Purpose</th><th>Response</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>item/commandExecution/requestApproval</td><td>Approve a command or network action.</td><td><code>{ decision }</code></td><td><span class="status stable">stable</span></td></tr>
+              <tr><td>item/fileChange/requestApproval</td><td>Approve proposed file changes.</td><td><code>{ decision }</code></td><td><span class="status stable">stable</span></td></tr>
+              <tr><td>item/tool/requestUserInput</td><td>Ask 1-3 structured questions.</td><td>Answers by question ID.</td><td><span class="status experimental">experimental</span></td></tr>
+              <tr><td>mcpServer/elicitation/request</td><td>MCP form, OpenAI form, or URL elicitation.</td><td><code>{ action, content }</code></td><td><span class="status stable">stable</span></td></tr>
+              <tr><td>item/permissions/requestApproval</td><td>Request a subset of filesystem/network permissions.</td><td><code>{ permissions, scope? }</code></td><td><span class="status stable">stable</span></td></tr>
+              <tr><td>item/tool/call</td><td>Run a client-owned dynamic tool.</td><td><code>{ contentItems, success }</code></td><td><span class="status experimental">experimental</span></td></tr>
+              <tr><td>account/chatgptAuthTokens/refresh</td><td>Client-owned token refresh integration.</td><td>Fresh auth tokens.</td><td><span class="status stable">specialized</span></td></tr>
+              <tr><td>attestation/generate</td><td>Desktop host attestation.</td><td><code>{ token }</code></td><td><span class="status stable">opt-in</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head"><span>approval-response.json</span><button class="copy">Copy</button></div>
+          <pre><code><span class="token-comment">// app-server -&gt; gateway</span>
+{"method":"item/commandExecution/requestApproval","id":61,"params":{"threadId":"thr_123","turnId":"turn_456","itemId":"item_9","startedAtMs":1784900000000,"reason":"Needs network access","command":"npm install","cwd":"/workspace/repo"}}
+
+<span class="token-comment">// gateway -&gt; app-server, after authenticated user decision</span>
+{"id":61,"result":{"decision":"accept"}}
+
+<span class="token-comment">// app-server -&gt; gateway; clear any pending UI</span>
+{"method":"serverRequest/resolved","params":{"threadId":"thr_123","requestId":61}}</code></pre>
+        </div>
+        <p>For command approvals, support the advertised <code>availableDecisions</code> when present. Otherwise use stable fallback choices. Command decisions include <code>accept</code>, <code>acceptForSession</code>, <code>decline</code>, and <code>cancel</code>, plus structured policy-amendment variants. File changes use the four simple string decisions.</p>
+      </section>
+
+      <section id="reliability">
+        <div class="eyebrow">Failure model</div>
+        <h2>Make crashes explicit and recovery bounded.</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Failure</th><th>Required behavior</th></tr></thead>
+            <tbody>
+              <tr><td>Malformed stdout line</td><td>Capture redacted diagnostics, count a protocol fault, and restart after a conservative threshold. Do not silently skip arbitrary protocol corruption.</td></tr>
+              <tr><td>Child exit</td><td>Reject all pending client requests and inbound approval promises, mark sessions disconnected, and restart with capped exponential backoff.</td></tr>
+              <tr><td>Restart</td><td>Perform a fresh initialize handshake, then <code>thread/resume</code> active persisted threads to restore subscriptions. Ephemeral threads cannot be recovered.</td></tr>
+              <tr><td>Request timeout</td><td>Reject the caller and remove correlation state. Do not blindly retry non-idempotent methods such as <code>turn/start</code>.</td></tr>
+              <tr><td>Overload -32001</td><td>Retry idempotent reads with jitter. For mutations, use product idempotency controls and reconcile state before retrying.</td></tr>
+              <tr><td>Subscription lag</td><td>Drop/coalesce deltas, preserve terminal events, and force snapshot resync when the bounded buffer is exceeded.</td></tr>
+              <tr><td>User cancellation</td><td>Call <code>turn/interrupt</code>, then wait for <code>turn/completed</code> with <code>interrupted</code>. The empty RPC response only acknowledges the request.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Idempotency and reconciliation</h3>
+        <ul>
+          <li>Send a unique <code>clientUserMessageId</code> and store it with the product message. It is echoed on the corresponding user item, which helps reconciliation.</li>
+          <li>A transport failure after writing <code>turn/start</code> is ambiguous. Before retrying, read/resume the thread and look for the client message ID.</li>
+          <li>Use your own idempotency key for <code>sendMessage</code> and serialize turn starts per thread.</li>
+          <li>Reject a second approval response locally; server requests are single-settlement.</li>
+          <li>On shutdown, stop accepting turns, interrupt or drain active work according to policy, unsubscribe where useful, close stdin, then enforce a deadline before killing the child.</li>
+        </ul>
+
+        <h3>Observability</h3>
+        <p>Log structured metadata, not raw secrets: process instance ID, request ID, method, thread/turn/item IDs, latency, result class, queue depth, restart count, event lag, and tRPC correlation ID. Set <code>LOG_FORMAT=json</code> for app-server stderr and ingest it as a separate log stream. Redact API keys, auth URLs/tokens, user prompts where policy requires, command environment, dynamic tool arguments, and file contents.</p>
+      </section>
+
+      <section id="security">
+        <div class="eyebrow">Trust boundaries</div>
+        <h2>Treat the gateway as a privileged local agent.</h2>
+        <p class="section-intro">App-server can execute commands, edit and read files, mutate config, authenticate accounts, invoke MCP tools, and run unsandboxed thread shell commands. Your tRPC layer must narrow that authority.</p>
+        <ul class="checklist">
+          <li>Resolve each workspace root server-side and canonicalize it; never accept an arbitrary browser-provided <code>cwd</code>.</li>
+          <li>Enforce tenant/user ownership on every session, event subscription, turn, and approval response.</li>
+          <li>Run app-server under an OS/container identity scoped to the workspace. Sandbox policy is defense in depth, not tenant isolation.</li>
+          <li>Do not expose generic <code>fs/*</code>, <code>config/*</code>, <code>account/*</code>, <code>process/*</code>, or <code>thread/shellCommand</code> procedures unless your product explicitly needs and authorizes them.</li>
+          <li>Keep <code>approvalPolicy</code> conservative. Never let an untrusted frontend silently switch to <code>never</code> or full access.</li>
+          <li>Bind pending server requests to session + user + process instance + original request ID; use one-time opaque public tokens.</li>
+          <li>Separate <code>CODEX_HOME</code> by isolation boundary and protect persisted credentials/config with filesystem permissions and encrypted storage where applicable.</li>
+          <li>Validate image/data URL size and type. Remote HTTP(S) image URLs are rejected by app-server; prefer controlled uploads followed by local paths.</li>
+          <li>Rate-limit turn starts, large inputs, process creation, approvals, and subscriptions.</li>
+          <li>Opt into experimental APIs only for specific features you own and test. Experimental methods and fields have no compatibility guarantee.</li>
+        </ul>
+
+        <div class="callout danger">
+          <div class="callout-title">Avoid the unsandboxed shortcut</div>
+          <p><code>thread/shellCommand</code> runs user-initiated shell commands unsandboxed with full access. Do not map it to a general browser terminal. If you need utilities, prefer a narrowly validated product operation or the sandboxed <code>command/exec</code> surface.</p>
+        </div>
+
+        <h3>Authentication model</h3>
+        <p>App-server supports API key, ChatGPT-managed OAuth/device flow, personal access token, and experimental managed Bedrock auth. For a local app, let app-server own ChatGPT OAuth and token refresh. For hosted multi-user infrastructure, isolate credential stores per user/workspace and decide whether credentials are user-owned or service-owned before choosing process granularity. Query <code>account/read</code> after initialization and expose only the minimal account state your UI needs.</p>
+        <p><code>clientInfo.name</code> identifies the integration in enterprise compliance logs. Use an honest stable identifier; the app-server documentation asks enterprise integrations to coordinate registration as a known client.</p>
+      </section>
+
+      <section id="delivery">
+        <div class="eyebrow">Implementation sequence</div>
+        <h2>Ship the smallest coherent slice first.</h2>
+        <div class="sequence">
+          <div class="step"><div class="step-marker">1</div><div><h3>Pin and generate</h3><p>Pin a Codex binary version. Generate stable TypeScript and JSON Schema. Add a CI drift check.</p></div></div>
+          <div class="step"><div class="step-marker">2</div><div><h3>Build wire client</h3><p>Implement spawn, JSONL framing, one-time handshake, response correlation, timeout handling, serialized writes, and process exit cleanup.</p></div></div>
+          <div class="step"><div class="step-marker">3</div><div><h3>Implement core agent flow</h3><p>Support account/model reads, thread start/resume/list/read, turn start/interrupt, and the essential item/turn notifications.</p></div></div>
+          <div class="step"><div class="step-marker">4</div><div><h3>Add event projection</h3><p>Create normalized session events, bounded replay, snapshots, per-session sequencing, and tRPC subscription resume cursors.</p></div></div>
+          <div class="step"><div class="step-marker">5</div><div><h3>Add approvals</h3><p>Handle command and file-change server requests end-to-end, including authorization, one-shot response, timeout, and resolved cleanup.</p></div></div>
+          <div class="step"><div class="step-marker">6</div><div><h3>Harden</h3><p>Add workspace isolation, crash recovery, resumption, idempotency reconciliation, backpressure, telemetry, redaction, and load tests.</p></div></div>
+          <div class="step"><div class="step-marker">7</div><div><h3>Expand deliberately</h3><p>Add user-input requests, MCP elicitations, permissions, dynamic tools, realtime, or experimental APIs only as product features demand.</p></div></div>
+        </div>
+
+        <h3>Minimum test matrix</h3>
+        <div class="grid">
+          <article class="card"><h3>Protocol</h3><p>Split chunks, multiple lines per chunk, malformed lines, unknown notifications, string/integer IDs, out-of-order responses.</p></article>
+          <article class="card"><h3>Lifecycle</h3><p>Handshake ordering, duplicate initialize, child exit, startup timeout, graceful shutdown, process restart.</p></article>
+          <article class="card"><h3>Agent flow</h3><p>Start/resume, text deltas, command output, file diffs, completed/failed/interrupted turns.</p></article>
+          <article class="card"><h3>Approvals</h3><p>Accept/decline/cancel, duplicate answer, stale request, cleanup event, unauthorized user, disconnect while pending.</p></article>
+          <article class="card"><h3>Streaming</h3><p>Reconnect cursor, replay order, duplicate delivery, slow client, buffer overflow, snapshot resync.</p></article>
+          <article class="card"><h3>Security</h3><p>Workspace traversal, cross-tenant IDs, forbidden procedures, unsafe policy override, secret redaction.</p></article>
+        </div>
+
+        <h3>Definition of done for v1</h3>
+        <ul class="checklist">
+          <li>A user can start/resume a persisted coding session and send a text turn.</li>
+          <li>The UI renders agent text, command progress/output, file changes, and terminal status from normalized events.</li>
+          <li>Command and file approvals work bidirectionally and cannot be answered by another user/session.</li>
+          <li>A browser reconnect resumes from an event cursor without duplicating visible output.</li>
+          <li>An app-server crash rejects ambiguous operations, restarts, reinitializes, and resumes recoverable threads.</li>
+          <li>All filesystem access is constrained to a server-resolved workspace isolation boundary.</li>
+          <li>The deployed Codex binary and generated protocol schema are version-locked.</li>
+        </ul>
+      </section>
+
+      <section id="sources">
+        <div class="eyebrow">Primary sources</div>
+        <h2>Repository evidence.</h2>
+        <p class="section-intro">This report is based on the checked-out Codex repository and generated protocol artifacts available on July 24, 2026. Line links are intentionally local/relative to this document's repository location.</p>
+        <ol class="sources">
+          <li><a href="codex-rs/app-server/README.md">codex-rs/app-server/README.md</a><span>Authoritative transport, lifecycle, API, events, approvals, auth, and experimental API documentation. Key sections begin around lines 20, 74, 83, 138, 730, 1316, 1463, 1933, and 2165.</span></li>
+          <li><a href="codex-rs/app-server-protocol/src/rpc.rs">codex-rs/app-server-protocol/src/rpc.rs</a><span>Wire envelope definitions and explicit omission of the JSON-RPC 2.0 version field, lines 1-88.</span></li>
+          <li><a href="codex-rs/app-server-protocol/src/protocol/v1.rs">codex-rs/app-server-protocol/src/protocol/v1.rs</a><span>Initialize params, capabilities, client info, and initialize response, lines 27-74.</span></li>
+          <li><a href="codex-rs/app-server-protocol/src/protocol/v2/thread.rs">codex-rs/app-server-protocol/src/protocol/v2/thread.rs</a><span>Thread start options and response contract, especially lines 49-201.</span></li>
+          <li><a href="codex-rs/app-server-protocol/src/protocol/v2/turn.rs">codex-rs/app-server-protocol/src/protocol/v2/turn.rs</a><span>Turn start/steer/interrupt, user input union, and terminal notifications, especially lines 66-217 and 288-398.</span></li>
+          <li><a href="codex-rs/app-server-protocol/src/protocol/v2/item.rs">codex-rs/app-server-protocol/src/protocol/v2/item.rs</a><span>Command and file approval request/response payloads, lines 1424-1526.</span></li>
+          <li><a href="codex-rs/app-server-protocol/src/protocol/common.rs">codex-rs/app-server-protocol/src/protocol/common.rs</a><span>Server-initiated request and notification definitions, lines 1206-1503.</span></li>
+          <li><a href="codex-rs/app-server/src/transport.rs">codex-rs/app-server/src/transport.rs</a><span>Bounded outbound routing, notification filtering, and slow-connection disconnection behavior.</span></li>
+          <li><a href="codex-rs/app-server/src/main.rs">codex-rs/app-server/src/main.rs</a><span>App-server CLI transport defaults and runtime arguments, lines 19-59.</span></li>
+          <li><a href="codex-rs/app-server-test-client/src/lib.rs">codex-rs/app-server-test-client/src/lib.rs</a><span>Reference process spawn, initialize handshake, newline writes, line reads, and server-request responses around lines 1630-1773 and 2274-2338.</span></li>
+          <li><a href="codex-rs/app-server-protocol/schema/typescript/">codex-rs/app-server-protocol/schema/typescript/</a><span>Generated stable TypeScript unions for ClientRequest, ServerRequest, ServerNotification, and v2 payloads.</span></li>
+          <li><a href="codex-rs/app-server-client/README.md">codex-rs/app-server-client/README.md</a><span>Useful lifecycle lessons from the internal in-process client: bounded queues, initialization, typed events, and graceful shutdown.</span></li>
+        </ol>
+        <footer>Research artifact: <code>app-server-trpc-integration-research.html</code> &middot; Self-contained HTML &middot; No external fonts, scripts, or stylesheets.</footer>
+      </section>
+    </main>
+
+    <aside class="rail" aria-label="Document notes">
+      <div class="rail-card">
+        <p class="rail-title">Bottom line</p>
+        <p class="rail-copy">Use stdio. Hide raw methods. Normalize events. Treat approvals as bidirectional RPC. Pin schema to binary.</p>
+      </div>
+      <div class="rail-card">
+        <p class="rail-title">Primary risk</p>
+        <p class="rail-copy">A shared app-server process is a credential, config, conversation, and filesystem trust boundary.</p>
+      </div>
+      <div class="rail-card">
+        <p class="rail-title">Protocol status</p>
+        <p class="rail-copy">Stable v2 surfaces are preferred. WebSocket and several advanced methods are experimental.</p>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem("research-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = savedTheme || (prefersDark ? "dark" : "light");
+
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      localStorage.setItem("research-theme", root.dataset.theme);
+    });
+
+    document.querySelectorAll(".copy").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const code = button.closest(".code-wrap").querySelector("code").innerText;
+        await navigator.clipboard.writeText(code);
+        const previous = button.textContent;
+        button.textContent = "Copied";
+        setTimeout(() => { button.textContent = previous; }, 1200);
+      });
+    });
+
+    const links = [...document.querySelectorAll(".toc a")];
+    const sections = links.map((link) => document.querySelector(link.getAttribute("href")));
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      links.forEach((link) => link.classList.toggle("active", link.getAttribute("href") === `#${visible.target.id}`));
+    }, { rootMargin: "-15% 0px -70% 0px" });
+    sections.forEach((section) => observer.observe(section));
+  </script>
+</body>
+</html>

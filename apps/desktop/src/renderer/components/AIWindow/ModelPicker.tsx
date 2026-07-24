@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { CheckIcon, ChevronDownIcon, SparklesIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +41,7 @@ type PickerDropdownProps = {
   value: string;
   onSelect: (value: string) => void;
   menuWidth: string;
+  leadingIcon?: ReactNode;
 };
 
 function PickerDropdown({
@@ -48,6 +49,7 @@ function PickerDropdown({
   value,
   onSelect,
   menuWidth,
+  leadingIcon,
 }: PickerDropdownProps) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? options[0].label;
@@ -58,13 +60,14 @@ function PickerDropdown({
         <button
           type="button"
           className={cn(
-            "group/trigger inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-normal transition-[background-color,color,transform] focus-visible:outline-none active:translate-y-px",
+            "group/trigger inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[13px] font-normal transition-[background-color,color,transform] focus-visible:outline-none active:translate-y-px",
             aiThemeClassNames.surfaceHover,
             aiThemeClassNames.textMuted,
             aiThemeClassNames.hoverTextPrimary,
             aiThemeClassNames.dataOpenSurfaceHover,
           )}
         >
+          {leadingIcon}
           {selectedLabel}
           <ChevronDownIcon className="size-3 opacity-50 transition-transform group-data-[state=open]/trigger:rotate-180" />
         </button>
@@ -134,10 +137,11 @@ export default function ModelPicker() {
         value={selectedModel}
         onSelect={modelSelected}
         menuWidth="min-w-56"
+        leadingIcon={<SparklesIcon className="size-3.5 text-[#E4714B]" />}
       />
       <span
         aria-hidden="true"
-        className={cn("mx-1.5 h-4 w-px shrink-0", aiThemeClassNames.divider)}
+        className={cn("mx-2.5 h-4 w-px shrink-0", aiThemeClassNames.divider)}
       />
       <PickerDropdown
         options={thinkingOptions}

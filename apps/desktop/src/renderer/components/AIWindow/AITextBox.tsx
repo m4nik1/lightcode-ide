@@ -16,7 +16,7 @@ export default function AITextBox() {
     ? aiThemeClassNames.stopAction
     : canSend
       ? aiThemeClassNames.primaryAction
-      : aiThemeClassNames.primaryActionDisabled;
+      : aiThemeClassNames.mutedAction;
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -28,10 +28,10 @@ export default function AITextBox() {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="relative min-h-28 w-full min-w-0 sm:w-[75%]">
+      <div className="relative min-h-36 w-full min-w-0 sm:w-[75%]">
         <div
           className={cn(
-            "relative flex min-h-28 flex-col overflow-hidden rounded-[22px] border transition-[border-color,background-color,box-shadow]",
+            "relative flex min-h-36 flex-col overflow-hidden rounded-[24px] border transition-[border-color,background-color,box-shadow]",
             aiThemeClassNames.raisedSurface,
             aiThemeClassNames.border,
             aiThemeClassNames.focusWithinBorder,
@@ -42,11 +42,11 @@ export default function AITextBox() {
             ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder=""
+            placeholder="Ask for follow-up changes or attach images"
             rows={3}
             onKeyDown={(e) => handleKeyDown(e)}
             className={cn(
-              "min-h-28 w-full resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-sm leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
+              "min-h-36 w-full resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-[15px] leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
               aiThemeClassNames.textPrimary,
               aiThemeClassNames.placeholder,
             )}
