@@ -19,6 +19,10 @@ export default class lightThread {
     return this;
   }
 
+  stopQuery() {
+    // The thread should stop here
+  }
+
   async sendQuery(query: string) {
     const result = await this.thread?.run(query)
 

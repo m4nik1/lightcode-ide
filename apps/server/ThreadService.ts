@@ -42,6 +42,14 @@ export class ThreadService {
     return result.finalResponse.trim();
   }
 
+  stopTurn(threadID: string) {
+    console.log("Interrupting turn")
+
+    let runningThread : lightThread = this.threads.get(threadID)
+
+
+  } 
+
   async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {
     let thread = this.threads.get(input.threadID);
 

@@ -9,7 +9,7 @@ import { useAIChat } from "@/context/useAIChat";
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const { messageSend, isTurning } = useAIChat();
+  const { messageSend, isTurning, stopTurn } = useAIChat();
 
   const canSend = value.trim().length > 0;
   const actionButtonThemeClassName = isTurning
@@ -57,7 +57,12 @@ export default function AITextBox() {
             <button
               type="button"
               onClick={() => {
-                void messageSend(value);
+                if(isTurning) {
+                  void messageSend(value);
+                }
+                else {
+                  stopTurn()
+                }
                 setValue("");
               }}
               aria-label="Send message"

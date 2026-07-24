@@ -44,6 +44,14 @@ export const appRouter = router({
         yield event;
       }
     }),
+  
+  stopTurn: publicProcedure
+    .input(
+      z.object({ threadID: z.string() })
+    )
+    .query(function ({input}) {
+      threadService.stopTurn(input.threadID)
+    })
 
   loadMessages: publicProcedure
     .input(

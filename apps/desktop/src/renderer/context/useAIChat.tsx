@@ -12,6 +12,7 @@ type AIContext = {
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
   isTurning: boolean;
+  stopTurn: (thread_id : string) => void;
 };
 
 type AIModel = {
@@ -124,6 +125,12 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     await projectsQuery.refetch();
   }
 
+  function stopTurn(thread_id : string) {
+    console.log("Stopping the current turn")
+
+    trpcClient.stopTurn.query(); 
+  }
+
   async function createProject() {
     const projectFolder = await window.electronAPI.openFolder();
     const projectFolderPath = projectFolder.filePaths[0];
@@ -178,6 +185,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         currentThread,
         setCurrentThread,
         isTurning,
+        stopTurn
       }}
     >
       {children}
