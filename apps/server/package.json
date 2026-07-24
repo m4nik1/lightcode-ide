@@ -1,0 +1,24 @@
+{
+  "name": "@lightcode/server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types index.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit --pretty false",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@openai/codex-sdk": "^0.140.0",
+    "@trpc/client": "^11.17.0",
+    "@trpc/server": "^11.17.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

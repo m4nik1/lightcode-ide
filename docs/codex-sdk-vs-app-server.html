@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codex SDK vs Codex App Server</title>
+<style>
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --border: 240 5.9% 90%;
+    --card: 0 0% 100%;
+    --accent: 240 4.8% 95.9%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --border: 240 3.7% 15.9%;
+    --card: 240 10% 3.9%;
+    --accent: 240 3.7% 15.9%;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    transition: background .2s, color .2s;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; }
+  .container { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; }
+
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(8px);
+    background: hsl(var(--background) / .85);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
+  .logo { display: flex; align-items: center; gap: .6rem; font-weight: 600; font-size: .9rem; letter-spacing: -0.01em; }
+  .logo svg { width: 18px; height: 18px; }
+  .nav-links { display: flex; gap: 1.25rem; font-size: .8rem; color: hsl(var(--muted-foreground)); }
+  .nav-links a { color: inherit; text-decoration: none; transition: color .15s; }
+  .nav-links a:hover { color: hsl(var(--foreground)); }
+  .theme-btn {
+    border: 1px solid hsl(var(--border)); background: transparent; color: hsl(var(--foreground));
+    border-radius: var(--radius); width: 2rem; height: 2rem; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;
+  }
+  .theme-btn:hover { background: hsl(var(--accent)); }
+
+  .hero { padding: 5rem 0 3.5rem; border-bottom: 1px solid hsl(var(--border)); }
+  .badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .72rem; font-weight: 500; padding: .2rem .65rem;
+    border: 1px solid hsl(var(--border)); border-radius: 9999px;
+    color: hsl(var(--muted-foreground)); margin-bottom: 1.25rem;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 700; letter-spacing: -0.035em;
+    line-height: 1.1; max-width: 40rem;
+  }
+  h1 .muted { color: hsl(var(--muted-foreground)); }
+  .hero p.lede { margin-top: 1.25rem; font-size: 1.05rem; color: hsl(var(--muted-foreground)); max-width: 42rem; }
+
+  section { padding: 3rem 0; border-bottom: 1px solid hsl(var(--border)); }
+  .eyebrow { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: hsl(var(--muted-foreground)); margin-bottom: .5rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1rem; }
+  h3 { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; }
+  section > .container > p { color: hsl(var(--muted-foreground)); max-width: 46rem; margin-bottom: 1.5rem; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) + 2px);
+    background: hsl(var(--card)); padding: 1.35rem; transition: border-color .15s;
+  }
+  .card:hover { border-color: hsl(var(--muted-foreground) / .4); }
+  .card .pill {
+    display: inline-block; font-size: .68rem; font-weight: 600; font-family: ui-monospace, monospace;
+    background: hsl(var(--muted)); border-radius: 4px; padding: .15rem .5rem; margin-bottom: .75rem;
+  }
+  .card h3 { margin-bottom: .5rem; }
+  .card p { font-size: .875rem; color: hsl(var(--muted-foreground)); }
+  .card ul { margin-top: .75rem; padding-left: 1.1rem; font-size: .875rem; color: hsl(var(--muted-foreground)); }
+  .card li { margin-bottom: .35rem; }
+  .card li strong { color: hsl(var(--foreground)); font-weight: 500; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .855rem; }
+  .table-wrap { border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) + 2px); overflow: hidden; overflow-x: auto; }
+  th {
+    text-align: left; font-weight: 500; color: hsl(var(--muted-foreground));
+    padding: .7rem 1rem; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--muted) / .5);
+    font-size: .78rem; white-space: nowrap;
+  }
+  td { padding: .7rem 1rem; border-bottom: 1px solid hsl(var(--border)); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 500; white-space: nowrap; }
+  td .sub { color: hsl(var(--muted-foreground)); }
+
+  pre {
+    background: hsl(var(--muted) / .5); border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) + 2px); padding: 1rem 1.15rem; font-size: .8rem;
+    overflow-x: auto; line-height: 1.55; margin-top: 1rem;
+  }
+  .code-label { font-size: .7rem; font-family: ui-monospace, monospace; color: hsl(var(--muted-foreground)); margin-top: 1.25rem; }
+  code.inline { background: hsl(var(--muted)); padding: .1rem .35rem; border-radius: 4px; font-size: .82em; }
+
+  .verdict {
+    border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) + 4px);
+    padding: 1.75rem; background: linear-gradient(180deg, hsl(var(--muted) / .35), transparent);
+  }
+  .verdict h3 { margin-bottom: .75rem; font-size: 1.1rem; }
+  .verdict p { font-size: .9rem; color: hsl(var(--muted-foreground)); margin-bottom: .75rem; }
+  .verdict p:last-child { margin-bottom: 0; }
+  .verdict strong { color: hsl(var(--foreground)); font-weight: 600; }
+
+  .check { color: #22c55e; font-weight: 600; }
+  .cross { color: hsl(var(--muted-foreground)); }
+  .warn { color: #f59e0b; font-weight: 600; }
+
+  footer { padding: 2.5rem 0; font-size: .78rem; color: hsl(var(--muted-foreground)); }
+  footer a { color: inherit; }
+  footer ul { list-style: none; display: flex; flex-direction: column; gap: .3rem; margin-top: .5rem; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 19.5h20L12 2z"/></svg>
+      Codex Integration Research
+    </div>
+    <nav class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#compare">Compare</a>
+      <a href="#code">Code</a>
+      <a href="#verdict">Verdict</a>
+    </nav>
+    <button class="theme-btn" onclick="document.body.classList.toggle('dark')" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <div class="badge"><span class="dot"></span> Research brief · July 2026</div>
+      <h1>Codex SDK <span class="muted">vs.</span> Codex App Server</h1>
+      <p class="lede">Two ways to embed OpenAI's Codex agent in your own coding app — one is a typed library for automation, the other is the full protocol that powers Codex's own clients. Which one should your AI coding app build on?</p>
+    </div>
+  </section>
+
+  <section id="overview">
+    <div class="container">
+      <div class="eyebrow">The short version</div>
+      <h2>Same binary, two entry points</h2>
+      <p>Both are modes of the same <code class="inline">codex</code> CLI binary — installing it gives you <code class="inline">exec</code>, the SDK, and <code class="inline">app-server</code> at once. The difference is the contract each exposes to your app.</p>
+      <div class="grid-2">
+        <div class="card">
+          <span class="pill">@openai/codex-sdk</span>
+          <h3>Codex SDK</h3>
+          <p>A TypeScript library (Node 18+) that spawns the CLI and exchanges JSONL events over stdio. Typed threads, turns, and events as ordinary async functions.</p>
+          <ul>
+            <li><strong>Threads & resume</strong> — <code class="inline">startThread()</code> / <code class="inline">resumeThread(id)</code>; sessions persist in <code class="inline">~/.codex/sessions</code></li>
+            <li><strong>Streaming</strong> — <code class="inline">runStreamed()</code> yields an async generator of structured events (tool calls, file changes, usage)</li>
+            <li><strong>Structured output</strong> — JSON responses conforming to a schema you supply per turn</li>
+            <li><strong>Images</strong> — mix text + local images in one turn</li>
+            <li><strong>Safety knobs</strong> — sandbox mode, approval policy, working directory</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="pill">codex app-server</span>
+          <h3>Codex App Server</h3>
+          <p>A bidirectional JSON-RPC 2.0 server (stdio, Unix socket, or experimental WebSocket) — the same interface that powers the VS Code extension, desktop app, and Codex Web.</p>
+          <ul>
+            <li><strong>Full client surface</strong> — auth, conversation history, approvals, streamed agent events</li>
+            <li><strong>Interactive approvals</strong> — server pauses a turn and asks your UI to allow/deny before proceeding</li>
+            <li><strong>Mid-turn injection</strong> — send messages into a running turn; persistent threads</li>
+            <li><strong>Language-agnostic</strong> — anything that can spawn a child process (Tauri, Electron, Python, Go)</li>
+            <li><strong>Generated schemas</strong> — <code class="inline">generate-ts</code> / <code class="inline">generate-json-schema</code> emit version-exact types</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="compare">
+    <div class="container">
+      <div class="eyebrow">Feature matrix</div>
+      <h2>Side by side</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dimension</th><th>Codex SDK</th><th>Codex App Server</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Intended use</td><td>Automation, CI, server-side jobs</td><td>Rich product integrations (IDE-class clients)</td></tr>
+            <tr><td>Interface</td><td>Typed TS library over spawned CLI (JSONL/stdio)</td><td>JSON-RPC 2.0, bidirectional; stdio / Unix socket / WS</td></tr>
+            <tr><td>Language</td><td>TypeScript/Node 18+ (community ports: Python, Go, Elixir)</td><td>Any language with a child-process API</td></tr>
+            <tr><td>Interactive approval UI</td><td><span class="cross">Policy-based only</span></td><td><span class="check">✓</span> Pause turn, ask client allow/deny</td></tr>
+            <tr><td>Mid-turn message injection</td><td><span class="cross">Limited (background events)</span></td><td><span class="check">✓</span> Supported</td></tr>
+            <tr><td>Streaming events</td><td><span class="check">✓</span> Async generator of typed events</td><td><span class="check">✓</span> Richer notifications (items, trajectories, connector events)</td></tr>
+            <tr><td>Structured JSON output</td><td><span class="check">✓</span> Per-turn schema</td><td>Via protocol payloads</td></tr>
+            <tr><td>Thread persistence / resume</td><td><span class="check">✓</span> <code class="inline">resumeThread()</code></td><td><span class="check">✓</span> Thread lifecycle is first-class</td></tr>
+            <tr><td>Auth & conversation history mgmt</td><td>Inherits CLI login</td><td><span class="check">✓</span> Exposed to client</td></tr>
+            <tr><td>Remote / multi-machine</td><td><span class="cross">Local process</span></td><td><span class="check">✓</span> WS listener, remote terminal UI, container patterns (Codex Web style)</td></tr>
+            <tr><td>Stability</td><td>Stable, documented</td><td><span class="warn">Experimental</span>, broader surface; WS transport unsupported</td></tr>
+            <tr><td>Integration effort</td><td>Low — a few lines</td><td>Higher — implement the protocol handshake &amp; notification loop</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="code">
+    <div class="container">
+      <div class="eyebrow">Developer experience</div>
+      <h2>What integration looks like</h2>
+      <p>The SDK is a function call; the app server is a session you drive.</p>
+      <div class="code-label">Codex SDK — thread + streaming</div>
+<pre>import { Codex } from "@openai/codex-sdk";
+
+const codex = new Codex();
+const thread = codex.startThread();
+
+const { events } = await thread.runStreamed("Fix the failing tests");
+for await (const event of events) {
+  if (event.type === "item.completed") render(event.item);
+  if (event.type === "turn.completed") console.log(event.usage);
+}</pre>
+      <div class="code-label">App Server — spawn, handshake, listen</div>
+<pre># start the server (stdio default, or a socket)
+codex app-server
+codex app-server --listen ws://127.0.0.1:4500
+
+# client flow (JSON-RPC 2.0):
+# 1. send initialize → receive capabilities
+# 2. send initialized notification
+# 3. start a thread, start a turn
+# 4. read streamed notifications; answer approval requests
+
+# generate version-exact client types
+codex app-server generate-ts --out ./schemas</pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="eyebrow">Context</div>
+      <h2>Why the app server exists</h2>
+      <p>OpenAI first tried exposing Codex as an MCP server for the VS Code extension, but IDE-grade needs — streaming diffs, approval flows, thread persistence — didn't map cleanly onto MCP's tool-oriented model, so they built a dedicated protocol. Every official Codex surface (terminal, VS Code, macOS desktop, Codex Web) now runs through the same app-server process. Deployment patterns from those clients are reusable: bundle the binary and speak stdio locally (VS Code style), decouple client and server release cycles (Xcode style), or run it in a container and bridge to a browser over HTTP/SSE (Codex Web style). A complementary industry effort, Zed's Agent Client Protocol, aims at the same problem but as a vendor-neutral standard.</p>
+    </div>
+  </section>
+
+  <section id="verdict">
+    <div class="container">
+      <div class="eyebrow">Recommendation</div>
+      <h2>For an AI agent coding app</h2>
+      <div class="verdict">
+        <h3>Default to the App Server if you're building a real client UI</h3>
+        <p>If your app shows a chat/agent surface where users watch the agent work, review diffs, and approve commands — the app server is effectively the only choice. Interactive approval dialogs, mid-execution message injection, auth and history management, and the richest event stream all live there. It's the same contract OpenAI's own clients depend on, so it will keep pace with new features.</p>
+        <p><strong>Choose the SDK instead</strong> if your "app" orchestrates Codex headlessly — CI jobs, batch refactors, a backend service that runs tasks and returns results. You get typed threads, streaming, structured output, and sandbox controls in a few lines, with none of the protocol plumbing.</p>
+        <p><strong>Hybrid is legitimate:</strong> many teams ship the SDK first for backend automation, then adopt the app server when the product needs a live, interactive agent surface. Budget for the app server's experimental status — pin CLI versions and regenerate schemas per release.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    Sources
+    <ul>
+      <li><a href="https://developers.openai.com/codex/app-server">OpenAI — Codex App Server docs</a></li>
+      <li><a href="https://developers.openai.com/codex/sdk">OpenAI — Codex SDK docs</a></li>
+      <li><a href="https://github.com/openai/codex/blob/main/sdk/typescript/README.md">openai/codex — TypeScript SDK README</a></li>
+      <li><a href="https://www.infoq.com/news/2026/02/opanai-codex-app-server">InfoQ — Unlocking the Codex Harness</a></li>
+      <li><a href="https://www.promptfoo.dev/docs/providers/openai-codex-app-server/">Promptfoo — App Server provider notes</a></li>
+      <li><a href="https://ai-sdk.dev/providers/community-providers/codex-app-server">Vercel AI SDK — community app-server provider</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>

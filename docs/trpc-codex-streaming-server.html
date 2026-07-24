@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Streaming Codex SDK Output from a tRPC Node.js Backend</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --panel: #0a0a0a;
+      --panel-2: #111111;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --soft: #71717a;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --accent: #ffffff;
+      --code-bg: #050505;
+      --green: #00dc82;
+      --blue: #3291ff;
+      --purple: #7928ca;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      --radius: 18px;
+      --max: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      background:
+        radial-gradient(circle at 20% -10%, rgba(50, 145, 255, 0.22), transparent 28rem),
+        radial-gradient(circle at 80% 0%, rgba(121, 40, 202, 0.18), transparent 24rem),
+        radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.08), transparent 34rem),
+        #000;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .site-shell {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.74);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 18px solid #fff;
+      filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      transition: 180ms ease;
+    }
+
+    .nav a:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero {
+      padding: 94px 0 58px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--muted);
+      font-size: 13px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 18px rgba(0, 220, 130, 0.75);
+    }
+
+    h1 {
+      margin: 24px auto 18px;
+      max-width: 920px;
+      font-size: clamp(44px, 7vw, 84px);
+      line-height: 0.96;
+      letter-spacing: -0.07em;
+      font-weight: 780;
+    }
+
+    .gradient-text {
+      background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 720px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: clamp(17px, 2vw, 21px);
+    }
+
+    .hero-actions {
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      font-weight: 560;
+      font-size: 14px;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .button.primary {
+      background: #fff;
+      color: #000;
+      border-color: #fff;
+    }
+
+    .button.secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      border-color: #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 0.78fr 1.22fr;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 96px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 92px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-inner {
+      padding: 22px;
+    }
+
+    .toc-title {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .toc {
+      display: grid;
+      gap: 4px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 9px 10px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      transition: 180ms ease;
+    }
+
+    .toc a:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .callout {
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg, rgba(50, 145, 255, 0.18), rgba(121, 40, 202, 0.12)),
+        rgba(255, 255, 255, 0.035);
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    main {
+      display: grid;
+      gap: 24px;
+    }
+
+    section {
+      scroll-margin-top: 96px;
+    }
+
+    .section-card {
+      padding: clamp(22px, 4vw, 34px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(10, 10, 10, 0.78);
+      box-shadow: var(--shadow);
+    }
+
+    .section-kicker {
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: clamp(28px, 3.8vw, 44px);
+      line-height: 1.05;
+      letter-spacing: -0.045em;
+    }
+
+    h3 {
+      margin: 28px 0 10px;
+      font-size: 20px;
+      letter-spacing: -0.03em;
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 16px;
+    }
+
+    .lead {
+      font-size: 18px;
+      color: #d4d4d8;
+    }
+
+    .steps {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #fff;
+      color: #000;
+      font-weight: 720;
+      font-size: 14px;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .step p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .code-block {
+      margin: 20px 0;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+
+    .code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px 10px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--soft);
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .traffic {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .traffic span {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #3f3f46;
+    }
+
+    .copy-btn {
+      border: 1px solid var(--border-strong);
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #fff;
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow-x: auto;
+      color: #e4e4e7;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    :not(pre) > code {
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      font-size: 0.92em;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .mini-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .mini-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .comparison article {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .comparison h3 {
+      margin-top: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .footer {
+      padding: 42px 0 60px;
+      color: var(--soft);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .footer code {
+      color: var(--text);
+    }
+
+    @media (max-width: 900px) {
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px 0;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      .hero {
+        padding-top: 64px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .mini-grid,
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="Back to top">
+        <span class="triangle" aria-hidden="true"></span>
+        <span>tRPC × Codex Streaming</span>
+      </a>
+      <nav class="nav" aria-label="Page navigation">
+        <a href="#mental-model">Mental model</a>
+        <a href="#server-code">Server code</a>
+        <a href="#yield">What yield does</a>
+        <a href="#gotchas">Gotchas</a>
+      </nav>
+    </div>
+  </header>
+
+  <div id="top" class="site-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="eyebrow"><span class="status-dot"></span> Node.js backend · tRPC streaming · Codex SDK</div>
+      <h1 id="page-title"><span class="gradient-text">Stream AI output from your tRPC server.</span></h1>
+      <p>
+        A clean server-side pattern for taking a streamed Codex SDK run and forwarding incremental chunks to a client through a tRPC async generator.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="#server-code">View server implementation</a>
+        <a class="button secondary" href="#yield">Understand yield</a>
+      </div>
+    </section>
+
+    <div class="grid">
+      <aside class="sidebar" aria-label="Table of contents">
+        <div class="card">
+          <div class="card-inner">
+            <p class="toc-title">On this page</p>
+            <nav class="toc">
+              <a href="#mental-model">Mental model</a>
+              <a href="#server-code">tRPC procedure</a>
+              <a href="#yield">What yield sends</a>
+              <a href="#text-only">Text-only stream</a>
+              <a href="#events-vs-text">Events vs. text</a>
+              <a href="#gotchas">Server-side gotchas</a>
+            </nav>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>Core idea</strong>
+          <p>Use <code>async function*</code> in your tRPC procedure and <code>yield</code> JSON-serializable chunks as Codex events arrive.</p>
+        </div>
+      </aside>
+
+      <main>
+        <section id="mental-model" class="section-card">
+          <div class="section-kicker">01 · Mental model</div>
+          <h2>Streaming is just yielding chunks over time.</h2>
+          <p class="lead">
+            On the server, the Codex SDK gives you an async stream of events. Your tRPC procedure loops over those events and decides what to send to the client.
+          </p>
+          <div class="steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div>
+                <strong>Codex SDK produces events</strong>
+                <p><code>thread.runStreamed(prompt)</code> returns an object containing an async event stream.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div>
+                <strong>Server loops over the stream</strong>
+                <p><code>for await (const event of events)</code> receives each Codex event as it becomes available.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div>
+                <strong>tRPC sends each yielded value</strong>
+                <p>Every <code>yield</code> pushes one JSON chunk to the client through the streaming transport.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="server-code" class="section-card">
+          <div class="section-kicker">02 · Server implementation</div>
+          <h2>Forward Codex events through tRPC.</h2>
+          <p>
+            This version streams structured Codex events. It is the most flexible approach because the client can react differently to text, tool activity, status updates, and completion.
+          </p>
+
+          <div class="code-block">
+            <div class="code-head">
+              <span class="traffic"><span></span><span></span><span></span></span>
+              <span>server/routers/ai.ts</span>
+              <button class="copy-btn" type="button">Copy</button>
+            </div>
+            <pre><code>import { z } from "zod";
+import { Codex } from "@openai/codex-sdk";
+import { router, protectedProcedure } from "../trpc";
+
+const codex = new Codex();
+
+type StreamChunk =
+  | {
+      type: "codex_event";
+      eventType: string;
+      event: unknown;
+    }
+  | {
+      type: "done";
+    };
+
+export const aiRouter = router({
+  streamCodexPrompt: protectedProcedure
+    .input(
+      z.object({
+        prompt: z.string().min(1),
+        threadId: z.string().optional(),
+      }),
+    )
+    .query(async function* ({ input }): AsyncGenerator&lt;StreamChunk&gt; {
+      const thread = input.threadId
+        ? codex.resumeThread(input.threadId)
+        : codex.startThread({
+            workingDirectory: process.cwd(),
+
+            // Useful during local development if the cwd is not a git repo.
+            // Remove this when you want stricter repo safety.
+            skipGitRepoCheck: true,
+          });
+
+      const { events } = await thread.runStreamed(input.prompt);
+
+      for await (const event of events) {
+        yield {
+          type: "codex_event",
+          eventType: event.type,
+          event,
+        };
+
+        if (event.type === "turn.completed") {
+          yield { type: "done" };
+        }
+      }
+    }),
+});</code></pre>
+          </div>
+        </section>
+
+        <section id="yield" class="section-card">
+          <div class="section-kicker">03 · What yield does</div>
+          <h2><code>yield</code> sends one streamed value.</h2>
+          <p class="lead">
+            <code>yield</code> does not automatically mean “stream text.” It sends whatever value you place after it.
+          </p>
+
+          <div class="code-block">
+            <div class="code-head">
+              <span class="traffic"><span></span><span></span><span></span></span>
+              <span>Minimal async generator</span>
+              <button class="copy-btn" type="button">Copy</button>
+            </div>
+            <pre><code>.query(async function* () {
+  yield "hello";
+  yield " ";
+  yield "world";
+})</code></pre>
+          </div>
+
+          <p>The client receives these as incremental stream chunks:</p>
+
+          <div class="code-block">
+            <div class="code-head">
+              <span class="traffic"><span></span><span></span><span></span></span>
+              <span>Client-side accumulated result</span>
+              <button class="copy-btn" type="button">Copy</button>
+            </div>
+            <pre><code>["hello", " ", "world"]</code></pre>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini-card">
+              <strong><code>yield value</code></strong>
+              <p>Sends one value immediately and keeps the generator alive for more chunks.</p>
+            </div>
+            <div class="mini-card">
+              <strong><code>return value</code></strong>
+              <p>Ends the generator and sends no more streamed chunks after that point.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="text-only" class="section-card">
+          <div class="section-kicker">04 · Text-only stream</div>
+          <h2>Transform events before yielding.</h2>
+          <p>
+            If your UI only needs assistant text, extract text from Codex events on the server and yield a smaller shape. The exact extraction logic depends on the event shapes you want to support.
+          </p>
+
+          <div class="code-block">
+            <div class="code-head">
+              <span class="traffic"><span></span><span></span><span></span></span>
+              <span>Server-side text chunks</span>
+              <button class="copy-btn" type="button">Copy</button>
+            </div>
+            <pre><code>streamCodexPrompt: protectedProcedure
+  .input(
+    z.object({
+      prompt: z.string().min(1),
+    }),
+  )
+  .query(async function* ({ input }) {
+    const thread = codex.startThread({
+      workingDirectory: process.cwd(),
+      skipGitRepoCheck: true,
+    });
+
+    const { events } = await thread.runStreamed(input.prompt);
+
+    for await (const event of events) {
+      if (event.type === "item.completed") {
+        const item = event.item as any;
+
+        const text =
+          typeof item?.text === "string"
+            ? item.text
+            : typeof item?.content === "string"
+              ? item.content
+              : "";
+
+        if (text) {
+          yield {
+            type: "text",
+            text,
+          };
+        }
+      }
+
+      if (event.type === "turn.completed") {
+        yield {
+          type: "done",
+        };
+      }
+    }
+  });</code></pre>
+          </div>
+
+          <p>That produces simple chunks like this:</p>
+
+          <div class="code-block">
+            <div class="code-head">
+              <span class="traffic"><span></span><span></span><span></span></span>
+              <span>Streamed result shape</span>
+              <button class="copy-btn" type="button">Copy</button>
+            </div>
+            <pre><code>[
+  { type: "text", text: "Here is" },
+  { type: "text", text: " the answer..." },
+  { type: "done" }
+]</code></pre>
+          </div>
+        </section>
+
+        <section id="events-vs-text" class="section-card">
+          <div class="section-kicker">05 · Design choice</div>
+          <h2>Choose between raw events and text chunks.</h2>
+          <div class="comparison">
+            <article>
+              <span class="badge">Most flexible</span>
+              <h3>Yield Codex events</h3>
+              <p>
+                Best when the client needs to display rich status: assistant messages, tool calls, file edits, progress, errors, and completion.
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="traffic"><span></span><span></span><span></span></span>
+                  <span>Raw event chunk</span>
+                  <button class="copy-btn" type="button">Copy</button>
+                </div>
+                <pre><code>yield {
+  type: "codex_event",
+  eventType: event.type,
+  event,
+};</code></pre>
+              </div>
+            </article>
+            <article>
+              <span class="badge">Simpler UI</span>
+              <h3>Yield text only</h3>
+              <p>
+                Best when the client only needs to append visible text to a chat bubble or output panel.
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="traffic"><span></span><span></span><span></span></span>
+                  <span>Text chunk</span>
+                  <button class="copy-btn" type="button">Copy</button>
+                </div>
+                <pre><code>yield {
+  type: "text",
+  text,
+};</code></pre>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="gotchas" class="section-card">
+          <div class="section-kicker">06 · Server-side gotchas</div>
+          <h2>Keep the stream tRPC-native.</h2>
+          <p>
+            Do not return a Node <code>Readable</code>, <code>PassThrough</code>, or raw SSE response from the procedure. In tRPC, the procedure should return an async generator and yield JSON-serializable chunks.
+          </p>
+          <div class="mini-grid">
+            <div class="mini-card">
+              <strong>Use <code>async function*</code></strong>
+              <p>This declares an async generator, which can pause, yield, and resume while Codex events arrive.</p>
+            </div>
+            <div class="mini-card">
+              <strong>Yield serializable data</strong>
+              <p>Stick to strings, numbers, booleans, arrays, and plain objects. Avoid streams, class instances, and functions.</p>
+            </div>
+            <div class="mini-card">
+              <strong>Keep Codex server-side</strong>
+              <p>The SDK and credentials should stay on your Node.js backend, not in browser code.</p>
+            </div>
+            <div class="mini-card">
+              <strong>Send a done event</strong>
+              <p>A final <code>{ type: "done" }</code> chunk makes client state management easier.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="site-shell">
+      Built as a single standalone HTML file. Main server primitive: <code>async function*</code> + <code>yield</code>.
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const block = button.closest('.code-block');
+        const code = block?.querySelector('code')?.innerText ?? '';
+
+        try {
+          await navigator.clipboard.writeText(code);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          setTimeout(() => {
+            button.textContent = original;
+          }, 1200);
+        } catch {
+          button.textContent = 'Copy failed';
+          setTimeout(() => {
+            button.textContent = 'Copy';
+          }, 1200);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Refactor Plan: Projects &amp; Messages via React Query</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --panel: #0a0a0a;
+      --panel-2: #111111;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --soft: #71717a;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --accent: #ffffff;
+      --code-bg: #050505;
+      --green: #00dc82;
+      --blue: #3291ff;
+      --purple: #bf7af0;
+      --orange: #f5a623;
+      --pink: #ff0080;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      --radius: 18px;
+      --max: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      background:
+        radial-gradient(circle at 20% -10%, rgba(50, 145, 255, 0.22), transparent 28rem),
+        radial-gradient(circle at 80% 0%, rgba(121, 40, 202, 0.18), transparent 24rem),
+        radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.08), transparent 34rem),
+        #000;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .site-shell {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.74);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 18px solid #fff;
+      filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      transition: 180ms ease;
+    }
+
+    .nav a:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero {
+      padding: 88px 0 48px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      border-radius: 999px;
+      font-size: 13px;
+      padding: 6px 14px;
+      margin-bottom: 22px;
+    }
+
+    .badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 12px rgba(0, 220, 130, 0.8);
+    }
+
+    .hero h1 {
+      margin: 0 auto;
+      max-width: 15em;
+      font-size: clamp(34px, 5.4vw, 58px);
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+      font-weight: 750;
+      background: linear-gradient(180deg, #ffffff 30%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      margin: 20px auto 0;
+      max-width: 46em;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .hero .kbd-row {
+      margin-top: 26px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-size: 12.5px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    main {
+      padding-bottom: 110px;
+    }
+
+    section {
+      margin-top: 54px;
+      scroll-margin-top: 96px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: var(--panel-2);
+      font-size: 14px;
+      font-weight: 650;
+      color: var(--text);
+      transform: translateY(4px);
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.025em;
+      font-weight: 700;
+    }
+
+    .section-head .sub {
+      color: var(--soft);
+      font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.008));
+      border-radius: var(--radius);
+      padding: 26px 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .card + .card {
+      margin-top: 16px;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .card p strong,
+    .card li strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .card ul,
+    .card ol {
+      margin: 10px 0 0;
+      padding-left: 22px;
+    }
+
+    .card li + li {
+      margin-top: 7px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    code.inline {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.86em;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 6px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .code-block {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+
+    .code-block .code-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .code-title .dots {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .code-title .dots i {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--border-strong);
+    }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: #e4e4e7;
+    }
+
+    .tok-kw { color: var(--pink); }
+    .tok-fn { color: var(--purple); }
+    .tok-str { color: var(--green); }
+    .tok-cm { color: var(--soft); font-style: italic; }
+    .tok-prop { color: var(--blue); }
+    .tok-num { color: var(--orange); }
+
+    .callout {
+      display: flex;
+      gap: 14px;
+      border: 1px solid rgba(245, 166, 35, 0.35);
+      background: rgba(245, 166, 35, 0.07);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-top: 18px;
+    }
+
+    .callout.info {
+      border-color: rgba(50, 145, 255, 0.35);
+      background: rgba(50, 145, 255, 0.07);
+    }
+
+    .callout .icon {
+      flex-shrink: 0;
+      font-size: 16px;
+      transform: translateY(1px);
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+
+    .callout p strong {
+      color: var(--text);
+    }
+
+    .file-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .file-table th {
+      text-align: left;
+      color: var(--soft);
+      font-weight: 500;
+      font-size: 12.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .file-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+
+    .file-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .file-table td:first-child {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .check-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: check;
+    }
+
+    .check-list li {
+      counter-increment: check;
+      display: flex;
+      gap: 14px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .check-list li:last-child {
+      border-bottom: none;
+    }
+
+    .check-list li::before {
+      content: counter(check);
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 650;
+      transform: translateY(2px);
+    }
+
+    .diff-del { color: #ff6369; }
+    .diff-add { color: var(--green); }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 30px 0 44px;
+      color: var(--soft);
+      font-size: 13.5px;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 20px;
+      }
+      .section-head {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="brand"><span class="triangle"></span> m4code · refactor plan</span>
+      <nav class="nav">
+        <a href="#context">Context</a>
+        <a href="#step-1">Server</a>
+        <a href="#step-2">Sidebar</a>
+        <a href="#step-3">Messages</a>
+        <a href="#files">Files</a>
+        <a href="#verify">Verify</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="site-shell">
+    <header class="hero">
+      <span class="badge"><span class="dot"></span> Implementation plan</span>
+      <h1>Load projects &amp; messages with React Query</h1>
+      <p>
+        Replace hand-rolled <code class="inline">useState</code> + manual <code class="inline">.map</code>
+        reconciliation with the TanStack Query cache you already have installed. Data loading becomes
+        declarative, mutations invalidate, and the copy/merge/patch state disappears.
+      </p>
+      <div class="kbd-row">
+        <span class="pill">@tanstack/react-query ^5</span>
+        <span class="pill">@trpc/tanstack-react-query ^11</span>
+        <span class="pill">node:sqlite</span>
+      </div>
+    </header>
+
+    <main>
+      <section id="context">
+        <div class="section-head">
+          <h2>Why this change</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>The problem today</h3>
+            <ul>
+              <li><strong>AISidebar.tsx</strong> copies <code class="inline">projectsQuery.data</code> into a local <code class="inline">useState&lt;Project[]&gt;</code> via a <code class="inline">useEffect</code>, fires one <code class="inline">getThreads</code> request per project (an N+1 waterfall), and hand-patches state after <code class="inline">addThread</code> with another <code class="inline">.map</code>.</li>
+              <li><strong>useAIChat.tsx</strong> keeps a <code class="inline">messagesByThread</code> record in <code class="inline">useState</code>, manually loads messages on thread switch, and reconciles by hand.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>The fix</h3>
+            <ul>
+              <li>Make the <strong>query cache the source of truth</strong>: <code class="inline">useQuery</code> for reads, <code class="inline">useMutation</code> + <code class="inline">invalidateQueries</code> for writes.</li>
+              <li>The <code class="inline">.map</code> calls used for <em>rendering</em> lists stay — that&rsquo;s just JSX. It&rsquo;s the <code class="inline">.map</code>-based <em>state reconciliation</em> that goes away.</li>
+              <li>Verified: <code class="inline">ThreadService.ts</code> already persists messages during <code class="inline">queryAI</code>, so invalidate-and-refetch after a stream is a safe reconciliation step.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="step-1">
+        <div class="section-head">
+          <span class="step-num">1</span>
+          <h2>Server: one joined query</h2>
+          <span class="sub">apps/server</span>
+        </div>
+        <div class="card">
+          <p>
+            Add a <code class="inline">getProjectsWithThreads</code> procedure that returns projects with nested
+            threads in a single round trip — this kills the N+1 waterfall. Returning the renderer&rsquo;s existing
+            <code class="inline">thread</code> shape means <code class="inline">ProjectDropdown</code> and
+            <code class="inline">ThreadItem</code> need zero changes.
+          </p>
+          <div class="code-block">
+            <div class="code-title"><span class="dots"><i></i><i></i><i></i></span> apps/server/appRouter.ts</div>
+            <pre><span class="tok-prop">getProjectsWithThreads</span>: publicProcedure.<span class="tok-fn">query</span>(() =&gt; {
+  <span class="tok-kw">const</span> projects = getProjects.<span class="tok-fn">all</span>() <span class="tok-kw">as</span> ProjectRecord[];
+  <span class="tok-kw">const</span> threads = getAllThreads.<span class="tok-fn">all</span>() <span class="tok-kw">as</span> ThreadRecord[];
+
+  <span class="tok-kw">return</span> projects.<span class="tok-fn">map</span>((project) =&gt; ({
+    <span class="tok-prop">id</span>: project.id,
+    <span class="tok-prop">name</span>: project.name,
+    <span class="tok-prop">path</span>: project.path,
+    <span class="tok-prop">threads</span>: threads
+      .<span class="tok-fn">filter</span>((t) =&gt; t.project_id === project.id)
+      .<span class="tok-fn">map</span>((t) =&gt; ({
+        <span class="tok-prop">id</span>: t.id,
+        <span class="tok-prop">projectId</span>: t.project_id,
+        <span class="tok-prop">title</span>: t.name,
+        <span class="tok-prop">projectPath</span>: project.path,
+      })),
+  }));
+}),</pre>
+          </div>
+          <div class="callout info">
+            <span class="icon">ℹ️</span>
+            <p>
+              Also add a prepared statement in <strong>lightQueries.ts</strong> —
+              <code class="inline">SELECT * FROM threads</code>, ordered newest-first to match the current
+              thread ordering. Keep the old <code class="inline">getProjects</code>/<code class="inline">getThreads</code>
+              procedures on the server; the renderer just stops calling them.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="step-2">
+        <div class="section-head">
+          <span class="step-num">2</span>
+          <h2>Sidebar: one query, one mutation</h2>
+          <span class="sub">AISidebar.tsx</span>
+        </div>
+        <div class="card">
+          <p>
+            <span class="diff-del">Delete</span> the <code class="inline">projects</code> useState, the entire
+            <code class="inline">useEffect</code> + <code class="inline">Promise.all</code> merge (lines 64&ndash;101),
+            the <code class="inline">draftCount</code> ref and draft-thread construction (the draft id is overwritten
+            immediately by the server response — dead code), and the <code class="inline">setProjects(...map...)</code> patch.
+            <span class="diff-add">Replace</span> with:
+          </p>
+          <div class="code-block">
+            <div class="code-title"><span class="dots"><i></i><i></i><i></i></span> apps/desktop/src/renderer/components/AIWindow/sidebar/AISidebar.tsx</div>
+            <pre><span class="tok-kw">const</span> projectsQuery = <span class="tok-fn">useQuery</span>(trpc.getProjectsWithThreads.<span class="tok-fn">queryOptions</span>());
+<span class="tok-kw">const</span> projects = projectsQuery.data ?? [];
+
+<span class="tok-kw">const</span> addThreadMutation = <span class="tok-fn">useMutation</span>(
+  trpc.addThread.<span class="tok-fn">mutationOptions</span>({
+    <span class="tok-prop">onSuccess</span>: () =&gt;
+      queryClient.<span class="tok-fn">invalidateQueries</span>({
+        <span class="tok-prop">queryKey</span>: trpc.getProjectsWithThreads.<span class="tok-fn">queryKey</span>(),
+      }),
+  }),
+);
+
+<span class="tok-kw">async function</span> <span class="tok-fn">handleNewChat</span>(projectId = currentThread?.projectId) {
+  <span class="tok-kw">if</span> (!projectId) <span class="tok-kw">return</span>;
+  <span class="tok-kw">const</span> project = projects.<span class="tok-fn">find</span>(({ id }) =&gt; id === projectId);
+  <span class="tok-kw">if</span> (!project) <span class="tok-kw">return</span>;
+
+  <span class="tok-kw">const</span> created = <span class="tok-kw">await</span> addThreadMutation.<span class="tok-fn">mutateAsync</span>({
+    <span class="tok-prop">threadName</span>: <span class="tok-str">"Untitled chat"</span>,
+    <span class="tok-prop">projectId</span>,
+  });
+
+  <span class="tok-fn">setCurrentThread</span>({
+    <span class="tok-prop">id</span>: created.id,
+    <span class="tok-prop">projectId</span>,
+    <span class="tok-prop">title</span>: created.name,
+    <span class="tok-prop">projectPath</span>: project.path,
+  });
+}</pre>
+          </div>
+          <p>
+            Replace the local <code class="inline">Project</code> interface with the inferred router output type
+            (<code class="inline">type Project = (typeof projects)[number]</code>) so the nested
+            <code class="inline">threads</code> shape stays in sync with the server automatically.
+          </p>
+        </div>
+      </section>
+
+      <section id="step-3">
+        <div class="section-head">
+          <span class="step-num">3</span>
+          <h2>Messages: the cache is the source of truth</h2>
+          <span class="sub">useAIChat.tsx</span>
+        </div>
+        <div class="card">
+          <h3>Reads: per-thread cached query</h3>
+          <p>
+            <span class="diff-del">Delete</span> <code class="inline">messagesByThread</code>,
+            <code class="inline">loadThreadMessages</code>, and the async body of
+            <code class="inline">setCurrentThread</code> (it becomes a plain setter with the same-id guard).
+            <span class="diff-add">Replace</span> with one query keyed by the current thread:
+          </p>
+          <div class="code-block">
+            <div class="code-title"><span class="dots"><i></i><i></i><i></i></span> apps/desktop/src/renderer/context/useAIChat.tsx</div>
+            <pre><span class="tok-kw">import</span> { skipToken, useQuery, useMutation } <span class="tok-kw">from</span> <span class="tok-str">"@tanstack/react-query"</span>;
+<span class="tok-kw">import</span> { trpc, trpcClient, queryClient } <span class="tok-kw">from</span> <span class="tok-str">"@/utils/trpc"</span>;
+
+<span class="tok-kw">const</span> messagesQuery = <span class="tok-fn">useQuery</span>(
+  trpc.loadMessages.<span class="tok-fn">queryOptions</span>(
+    currentThread ? { <span class="tok-prop">threadID</span>: currentThread.id } : skipToken,
+  ),
+);
+<span class="tok-kw">const</span> messages = messagesQuery.data ?? [];</pre>
+          </div>
+          <p>
+            Per-thread caching comes for free: switching back to a thread renders instantly from cache,
+            then background-refetches. The server&rsquo;s <code class="inline">loadMessages</code> already returns
+            <code class="inline">{ id, text, role }</code> — the exact <code class="inline">ChatMessage</code> shape,
+            so no mapping is needed.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>Writes: stream into the cache</h3>
+          <p>
+            <code class="inline">messageSend</code> streams chunks into the cache with
+            <code class="inline">setQueryData</code> instead of local state, then reconciles with the
+            persisted server rows at the end of the turn:
+          </p>
+          <div class="code-block">
+            <div class="code-title"><span class="dots"><i></i><i></i><i></i></span> apps/desktop/src/renderer/context/useAIChat.tsx</div>
+            <pre><span class="tok-kw">async function</span> <span class="tok-fn">messageSend</span>(value: <span class="tok-kw">string</span>) {
+  <span class="tok-kw">const</span> text = value.<span class="tok-fn">trim</span>();
+  <span class="tok-kw">if</span> (!text || !currentThread) <span class="tok-kw">return</span>;
+
+  <span class="tok-kw">const</span> threadID = currentThread.id;
+  <span class="tok-cm">// capture the key up front — a mid-stream thread switch keeps writing to the right entry</span>
+  <span class="tok-kw">const</span> messagesKey = trpc.loadMessages.<span class="tok-fn">queryKey</span>({ threadID });
+  <span class="tok-kw">const</span> assistantMessageID = crypto.<span class="tok-fn">randomUUID</span>();
+
+  <span class="tok-cm">// don't let an in-flight refetch overwrite the optimistic rows</span>
+  <span class="tok-kw">await</span> queryClient.<span class="tok-fn">cancelQueries</span>({ <span class="tok-prop">queryKey</span>: messagesKey });
+
+  queryClient.<span class="tok-fn">setQueryData</span>(messagesKey, (old = []) =&gt; [
+    ...old,
+    { <span class="tok-prop">id</span>: crypto.<span class="tok-fn">randomUUID</span>(), text, <span class="tok-prop">role</span>: <span class="tok-str">"user"</span> <span class="tok-kw">as const</span> },
+    { <span class="tok-prop">id</span>: assistantMessageID, <span class="tok-prop">text</span>: <span class="tok-str">""</span>, <span class="tok-prop">role</span>: <span class="tok-str">"assistant"</span> <span class="tok-kw">as const</span> },
+  ]);
+
+  <span class="tok-fn">setTurn</span>(<span class="tok-num">true</span>);
+  <span class="tok-kw">try</span> {
+    <span class="tok-kw">const</span> streamChat = <span class="tok-kw">await</span> trpcClient.queryAI.<span class="tok-fn">query</span>({ threadID, <span class="tok-prop">message</span>: text, model });
+
+    <span class="tok-kw">for await</span> (<span class="tok-kw">const</span> chunk <span class="tok-kw">of</span> streamChat) {
+      <span class="tok-kw">if</span> (chunk.type === <span class="tok-str">"item.completed"</span> &amp;&amp; chunk.item.type === <span class="tok-str">"agent_message"</span>) {
+        <span class="tok-kw">const</span> responseText = chunk.item.text;
+        queryClient.<span class="tok-fn">setQueryData</span>(messagesKey, (old = []) =&gt;
+          old.<span class="tok-fn">map</span>((m) =&gt;
+            m.id === assistantMessageID ? { ...m, <span class="tok-prop">text</span>: m.text + responseText } : m,
+          ),
+        );
+      }
+    }
+  } <span class="tok-kw">finally</span> {
+    <span class="tok-fn">setTurn</span>(<span class="tok-num">false</span>); <span class="tok-cm">// also clears the spinner on stream errors</span>
+  }
+
+  <span class="tok-cm">// DB already holds both rows (ThreadService persists them) — reconcile IDs/rows</span>
+  <span class="tok-kw">await</span> queryClient.<span class="tok-fn">invalidateQueries</span>(trpc.loadMessages.<span class="tok-fn">queryFilter</span>({ threadID }));
+
+  <span class="tok-kw">const</span> threadTitle = <span class="tok-kw">await</span> generateTitleMutation.<span class="tok-fn">mutateAsync</span>({ <span class="tok-prop">id</span>: threadID, <span class="tok-prop">message</span>: text });
+  <span class="tok-cm">// keep the existing validity checks, then update the current thread's title</span>
+  <span class="tok-fn">setThread</span>((cur) =&gt; (cur?.id === threadTitle.id ? { ...cur, <span class="tok-prop">title</span>: threadTitle.name } : cur));
+}</pre>
+          </div>
+          <p>
+            The <code class="inline">finally</code>-based <code class="inline">setTurn</code> also fixes the
+            stale-closure <code class="inline">if (!isTurning) setTurn(true)</code> bug in the current loop.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>Mutations with invalidation</h3>
+          <p>
+            <code class="inline">createProject</code> and title generation become mutations that invalidate
+            the sidebar query — the two manual <code class="inline">projectsQuery.refetch()</code> calls go away:
+          </p>
+          <div class="code-block">
+            <div class="code-title"><span class="dots"><i></i><i></i><i></i></span> apps/desktop/src/renderer/context/useAIChat.tsx</div>
+            <pre><span class="tok-kw">const</span> addProjectMutation = <span class="tok-fn">useMutation</span>(
+  trpc.addProject.<span class="tok-fn">mutationOptions</span>({
+    <span class="tok-prop">onSuccess</span>: () =&gt;
+      queryClient.<span class="tok-fn">invalidateQueries</span>({ <span class="tok-prop">queryKey</span>: trpc.getProjectsWithThreads.<span class="tok-fn">queryKey</span>() }),
+  }),
+);
+
+<span class="tok-kw">const</span> generateTitleMutation = <span class="tok-fn">useMutation</span>(
+  trpc.generateThreadMessage.<span class="tok-fn">mutationOptions</span>({
+    <span class="tok-prop">onSuccess</span>: () =&gt;
+      queryClient.<span class="tok-fn">invalidateQueries</span>({ <span class="tok-prop">queryKey</span>: trpc.getProjectsWithThreads.<span class="tok-fn">queryKey</span>() }),
+  }),
+);</pre>
+          </div>
+          <p>
+            The public <code class="inline">AIContext</code> type is unchanged, so
+            <code class="inline">ChatMessages.tsx</code>, <code class="inline">AITextBox.tsx</code>,
+            <code class="inline">ThreadItem.tsx</code>, and <code class="inline">ModelPicker.tsx</code> need no edits.
+          </p>
+        </div>
+      </section>
+
+      <section id="step-4">
+        <div class="section-head">
+          <span class="step-num">4</span>
+          <h2>Query defaults (optional polish)</h2>
+          <span class="sub">utils/trpc.ts</span>
+        </div>
+        <div class="card">
+          <p>
+            A small <code class="inline">staleTime</code> prevents a window-refocus refetch of
+            <code class="inline">loadMessages</code> from clobbering an in-flight optimistic stream
+            (the assistant text isn&rsquo;t in the DB until <code class="inline">item.completed</code>):
+          </p>
+          <div class="code-block">
+            <div class="code-title"><span class="dots"><i></i><i></i><i></i></span> apps/desktop/src/renderer/utils/trpc.ts</div>
+            <pre><span class="tok-kw">export const</span> queryClient = <span class="tok-kw">new</span> <span class="tok-fn">QueryClient</span>({
+  <span class="tok-prop">defaultOptions</span>: {
+    <span class="tok-prop">queries</span>: { <span class="tok-prop">staleTime</span>: <span class="tok-num">5_000</span>, <span class="tok-prop">retry</span>: <span class="tok-num">1</span> },
+  },
+});</pre>
+          </div>
+          <div class="callout">
+            <span class="icon">⚠️</span>
+            <p>
+              <strong>Known cosmetic caveat:</strong> the server stores each completed
+              <code class="inline">agent_message</code> as a separate row while the UI concatenates them into one
+              bubble, so after the end-of-turn refetch a multi-item response may split into multiple assistant
+              bubbles (matching what the DB actually stores). Acceptable for now; fixable later server-side.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="files">
+        <div class="section-head">
+          <h2>Files to modify</h2>
+        </div>
+        <div class="card">
+          <table class="file-table">
+            <thead>
+              <tr><th>File</th><th>Change</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>apps/server/lightQueries.ts</td>
+                <td>New prepared statement: all threads, newest-first</td>
+              </tr>
+              <tr>
+                <td>apps/server/appRouter.ts</td>
+                <td>Add <code class="inline">getProjectsWithThreads</code> procedure</td>
+              </tr>
+              <tr>
+                <td>…/sidebar/AISidebar.tsx</td>
+                <td>Delete local state + effect; use joined query + <code class="inline">addThread</code> mutation</td>
+              </tr>
+              <tr>
+                <td>…/context/useAIChat.tsx</td>
+                <td>Messages from cache, streaming via <code class="inline">setQueryData</code>, mutations with invalidation</td>
+              </tr>
+              <tr>
+                <td>…/utils/trpc.ts</td>
+                <td>Query defaults (optional)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="verify">
+        <div class="section-head">
+          <h2>Verification</h2>
+        </div>
+        <div class="card">
+          <ol class="check-list">
+            <li>Typecheck both <code class="inline">apps/desktop</code> and <code class="inline">apps/server</code> (<code class="inline">tsc --noEmit</code>) — router inference confirms the new procedure&rsquo;s shape reaches the renderer.</li>
+            <li>Run the app. In DevTools Network: sidebar loads via a single <code class="inline">getProjectsWithThreads</code> call (previously 1 + N batched <code class="inline">getThreads</code>).</li>
+            <li>Create a project → appears in the sidebar with no manual refetch code.</li>
+            <li>New chat → thread appears in its project and becomes current.</li>
+            <li>Send a message → user + assistant bubbles appear instantly, text streams in, thread title updates in the sidebar afterward.</li>
+            <li>Switch threads mid-stream and back — the stream keeps writing to the correct thread; cached messages render instantly.</li>
+            <li>Restart the app, reselect the thread → full history loads from SQLite (proves the invalidate/refetch reconciliation).</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="site-shell">
+      m4code-ide · React Query refactor plan · July 2026
+    </div>
+  </footer>
+</body>
+</html>

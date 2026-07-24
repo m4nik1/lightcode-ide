@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rendering React in an Electron AI Window</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b16;
+        --panel: rgba(19, 23, 43, 0.82);
+        --panel-strong: rgba(30, 36, 68, 0.94);
+        --text: #f8fbff;
+        --muted: #a8b3cf;
+        --cyan: #55d9ff;
+        --pink: #ff5ec4;
+        --yellow: #ffe66d;
+        --green: #8dffb2;
+        --purple: #9d7dff;
+        --border: rgba(255, 255, 255, 0.14);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 12% 18%, rgba(85, 217, 255, 0.28), transparent 30%),
+          radial-gradient(circle at 88% 8%, rgba(255, 94, 196, 0.24), transparent 34%),
+          radial-gradient(circle at 45% 95%, rgba(157, 125, 255, 0.28), transparent 30%),
+          linear-gradient(135deg, #070914 0%, #111833 48%, #0a1022 100%);
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .page {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 56px;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        padding: clamp(28px, 5vw, 56px);
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.03)),
+          var(--panel);
+        box-shadow: 0 24px 90px rgba(0, 0, 0, 0.42);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -120px -180px auto;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cyan), var(--pink));
+        filter: blur(34px);
+        opacity: 0.22;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 12px;
+        border: 1px solid rgba(85, 217, 255, 0.42);
+        border-radius: 999px;
+        color: var(--cyan);
+        background: rgba(85, 217, 255, 0.1);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 820px;
+        margin: 24px 0 16px;
+        font-size: clamp(38px, 7vw, 78px);
+        line-height: 0.94;
+        letter-spacing: -0.07em;
+      }
+
+      .gradient-text {
+        background: linear-gradient(90deg, var(--cyan), var(--yellow), var(--pink));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .intro {
+        max-width: 780px;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(17px, 2vw, 21px);
+        line-height: 1.65;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .primary-button,
+      .ghost-button {
+        border: 0;
+        border-radius: 16px;
+        padding: 13px 18px;
+        cursor: pointer;
+        color: #07101b;
+        background: linear-gradient(135deg, var(--cyan), var(--green));
+        font-weight: 800;
+        box-shadow: 0 12px 30px rgba(85, 217, 255, 0.22);
+      }
+
+      .ghost-button {
+        color: var(--text);
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: none;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 0.92fr 1.08fr;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 22px;
+        background: var(--panel);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.26);
+        backdrop-filter: blur(18px);
+      }
+
+      .card h2,
+      .card h3 {
+        margin: 0 0 12px;
+        letter-spacing: -0.03em;
+      }
+
+      .card p {
+        margin: 0 0 16px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .steps {
+        display: grid;
+        gap: 12px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .number {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        color: #06101c;
+        background: linear-gradient(135deg, var(--yellow), var(--pink));
+        font-weight: 900;
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .step span {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .diagram {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .node {
+        position: relative;
+        min-height: 118px;
+        padding: 14px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04));
+        border: 1px solid rgba(255, 255, 255, 0.13);
+      }
+
+      .node::after {
+        content: "->";
+        position: absolute;
+        top: 45%;
+        right: -14px;
+        color: var(--yellow);
+        font-weight: 900;
+      }
+
+      .node:last-child::after {
+        content: "";
+      }
+
+      .node b {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .node small {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .tab {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 10px 14px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.06);
+        cursor: pointer;
+        transition: 160ms ease;
+      }
+
+      .tab.active {
+        color: #07101b;
+        border-color: transparent;
+        background: linear-gradient(135deg, var(--cyan), var(--yellow));
+        font-weight: 900;
+      }
+
+      .code-card {
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 20px;
+        background: #080b14;
+      }
+
+      .code-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .filename {
+        color: var(--green);
+        font-weight: 800;
+      }
+
+      .copy {
+        border: 0;
+        border-radius: 11px;
+        padding: 8px 10px;
+        color: #06101c;
+        background: var(--green);
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      pre {
+        margin: 0;
+        padding: 18px;
+        overflow: auto;
+        color: #d8e2ff;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      code {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      .token-a {
+        color: var(--cyan);
+      }
+
+      .token-b {
+        color: var(--pink);
+      }
+
+      .token-c {
+        color: var(--yellow);
+      }
+
+      .preview {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .mock-window {
+        overflow: hidden;
+        min-height: 210px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 20px;
+        background: #0b1020;
+      }
+
+      .window-bar {
+        display: flex;
+        gap: 7px;
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+      }
+
+      .red {
+        background: #ff5f57;
+      }
+
+      .orange {
+        background: #febc2e;
+      }
+
+      .green {
+        background: #28c840;
+      }
+
+      .mock-body {
+        padding: 18px;
+      }
+
+      .pill-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 7px 10px;
+        color: #07101b;
+        background: var(--yellow);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .assistant-box {
+        margin-top: 18px;
+        padding: 16px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(85, 217, 255, 0.2), rgba(255, 94, 196, 0.15));
+      }
+
+      .checklist label {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 12px 0;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .checklist input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--cyan);
+      }
+
+      .progress-shell {
+        height: 12px;
+        margin-top: 14px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .progress-bar {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--cyan), var(--green), var(--yellow));
+        transition: width 180ms ease;
+      }
+
+      .note {
+        margin-top: 18px;
+        border-left: 4px solid var(--pink);
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(255, 94, 196, 0.1);
+        color: var(--muted);
+      }
+
+      @media (max-width: 860px) {
+        .grid,
+        .preview,
+        .diagram {
+          grid-template-columns: 1fr;
+        }
+
+        .node::after {
+          content: "down";
+          right: 14px;
+          top: auto;
+          bottom: 10px;
+        }
+
+        .node:last-child::after {
+          content: "";
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <span class="eyebrow">Electron + React</span>
+        <h1>Render React inside a <span class="gradient-text">new AI window</span></h1>
+        <p class="intro">
+          The new Electron BrowserWindow needs to load your renderer. The simplest approach is to reuse the current React bundle and pass a query flag like <code>?window=ai</code> so React can render a different screen.
+        </p>
+        <div class="actions">
+          <button class="primary-button" type="button" data-scroll-to="code">Show the code</button>
+          <button class="ghost-button" type="button" data-scroll-to="flow">View the flow</button>
+        </div>
+      </section>
+
+      <section class="grid" id="flow">
+        <article class="card">
+          <h2>The idea</h2>
+          <p>
+            A new <code>BrowserWindow</code> is already a separate Electron renderer process. You just need to load the same React app and tell it which UI to show.
+          </p>
+          <div class="steps">
+            <div class="step">
+              <div class="number">1</div>
+              <div><strong>React button</strong><span>Calls <code>window.electronAPI.openAIWindow()</code>.</span></div>
+            </div>
+            <div class="step">
+              <div class="number">2</div>
+              <div><strong>Preload IPC</strong><span>Invokes <code>window.openAIWindow</code> in the main process.</span></div>
+            </div>
+            <div class="step">
+              <div class="number">3</div>
+              <div><strong>Main process</strong><span>Creates the AI <code>BrowserWindow</code> and loads React with <code>?window=ai</code>.</span></div>
+            </div>
+            <div class="step">
+              <div class="number">4</div>
+              <div><strong>React routing</strong><span><code>App</code> sees the query flag and renders <code>AIWindow</code>.</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Window flow</h2>
+          <div class="diagram">
+            <div class="node"><b>AI Button</b><small>User clicks the button in the editor window.</small></div>
+            <div class="node"><b>IPC</b><small>The preload bridge calls the main process.</small></div>
+            <div class="node"><b>BrowserWindow</b><small>Electron opens another native window.</small></div>
+            <div class="node"><b>React UI</b><small>The query flag makes React render the AI screen.</small></div>
+          </div>
+          <div class="preview">
+            <div class="mock-window">
+              <div class="window-bar"><span class="dot red"></span><span class="dot orange"></span><span class="dot green"></span></div>
+              <div class="mock-body">
+                <h3>Main Window</h3>
+                <div class="pill-row"><span class="pill">Files</span><span class="pill">Editor</span><span class="pill">Tabs</span></div>
+                <div class="assistant-box">Button: Open AI window</div>
+              </div>
+            </div>
+            <div class="mock-window">
+              <div class="window-bar"><span class="dot red"></span><span class="dot orange"></span><span class="dot green"></span></div>
+              <div class="mock-body">
+                <h3>AI Window</h3>
+                <div class="assistant-box">React renders <strong>AIWindow</strong> because the URL has <code>?window=ai</code>.</div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid" id="code">
+        <article class="card">
+          <h2>Implementation checklist</h2>
+          <p>Check items off as you wire the feature into the app.</p>
+          <div class="checklist">
+            <label><input type="checkbox" /> Update the React button to call the preload API</label>
+            <label><input type="checkbox" /> Create and load the AI BrowserWindow in <code>main.ts</code></label>
+            <label><input type="checkbox" /> Branch in <code>App.tsx</code> with <code>?window=ai</code></label>
+            <label><input type="checkbox" /> Add the <code>AIWindow</code> component</label>
+          </div>
+          <div class="progress-shell"><div class="progress-bar" id="progressBar"></div></div>
+          <div class="note">
+            Keep one renderer bundle for now. Split into a separate renderer entry only if the AI window becomes a completely separate app.
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Code tabs</h2>
+          <div class="tabs" role="tablist" aria-label="Code examples">
+            <button class="tab active" type="button" data-tab="main">main.ts</button>
+            <button class="tab" type="button" data-tab="app">App.tsx</button>
+            <button class="tab" type="button" data-tab="preload">preload.ts</button>
+          </div>
+          <div class="code-card">
+            <div class="code-header">
+              <span class="filename" id="filename">src/main/main.ts</span>
+              <button class="copy" type="button" id="copyButton">Copy</button>
+            </div>
+            <pre><code id="codeBlock"></code></pre>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const snippets = {
+        main: {
+          filename: "src/main/main.ts",
+          code: `ipcMain.handle("window.openAIWindow", () => {
+  const aiWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    icon: iconPath,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    aiWindow.loadURL(\`${MAIN_WINDOW_VITE_DEV_SERVER_URL}?window=ai\`);
+  } else {
+    aiWindow.loadFile(
+      path.join(__dirname, \`../renderer/${MAIN_WINDOW_VITE_NAME}/index.html\`),
+      {
+        query: {
+          window: "ai",
+        },
+      },
+    );
+  }
+});`,
+        },
+        app: {
+          filename: "src/renderer/App.tsx",
+          code: `const windowType = new URLSearchParams(window.location.search).get("window");
+
+function openAIWindow() {
+  window.electronAPI.openAIWindow();
+}
+
+function AIWindow() {
+  return (
+    <main>
+      <h1>AI Window</h1>
+      <p>This React screen is rendered in the second BrowserWindow.</p>
+    </main>
+  );
+}
+
+export default function App() {
+  if (windowType === "ai") {
+    return <AIWindow />;
+  }
+
+  return (
+    <main>
+      {/* existing editor UI */}
+    </main>
+  );
+}`,
+        },
+        preload: {
+          filename: "src/preload/preload.ts",
+          code: `contextBridge.exposeInMainWorld("electronAPI", {
+  openAIWindow: () => ipcRenderer.invoke("window.openAIWindow"),
+});`,
+        },
+      };
+
+      const codeBlock = document.getElementById("codeBlock");
+      const filename = document.getElementById("filename");
+      const copyButton = document.getElementById("copyButton");
+
+      function setTab(name) {
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.tab === name);
+        });
+        filename.textContent = snippets[name].filename;
+        codeBlock.textContent = snippets[name].code;
+        copyButton.textContent = "Copy";
+      }
+
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => setTab(tab.dataset.tab));
+      });
+
+      copyButton.addEventListener("click", async () => {
+        const activeTab = document.querySelector(".tab.active").dataset.tab;
+        await navigator.clipboard.writeText(snippets[activeTab].code);
+        copyButton.textContent = "Copied";
+        setTimeout(() => {
+          copyButton.textContent = "Copy";
+        }, 1200);
+      });
+
+      document.querySelectorAll("[data-scroll-to]").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.getElementById(button.dataset.scrollTo).scrollIntoView({ behavior: "smooth" });
+        });
+      });
+
+      const checkboxes = document.querySelectorAll(".checklist input");
+      const progressBar = document.getElementById("progressBar");
+
+      function updateProgress() {
+        const completed = Array.from(checkboxes).filter((checkbox) => checkbox.checked).length;
+        progressBar.style.width = `${(completed / checkboxes.length) * 100}%`;
+      }
+
+      checkboxes.forEach((checkbox) => checkbox.addEventListener("change", updateProgress));
+      setTab("main");
+      updateProgress();
+    </script>
+  </body>
+</html>

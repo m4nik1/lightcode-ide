@@ -1,0 +1,1738 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A source-backed guide to the OpenAI Codex TypeScript SDK: architecture, threads, streaming events, configuration, and production patterns."
+    />
+    <title>Codex TypeScript SDK — Field Guide</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #fff;
+        --fg: #09090b;
+        --muted: #71717a;
+        --soft: #fafafa;
+        --line: #e4e4e7;
+        --code: #0a0a0a;
+        --green: #16a34a;
+        --amber: #d97706;
+        --radius: 10px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 84px;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.65 ui-sans-serif,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        text-rendering: optimizeLegibility;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      button {
+        font: inherit;
+      }
+      code,
+      pre,
+      .mono {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        height: 64px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(14px);
+      }
+      .topbar-inner {
+        max-width: 1400px;
+        height: 100%;
+        margin: auto;
+        padding: 0 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      .mark {
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        color: #fff;
+        background: #09090b;
+      }
+      .mark svg {
+        width: 15px;
+      }
+      .slash {
+        color: #d4d4d8;
+        margin: 0 2px;
+      }
+      .subbrand {
+        color: var(--muted);
+        font-weight: 450;
+      }
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .button {
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 520;
+      }
+      .button.primary {
+        border-color: #18181b;
+        background: #18181b;
+        color: #fff;
+      }
+      .button:hover {
+        background: #f4f4f5;
+      }
+      .button.primary:hover {
+        background: #27272a;
+      }
+      .layout {
+        max-width: 1400px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: 230px minmax(0, 820px) 220px;
+        gap: 48px;
+        padding: 0 28px;
+      }
+      .sidebar,
+      .toc {
+        position: sticky;
+        top: 64px;
+        align-self: start;
+        height: calc(100vh - 64px);
+        overflow: auto;
+        padding: 36px 0;
+      }
+      .nav-label {
+        margin: 0 0 8px;
+        color: #a1a1aa;
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .sidebar nav {
+        display: grid;
+        gap: 2px;
+      }
+      .sidebar a {
+        padding: 6px 9px;
+        border-radius: 6px;
+        color: #52525b;
+        font-size: 13px;
+      }
+      .sidebar a:hover,
+      .sidebar a.active {
+        color: #09090b;
+        background: #f4f4f5;
+      }
+      .sidebar .nav-label:not(:first-child) {
+        margin-top: 25px;
+      }
+      main {
+        min-width: 0;
+        padding: 76px 0 110px;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 3px 9px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: #52525b;
+        font-size: 12px;
+        font-weight: 520;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 0 3px #dcfce7;
+      }
+      h1 {
+        max-width: 760px;
+        margin: 22px 0 20px;
+        font-size: clamp(42px, 7vw, 72px);
+        line-height: 1.02;
+        letter-spacing: -0.055em;
+        font-weight: 700;
+      }
+      .lead {
+        max-width: 700px;
+        margin: 0;
+        color: #52525b;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin: 30px 0 46px;
+      }
+      .hero-meta {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .metric {
+        padding: 18px;
+        background: var(--soft);
+        border-right: 1px solid var(--line);
+      }
+      .metric:last-child {
+        border: 0;
+      }
+      .metric strong {
+        display: block;
+        font-size: 14px;
+      }
+      .metric span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      section {
+        padding-top: 76px;
+      }
+      h2 {
+        margin: 0 0 13px;
+        font-size: 30px;
+        line-height: 1.2;
+        letter-spacing: -0.035em;
+      }
+      h3 {
+        margin: 32px 0 10px;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 10px 0;
+      }
+      .section-intro {
+        max-width: 700px;
+        color: #52525b;
+        font-size: 16px;
+      }
+      .callout {
+        margin: 24px 0;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-left: 3px solid #18181b;
+        border-radius: 8px;
+        background: var(--soft);
+        color: #3f3f46;
+      }
+      .callout strong {
+        color: #09090b;
+      }
+      .callout.warn {
+        border-left-color: var(--amber);
+        background: #fffbeb;
+      }
+      .code-block {
+        position: relative;
+        margin: 20px 0;
+        overflow: hidden;
+        border: 1px solid #27272a;
+        border-radius: var(--radius);
+        background: var(--code);
+        color: #e4e4e7;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+      }
+      .code-head {
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px 0 16px;
+        border-bottom: 1px solid #27272a;
+        color: #a1a1aa;
+        font-size: 12px;
+      }
+      .copy {
+        padding: 4px 8px;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: #a1a1aa;
+        cursor: pointer;
+      }
+      .copy:hover {
+        color: #fff;
+        background: #27272a;
+      }
+      pre {
+        margin: 0;
+        padding: 18px;
+        overflow: auto;
+        font-size: 12.5px;
+        line-height: 1.7;
+        tab-size: 2;
+      }
+      .kw {
+        color: #c084fc;
+      }
+      .str {
+        color: #86efac;
+      }
+      .fn {
+        color: #93c5fd;
+      }
+      .type {
+        color: #67e8f9;
+      }
+      .cm {
+        color: #71717a;
+      }
+      .num {
+        color: #fdba74;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 22px 0;
+      }
+      .card {
+        padding: 19px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+      }
+      .card h3 {
+        margin: 0 0 5px;
+        font-size: 15px;
+      }
+      .card p {
+        margin: 0;
+        color: #71717a;
+        font-size: 13px;
+      }
+      .card .icon {
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 14px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--soft);
+      }
+      .flow {
+        margin: 26px 0;
+        display: grid;
+        grid-template-columns: 1fr 28px 1fr 28px 1fr;
+        align-items: center;
+      }
+      .node {
+        min-height: 108px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--soft);
+      }
+      .node small {
+        color: var(--muted);
+      }
+      .node strong {
+        display: block;
+        margin: 5px 0;
+        font-size: 14px;
+      }
+      .arrow {
+        color: #a1a1aa;
+        text-align: center;
+      }
+      .protocol {
+        margin-top: 12px;
+        padding: 14px 16px;
+        border: 1px dashed #d4d4d8;
+        border-radius: 8px;
+        color: #52525b;
+        font-size: 12px;
+      }
+      .steps {
+        margin: 22px 0;
+        counter-reset: steps;
+      }
+      .step {
+        position: relative;
+        margin-left: 17px;
+        padding: 0 0 28px 34px;
+        border-left: 1px solid var(--line);
+      }
+      .step:last-child {
+        border-color: transparent;
+        padding-bottom: 0;
+      }
+      .step:before {
+        counter-increment: steps;
+        content: counter(steps);
+        position: absolute;
+        left: -14px;
+        top: -2px;
+        width: 27px;
+        height: 27px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: #fff;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .step strong {
+        display: block;
+      }
+      .step span {
+        color: var(--muted);
+      }
+      table {
+        width: 100%;
+        margin: 20px 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        font-size: 13px;
+      }
+      th,
+      td {
+        padding: 11px 13px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: var(--soft);
+        color: #52525b;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      td code,
+      p code,
+      li code {
+        padding: 2px 5px;
+        border: 1px solid #e4e4e7;
+        border-radius: 4px;
+        background: #f4f4f5;
+        color: #18181b;
+        font-size: 0.9em;
+      }
+      ul.clean {
+        margin: 14px 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.clean li {
+        position: relative;
+        padding: 7px 0 7px 24px;
+        border-bottom: 1px solid #f4f4f5;
+      }
+      ul.clean li:before {
+        content: "✓";
+        position: absolute;
+        left: 2px;
+        color: #52525b;
+        font-weight: 700;
+      }
+      .toc {
+        padding-top: 40px;
+      }
+      .toc a {
+        display: block;
+        padding: 4px 0 4px 12px;
+        border-left: 1px solid var(--line);
+        color: #a1a1aa;
+        font-size: 12px;
+      }
+      .toc a:hover,
+      .toc a.active {
+        border-color: #18181b;
+        color: #18181b;
+      }
+      .toc .source-box {
+        margin-top: 28px;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: #71717a;
+        font-size: 11px;
+      }
+      .toc .source-box strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #27272a;
+      }
+      footer {
+        margin-top: 84px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        color: #a1a1aa;
+        font-size: 12px;
+      }
+      .menu {
+        display: none;
+        border: 0;
+        background: transparent;
+      }
+      @media (max-width: 1100px) {
+        .layout {
+          grid-template-columns: 210px minmax(0, 1fr);
+          gap: 38px;
+        }
+        .toc {
+          display: none;
+        }
+      }
+      @media (max-width: 760px) {
+        .topbar-inner {
+          padding: 0 18px;
+        }
+        .top-actions .button:first-child {
+          display: none;
+        }
+        .menu {
+          display: block;
+        }
+        .layout {
+          display: block;
+          padding: 0 18px;
+        }
+        .sidebar {
+          display: none;
+          position: fixed;
+          z-index: 30;
+          inset: 64px 0 0;
+          height: auto;
+          padding: 24px;
+          background: #fff;
+        }
+        .sidebar.open {
+          display: block;
+        }
+        main {
+          padding-top: 55px;
+        }
+        h1 {
+          font-size: 45px;
+        }
+        .lead {
+          font-size: 16px;
+        }
+        .hero-meta {
+          grid-template-columns: 1fr 1fr;
+        }
+        .metric:nth-child(2) {
+          border-right: 0;
+        }
+        .metric:nth-child(-n + 2) {
+          border-bottom: 1px solid var(--line);
+        }
+        section {
+          padding-top: 62px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .flow {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .arrow {
+          transform: rotate(90deg);
+        }
+        .node {
+          min-height: 0;
+        }
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+        footer {
+          display: block;
+        }
+        footer span {
+          display: block;
+          margin-top: 4px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#top" aria-label="Codex TypeScript SDK guide home"
+          ><span class="mark"
+            ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m8 5-5 7 5 7M16 5l5 7-5 7M14 3l-4 18" /></svg></span
+          ><span>Codex</span><span class="slash">/</span
+          ><span class="subbrand">TypeScript SDK</span></a
+        >
+        <div class="top-actions">
+          <a class="button" href="../README.md">README</a
+          ><a class="button primary" href="#quickstart"
+            >Get started <span aria-hidden="true">→</span></a
+          ><button class="menu" type="button" aria-label="Toggle navigation" aria-expanded="false">
+            Menu
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Guide navigation">
+        <p class="nav-label">Overview</p>
+        <nav>
+          <a href="#what-it-is">What it is</a><a href="#architecture">Architecture</a
+          ><a href="#quickstart">Quickstart</a>
+        </nav>
+        <p class="nav-label">Build</p>
+        <nav>
+          <a href="#threads">Threads &amp; turns</a><a href="#streaming">Streaming</a
+          ><a href="#items">Events &amp; items</a><a href="#inputs">Inputs</a
+          ><a href="#structured">Structured output</a><a href="#examples">Examples</a>
+        </nav>
+        <p class="nav-label">Operate</p>
+        <nav>
+          <a href="#safety">Sandbox &amp; network</a><a href="#configuration">Configuration</a
+          ><a href="#cancellation">Cancellation &amp; errors</a
+          ><a href="#persistence">Persistence</a><a href="#api-map">API map</a
+          ><a href="#limits">Boundaries</a><a href="#sources">Sources</a>
+        </nav>
+      </aside>
+
+      <main id="top">
+        <div class="eyebrow"><span class="dot"></span> Source-backed field guide</div>
+        <h1>Run Codex agents from Node.js.</h1>
+        <p class="lead">
+          A practical map to <code>@openai/codex-sdk</code>: how it launches the CLI per turn,
+          resumes local conversations, streams JSONL events, and safely lets an agent work in your
+          repository.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#quickstart">Install and run <span>→</span></a
+          ><a class="button" href="#architecture">See how it works</a>
+        </div>
+        <div class="hero-meta">
+          <div class="metric"><strong>Node.js ≥ 18</strong><span>Runtime requirement</span></div>
+          <div class="metric"><strong>ES modules</strong><span>Import-only package</span></div>
+          <div class="metric"><strong>JSONL events</strong><span>Typed async generator</span></div>
+          <div class="metric">
+            <strong>Process per turn</strong><span>CLI-backed execution</span>
+          </div>
+        </div>
+
+        <section id="what-it-is">
+          <h2>A thin SDK over <code>codex exec</code></h2>
+          <p class="section-intro">
+            The TypeScript SDK is not a REST client and does not keep an agent server resident. A
+            <code>Codex</code> object stores launch configuration; each call to
+            <code>run()</code> or consumption of <code>runStreamed()</code> starts a fresh local CLI
+            process.
+          </p>
+          <div class="grid">
+            <article class="card">
+              <div class="icon">01</div>
+              <h3><code>Codex</code></h3>
+              <p>
+                Resolves the CLI and stores global binary, URL, key, config, and environment
+                options.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">02</div>
+              <h3><code>Thread</code></h3>
+              <p>
+                Holds fixed execution options and a local persisted session ID. It does not hold
+                message history itself.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">03</div>
+              <h3>Turn</h3>
+              <p>
+                One CLI invocation. Buffered <code>run()</code> returns completed snapshots;
+                streamed mode exposes progress.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">04</div>
+              <h3>Item</h3>
+              <p>
+                A typed unit of work such as an assistant message, command, file change, MCP call,
+                or todo list.
+              </p>
+            </article>
+          </div>
+          <div class="callout">
+            <strong>Mental model:</strong> thread continuity comes from Codex session files and
+            <code>resume &lt;thread-id&gt;</code>, not from a long-lived Node subprocess.
+          </div>
+        </section>
+
+        <section id="architecture">
+          <h2>How one turn travels</h2>
+          <p class="section-intro">
+            The SDK converts options into CLI flags, writes the prompt to stdin, and parses one
+            event from each stdout line.
+          </p>
+          <div class="flow" aria-label="TypeScript SDK architecture flow">
+            <div class="node">
+              <small>Your process</small><strong>Node.js application</strong
+              ><code>Codex → Thread</code>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node">
+              <small>Fresh child per turn</small><strong>codex exec</strong
+              ><code>--experimental-json</code>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node">
+              <small>Agent runtime</small><strong>Model + tools</strong
+              ><code>workspace / shell / MCP</code>
+            </div>
+          </div>
+          <div class="protocol mono">
+            stdin: raw prompt → &nbsp; child process &nbsp; → stdout: newline-delimited JSON events
+          </div>
+          <div class="steps">
+            <div class="step">
+              <strong>Normalize input</strong
+              ><span
+                >Strings become the prompt. Structured text entries join with blank lines; local
+                image paths become repeated <code>--image</code> flags.</span
+              >
+            </div>
+            <div class="step">
+              <strong>Build command arguments</strong
+              ><span
+                >Global config is emitted first, then base URL and thread options so more specific
+                values win.</span
+              >
+            </div>
+            <div class="step">
+              <strong>Start or resume</strong
+              ><span
+                >The first turn invokes <code>codex exec</code>; later turns add
+                <code>resume &lt;id&gt;</code>.</span
+              >
+            </div>
+            <div class="step">
+              <strong>Parse events</strong
+              ><span
+                >Each stdout line is <code>JSON.parse</code>d and yielded.
+                <code>thread.started</code> populates the thread ID.</span
+              >
+            </div>
+            <div class="step">
+              <strong>Clean up</strong
+              ><span
+                >The child closes after the turn. Temporary structured-output files are removed in a
+                <code>finally</code> block.</span
+              >
+            </div>
+          </div>
+          <div class="callout warn">
+            <strong>Streaming is lazy:</strong> <code>await thread.runStreamed()</code> returns a
+            generator wrapper, but does not start the child process. Execution starts when code
+            begins iterating <code>events</code>.
+          </div>
+        </section>
+
+        <section id="quickstart">
+          <h2>From zero to first turn</h2>
+          <p class="section-intro">
+            The published SDK includes a matching Codex CLI dependency. Existing CLI authentication
+            and configuration are used unless you supply explicit overrides.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>Terminal</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code>npm install @openai/codex-sdk</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head">
+              <span>quickstart.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { Codex } <span class="kw">from</span> <span class="str">"@openai/codex-sdk"</span>;
+
+<span class="kw">const</span> codex = <span class="kw">new</span> Codex();
+<span class="kw">const</span> thread = codex.startThread({
+  workingDirectory: <span class="str">"/path/to/project"</span>,
+  sandboxMode: <span class="str">"read-only"</span>,
+});
+
+<span class="kw">const</span> result = <span class="kw">await</span> thread.run(
+  <span class="str">"Explain this repository in three bullets."</span>,
+);
+
+console.log(<span class="str">"thread:"</span>, thread.id);
+console.log(<span class="str">"usage:"</span>, result.usage);
+console.log(result.finalResponse);</code></pre>
+          </div>
+          <h3>What <code>run()</code> returns</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>items: ThreadItem[]</code></td>
+                <td>Only completed item snapshots, in event order.</td>
+              </tr>
+              <tr>
+                <td><code>finalResponse: string</code></td>
+                <td>
+                  Text from the last completed <code>agent_message</code>; empty when none is
+                  emitted.
+                </td>
+              </tr>
+              <tr>
+                <td><code>usage: Usage | null</code></td>
+                <td>
+                  Usage from <code>turn.completed</code>. Current runtime data can be cumulative for
+                  the thread.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="threads">
+          <h2><code>run()</code> vs <code>runStreamed()</code></h2>
+          <p class="section-intro">
+            Both execute a turn. Choose based on whether you need a collected result or live state
+            transitions.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Returns</th>
+                <th>Use when</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>thread.run(input, options?)</code></td>
+                <td><code>Promise&lt;RunResult&gt;</code></td>
+                <td>You can wait and only need final completed items, final text, and usage.</td>
+              </tr>
+              <tr>
+                <td><code>thread.runStreamed(input, options?)</code></td>
+                <td><code>Promise&lt;{ events: AsyncGenerator&lt;ThreadEvent&gt; }&gt;</code></td>
+                <td>
+                  You need commands, file changes, MCP progress, item updates, or custom rendering.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="code-block">
+            <div class="code-head">
+              <span>multi-turn.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> thread = codex.startThread({
+  workingDirectory: <span class="str">"/path/to/project"</span>,
+  sandboxMode: <span class="str">"workspace-write"</span>,
+});
+
+<span class="kw">const</span> analysis = <span class="kw">await</span> thread.run(<span class="str">"Diagnose the failing tests."</span>);
+console.log(analysis.finalResponse);
+
+<span class="cm">// Reuses the thread ID and persisted conversation history.</span>
+<span class="kw">const</span> implementation = <span class="kw">await</span> thread.run(<span class="str">"Implement the smallest fix."</span>);
+console.log(implementation.finalResponse);</code></pre>
+          </div>
+          <ul class="clean">
+            <li>
+              A new thread starts with <code>thread.id === null</code>; the first
+              <code>thread.started</code> event sets it.
+            </li>
+            <li>
+              Thread options are fixed when the <code>Thread</code> is created. Only output schema
+              and cancellation vary by turn.
+            </li>
+            <li>
+              Avoid concurrent turns on the same <code>Thread</code>; there is no concurrency guard
+              around its ID or persisted state.
+            </li>
+          </ul>
+        </section>
+
+        <section id="streaming">
+          <h2>Stream the agent's work</h2>
+          <p class="section-intro">
+            Iterate the async generator to receive state transitions. Always handle terminal turn
+            events and top-level errors.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>stream.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { Codex, <span class="kw">type</span> ThreadEvent } <span class="kw">from</span> <span class="str">"@openai/codex-sdk"</span>;
+
+<span class="kw">const</span> thread = <span class="kw">new</span> Codex().startThread({
+  workingDirectory: <span class="str">"/path/to/project"</span>,
+});
+<span class="kw">const</span> { events } = <span class="kw">await</span> thread.runStreamed(<span class="str">"Review the test strategy."</span>);
+
+<span class="kw">for await</span> (<span class="kw">const</span> event <span class="kw">of</span> events) {
+  <span class="kw">switch</span> (event.type) {
+    <span class="kw">case</span> <span class="str">"thread.started"</span>:
+      console.log(<span class="str">"thread"</span>, event.thread_id);
+      <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="str">"item.started"</span>:
+    <span class="kw">case</span> <span class="str">"item.updated"</span>:
+    <span class="kw">case</span> <span class="str">"item.completed"</span>:
+      console.log(event.type, event.item.type, event.item);
+      <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="str">"turn.completed"</span>:
+      console.log(<span class="str">"usage"</span>, event.usage);
+      <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="str">"turn.failed"</span>:
+      <span class="kw">throw new</span> Error(event.error.message);
+    <span class="kw">case</span> <span class="str">"error"</span>:
+      console.error(event.message);
+      <span class="kw">break</span>;
+  }
+}</code></pre>
+          </div>
+          <div class="callout">
+            <strong>Generator ownership:</strong> consume the stream to completion. If iteration
+            stops early, generator cleanup kills the child if needed and removes temporary schema
+            files.
+          </div>
+        </section>
+
+        <section id="items">
+          <h2>Events and item types</h2>
+          <p class="section-intro">
+            Top-level events describe lifecycle; item payloads describe the work. Use both
+            <code>event.type</code> and <code>event.item.type</code> as discriminants.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Payload / behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>thread.started</code></td>
+                <td><code>thread_id</code>; emitted for new and resumed executions.</td>
+              </tr>
+              <tr>
+                <td><code>turn.started</code></td>
+                <td>Signals agent processing has begun.</td>
+              </tr>
+              <tr>
+                <td><code>item.started</code></td>
+                <td>Initial in-progress snapshot for supported work items.</td>
+              </tr>
+              <tr>
+                <td><code>item.updated</code></td>
+                <td>Replacement snapshot as command, MCP, or todo state changes.</td>
+              </tr>
+              <tr>
+                <td><code>item.completed</code></td>
+                <td>
+                  Terminal success/failure snapshot; the only items collected by <code>run()</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>turn.completed</code></td>
+                <td>Terminal success plus usage.</td>
+              </tr>
+              <tr>
+                <td><code>turn.failed</code></td>
+                <td>Terminal failure with <code>error.message</code>.</td>
+              </tr>
+              <tr>
+                <td><code>error</code></td>
+                <td>Unrecoverable stream message represented as data.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grid">
+            <article class="card">
+              <h3><code>agent_message</code></h3>
+              <p>Assistant text. The last completed one becomes <code>finalResponse</code>.</p>
+            </article>
+            <article class="card">
+              <h3><code>reasoning</code></h3>
+              <p>Agent reasoning summary text.</p>
+            </article>
+            <article class="card">
+              <h3><code>command_execution</code></h3>
+              <p>Command, aggregate output, exit code, and execution status.</p>
+            </article>
+            <article class="card">
+              <h3><code>file_change</code></h3>
+              <p>Changed paths, add/delete/update kinds, and patch status.</p>
+            </article>
+            <article class="card">
+              <h3><code>mcp_tool_call</code></h3>
+              <p>Server, tool, arguments, status, result, or error.</p>
+            </article>
+            <article class="card">
+              <h3><code>web_search</code></h3>
+              <p>Web search activity and query.</p>
+            </article>
+            <article class="card">
+              <h3><code>todo_list</code></h3>
+              <p>The agent's plan items and completion flags.</p>
+            </article>
+            <article class="card">
+              <h3><code>error</code> item</h3>
+              <p>A non-fatal warning or error item; it does not necessarily fail the turn.</p>
+            </article>
+          </div>
+          <div class="callout warn">
+            <strong>Wire-format caveat:</strong> stdout events are cast after
+            <code>JSON.parse</code>, not runtime-validated. The CLI can evolve ahead of the declared
+            union. Include a defensive default branch and inspect unknown items rather than assuming
+            the union is exhaustive at runtime.
+          </div>
+        </section>
+
+        <section id="inputs">
+          <h2>Text and local images</h2>
+          <p class="section-intro">
+            Input is either one string or an array of text and local-image objects. The SDK does not
+            support remote image URLs or raw binary image payloads.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>multimodal.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> result = <span class="kw">await</span> thread.run([
+  { type: <span class="str">"text"</span>, text: <span class="str">"Compare these screenshots."</span> },
+  { type: <span class="str">"local_image"</span>, path: <span class="str">"./before.png"</span> },
+  { type: <span class="str">"text"</span>, text: <span class="str">"Focus on layout regressions."</span> },
+  { type: <span class="str">"local_image"</span>, path: <span class="str">"./after.png"</span> },
+]);
+
+console.log(result.finalResponse);</code></pre>
+          </div>
+          <ul class="clean">
+            <li>Text entries are concatenated with exactly two newline characters.</li>
+            <li>
+              Image positions relative to text are not preserved; every image becomes a CLI
+              <code>--image</code> argument.
+            </li>
+            <li>
+              Paths are passed through unchanged. Resolve and validate them in your application when
+              location matters.
+            </li>
+            <li>An image-only or empty array produces an empty textual prompt.</li>
+          </ul>
+        </section>
+
+        <section id="structured">
+          <h2>Structured output</h2>
+          <p class="section-intro">
+            Pass a JSON Schema per turn. The SDK writes it to a temporary file for the CLI, but
+            returns the generated JSON as an ordinary string.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>structured.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">"zod"</span>;
+<span class="kw">import</span> { zodToJsonSchema } <span class="kw">from</span> <span class="str">"zod-to-json-schema"</span>;
+
+<span class="kw">const</span> Audit = z.object({
+  summary: z.string(),
+  risks: z.array(z.object({
+    file: z.string(),
+    severity: z.enum([<span class="str">"low"</span>, <span class="str">"medium"</span>, <span class="str">"high"</span>]),
+  })),
+});
+
+<span class="kw">const</span> result = <span class="kw">await</span> thread.run(<span class="str">"Audit authentication code."</span>, {
+  outputSchema: zodToJsonSchema(Audit, { target: <span class="str">"openAi"</span> }),
+});
+
+<span class="kw">const</span> audit = Audit.parse(JSON.parse(result.finalResponse));
+console.log(audit.risks);</code></pre>
+          </div>
+          <div class="callout warn">
+            <strong>Validate after parsing:</strong> <code>outputSchema</code> is typed as
+            <code>unknown</code>. The SDK checks for a non-null, non-array object and serializes it,
+            but does not parse or validate the model response. Zod integration is application-side.
+          </div>
+        </section>
+
+        <section id="examples">
+          <h2>Examples cookbook</h2>
+          <p class="section-intro">
+            Complete patterns for common Node.js integrations. Replace paths and models with values
+            appropriate to your environment.
+          </p>
+          <h3>Read-only repository review</h3>
+          <div class="code-block">
+            <div class="code-head">
+              <span>review.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { resolve } <span class="kw">from</span> <span class="str">"node:path"</span>;
+<span class="kw">import</span> { Codex } <span class="kw">from</span> <span class="str">"@openai/codex-sdk"</span>;
+
+<span class="kw">const</span> thread = <span class="kw">new</span> Codex().startThread({
+  workingDirectory: resolve(<span class="str">"../my-project"</span>),
+  sandboxMode: <span class="str">"read-only"</span>,
+  modelReasoningEffort: <span class="str">"high"</span>,
+});
+
+<span class="kw">const</span> result = <span class="kw">await</span> thread.run(
+  <span class="str">"Review architecture and identify the three highest-risk areas. "</span> +
+    <span class="str">"Cite relevant files and do not modify anything."</span>,
+);
+console.log(result.finalResponse);</code></pre>
+          </div>
+
+          <h3>Implement, test, and inspect completed work</h3>
+          <div class="code-block">
+            <div class="code-head">
+              <span>implement.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { Codex, <span class="kw">type</span> CommandExecutionItem } <span class="kw">from</span> <span class="str">"@openai/codex-sdk"</span>;
+
+<span class="kw">const</span> thread = <span class="kw">new</span> Codex().startThread({
+  workingDirectory: <span class="str">"/path/to/project"</span>,
+  sandboxMode: <span class="str">"workspace-write"</span>,
+  networkAccessEnabled: <span class="kw">false</span>,
+});
+
+<span class="kw">const</span> result = <span class="kw">await</span> thread.run(
+  <span class="str">"Fix the validation bug, add focused tests, and run them."</span>,
+);
+
+<span class="kw">const</span> commands = result.items.filter(
+  (item): item <span class="kw">is</span> CommandExecutionItem =&gt; item.type === <span class="str">"command_execution"</span>,
+);
+<span class="kw">for</span> (<span class="kw">const</span> command <span class="kw">of</span> commands) {
+  console.log(command.command, command.exit_code, command.status);
+}
+console.log(result.finalResponse);</code></pre>
+          </div>
+
+          <h3>Cancel on timeout</h3>
+          <div class="code-block">
+            <div class="code-head">
+              <span>timeout.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> controller = <span class="kw">new</span> AbortController();
+<span class="kw">const</span> timeout = setTimeout(() =&gt; controller.abort(), <span class="num">60_000</span>);
+
+<span class="kw">try</span> {
+  <span class="kw">const</span> result = <span class="kw">await</span> thread.run(<span class="str">"Perform a focused security review."</span>, {
+    signal: controller.signal,
+  });
+  console.log(result.finalResponse);
+} <span class="kw">finally</span> {
+  clearTimeout(timeout);
+}</code></pre>
+          </div>
+
+          <h3>Run independent threads concurrently</h3>
+          <div class="code-block">
+            <div class="code-head">
+              <span>parallel.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> codex = <span class="kw">new</span> Codex();
+<span class="kw">const</span> backend = codex.startThread({
+  workingDirectory: <span class="str">"/path/to/project"</span>, sandboxMode: <span class="str">"read-only"</span>,
+});
+<span class="kw">const</span> frontend = codex.startThread({
+  workingDirectory: <span class="str">"/path/to/project"</span>, sandboxMode: <span class="str">"read-only"</span>,
+});
+
+<span class="kw">const</span> [api, ui] = <span class="kw">await</span> Promise.all([
+  backend.run(<span class="str">"Audit API error handling."</span>),
+  frontend.run(<span class="str">"Audit accessibility and loading states."</span>),
+]);
+console.log(api.finalResponse, ui.finalResponse);</code></pre>
+          </div>
+          <p>
+            Each turn has its own child process. Parallel independent threads are straightforward;
+            concurrent turns sharing one thread can race on persisted conversation state and should
+            be avoided.
+          </p>
+
+          <h3>Production checklist</h3>
+          <ul class="clean">
+            <li>Run in Node.js, not a browser or edge runtime.</li>
+            <li>Use absolute, validated workspace and image paths.</li>
+            <li>
+              Prefer <code>read-only</code>; grant writes and network access only when required.
+            </li>
+            <li>Fully consume streams and handle both terminal events.</li>
+            <li>Use one in-flight turn per <code>Thread</code>.</li>
+            <li>Parse and validate structured output before using it.</li>
+            <li>Preserve <code>thread.id</code> only when local resumability is required.</li>
+            <li>
+              Handle aborts, malformed JSONL, spawn failure, nonzero exit, and
+              <code>turn.failed</code>.
+            </li>
+            <li>Pin compatible SDK/CLI versions when overriding the binary.</li>
+          </ul>
+          <p>
+            Repository samples include
+            <a href="../samples/basic_streaming.ts"><code>basic_streaming.ts</code></a
+            >, <a href="../samples/structured_output.ts"><code>structured_output.ts</code></a
+            >, and
+            <a href="../samples/structured_output_zod.ts"><code>structured_output_zod.ts</code></a
+            >.
+          </p>
+        </section>
+
+        <section id="safety">
+          <h2>Sandbox, approval, and network controls</h2>
+          <p class="section-intro">
+            Thread options become CLI flags or config overrides on every turn. Omitted values defer
+            to CLI, user, project, and policy configuration.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Option</th>
+                <th>Values</th>
+                <th>Effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>sandboxMode</code></td>
+                <td>
+                  <code>read-only</code>, <code>workspace-write</code>,
+                  <code>danger-full-access</code>
+                </td>
+                <td>Filesystem capability boundary.</td>
+              </tr>
+              <tr>
+                <td><code>networkAccessEnabled</code></td>
+                <td>boolean</td>
+                <td>Overrides network access for workspace-write sandbox configuration.</td>
+              </tr>
+              <tr>
+                <td><code>webSearchMode</code></td>
+                <td><code>disabled</code>, <code>cached</code>, <code>live</code></td>
+                <td>Controls search behavior; wins over legacy <code>webSearchEnabled</code>.</td>
+              </tr>
+              <tr>
+                <td><code>approvalPolicy</code></td>
+                <td>
+                  <code>never</code>, <code>on-request</code>, <code>on-failure</code>,
+                  <code>untrusted</code>
+                </td>
+                <td>
+                  CLI approval policy override. <code>on-failure</code> is a legacy alias for
+                  on-request behavior.
+                </td>
+              </tr>
+              <tr>
+                <td><code>additionalDirectories</code></td>
+                <td><code>string[]</code></td>
+                <td>
+                  Adds accessible roots; write capability still depends on the effective sandbox.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warn">
+            <strong>Headless constraint:</strong> the exec transport cannot present interactive
+            approval or user-input requests to your application. Requests that require interaction
+            are rejected or canceled, so choose non-interactive policies and prompts appropriate for
+            automation.
+          </div>
+        </section>
+
+        <section id="configuration">
+          <h2>Global and thread configuration</h2>
+          <p class="section-intro">
+            Global <code>CodexOptions</code> configure CLI launch.
+            <code>ThreadOptions</code> configure every invocation for one conversation.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>configuration.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> codex = <span class="kw">new</span> Codex({
+  codexPathOverride: <span class="str">"/opt/codex/bin/codex"</span>, <span class="cm">// optional</span>
+  baseUrl: process.env.OPENAI_BASE_URL,
+  apiKey: process.env.OPENAI_API_KEY,
+  config: {
+    show_raw_agent_reasoning: <span class="kw">false</span>,
+    sandbox_workspace_write: { network_access: <span class="kw">false</span> },
+    mcp_servers: {
+      internal: { command: <span class="str">"my-mcp-server"</span> },
+    },
+  },
+});
+
+<span class="kw">const</span> thread = codex.startThread({
+  model: <span class="str">"gpt-5.4"</span>,
+  workingDirectory: <span class="str">"/path/to/project"</span>,
+  modelReasoningEffort: <span class="str">"high"</span>,
+  sandboxMode: <span class="str">"workspace-write"</span>,
+  networkAccessEnabled: <span class="kw">false</span>,
+  additionalDirectories: [<span class="str">"/path/to/shared"</span>],
+});</code></pre>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Global option</th>
+                <th>Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>codexPathOverride</code></td>
+                <td>Use a specific executable instead of packaged-binary discovery.</td>
+              </tr>
+              <tr>
+                <td><code>baseUrl</code></td>
+                <td>Emits <code>openai_base_url</code> as a CLI config override.</td>
+              </tr>
+              <tr>
+                <td><code>apiKey</code></td>
+                <td>Sets <code>CODEX_API_KEY</code> in each child process.</td>
+              </tr>
+              <tr>
+                <td><code>config</code></td>
+                <td>
+                  Flattens nested objects to dotted keys and serializes values as TOML literals.
+                </td>
+              </tr>
+              <tr>
+                <td><code>env</code></td>
+                <td>
+                  When present, fully replaces inherited <code>process.env</code> before
+                  SDK-required additions.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout">
+            <strong>Precedence:</strong> arbitrary global config is emitted first, then
+            <code>baseUrl</code>, then thread-specific options. Later duplicate CLI overrides win.
+          </div>
+          <div class="callout warn">
+            <strong>Custom environment:</strong> <code>env</code> is not merged. Include every
+            variable the child needs, potentially <code>HOME</code>, <code>PATH</code>, proxies,
+            certificates, provider credentials, and <code>CODEX_HOME</code>.
+          </div>
+          <h3>Tools and MCP</h3>
+          <p>
+            The SDK does not register JavaScript callback functions as agent tools. Configure MCP
+            servers through Codex configuration. Their calls appear as
+            <code>mcp_tool_call</code> items with server, tool, arguments, status, result, and error
+            fields.
+          </p>
+        </section>
+
+        <section id="cancellation">
+          <h2>Cancellation and failure modes</h2>
+          <p class="section-intro">
+            Pass an <code>AbortSignal</code> per turn. Node forwards it to the spawned child;
+            aborting rejects buffered execution or streamed iteration.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>abort.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> controller = <span class="kw">new</span> AbortController();
+process.once(<span class="str">"SIGINT"</span>, () =&gt; controller.abort());
+
+<span class="kw">try</span> {
+  <span class="kw">const</span> { events } = <span class="kw">await</span> thread.runStreamed(<span class="str">"Review the repository."</span>, {
+    signal: controller.signal,
+  });
+  <span class="kw">for await</span> (<span class="kw">const</span> event <span class="kw">of</span> events) {
+    console.log(event);
+  }
+} <span class="kw">catch</span> (error) {
+  <span class="kw">if</span> (controller.signal.aborted) console.error(<span class="str">"Turn canceled"</span>);
+  <span class="kw">else throw</span> error;
+}</code></pre>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Failure</th>
+                <th>Observed as</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Agent turn failure in <code>run()</code></td>
+                <td>Generic <code>Error</code> with the turn message.</td>
+              </tr>
+              <tr>
+                <td>Agent turn failure in streaming</td>
+                <td><code>turn.failed</code> event; your loop decides whether to throw.</td>
+              </tr>
+              <tr>
+                <td>Top-level runtime error event</td>
+                <td>
+                  <code>{ type: "error", message }</code>; buffered <code>run()</code> does not
+                  directly throw for this event.
+                </td>
+              </tr>
+              <tr>
+                <td>Nonzero exit or signal</td>
+                <td>Rejected iteration with exit/signal and captured stderr.</td>
+              </tr>
+              <tr>
+                <td>Malformed JSONL</td>
+                <td><code>Error("Failed to parse item: ...")</code> with a cause.</td>
+              </tr>
+              <tr>
+                <td>Abort</td>
+                <td>Node child-process abort error; no SDK-specific error hierarchy.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="persistence">
+          <h2>Resume local conversations</h2>
+          <p class="section-intro">
+            Turns are persisted by the CLI. Save the thread ID after execution starts, then
+            construct a new thread wrapper later.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span>resume.ts</span><button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> codex = <span class="kw">new</span> Codex();
+<span class="kw">const</span> original = codex.startThread({ workingDirectory: <span class="str">"/path/to/project"</span> });
+<span class="kw">await</span> original.run(<span class="str">"Analyze the migration plan."</span>);
+
+<span class="kw">if</span> (!original.id) <span class="kw">throw new</span> Error(<span class="str">"Thread ID was not emitted"</span>);
+<span class="kw">await</span> saveThreadId(original.id);
+
+<span class="cm">// In a later process:</span>
+<span class="kw">const</span> id = <span class="kw">await</span> loadThreadId();
+<span class="kw">const</span> resumed = codex.resumeThread(id, {
+  workingDirectory: <span class="str">"/path/to/project"</span>,
+});
+<span class="kw">const</span> next = <span class="kw">await</span> resumed.run(<span class="str">"Add a rollback checklist."</span>);</code></pre>
+          </div>
+          <ul class="clean">
+            <li>
+              Ordinary storage is under <code>$CODEX_HOME/sessions</code>, typically
+              <code>~/.codex/sessions</code>.
+            </li>
+            <li>
+              <code>resumeThread()</code> does no immediate I/O or ID validation; lookup occurs on
+              the next turn.
+            </li>
+            <li>
+              Sessions are local to the host and effective <code>CODEX_HOME</code>. Persisting an ID
+              does not transfer its rollout.
+            </li>
+            <li>
+              The TypeScript SDK has no list, read, archive, fork, delete, compact, or export API.
+            </li>
+          </ul>
+        </section>
+
+        <section id="api-map">
+          <h2>Public API map</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Signature / role</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>new Codex(options?)</code></td>
+                <td>Create the CLI execution wrapper.</td>
+              </tr>
+              <tr>
+                <td><code>codex.startThread(options?)</code></td>
+                <td>Create a local <code>Thread</code> with no ID yet.</td>
+              </tr>
+              <tr>
+                <td><code>codex.resumeThread(id, options?)</code></td>
+                <td>Create a <code>Thread</code> initialized with a persisted ID.</td>
+              </tr>
+              <tr>
+                <td><code>thread.id</code></td>
+                <td><code>string | null</code>; populated from <code>thread.started</code>.</td>
+              </tr>
+              <tr>
+                <td><code>thread.run(input, turnOptions?)</code></td>
+                <td>Collect a turn into <code>{ items, finalResponse, usage }</code>.</td>
+              </tr>
+              <tr>
+                <td><code>thread.runStreamed(input, turnOptions?)</code></td>
+                <td>Return a lazy async event generator.</td>
+              </tr>
+              <tr>
+                <td><code>TurnOptions</code></td>
+                <td><code>{ outputSchema?: unknown; signal?: AbortSignal }</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+          <h3>Complete <code>ThreadOptions</code></h3>
+          <div class="code-block">
+            <pre><code><span class="kw">type</span> <span class="type">ThreadOptions</span> = {
+  model?: string;
+  sandboxMode?: <span class="str">"read-only"</span> | <span class="str">"workspace-write"</span> | <span class="str">"danger-full-access"</span>;
+  workingDirectory?: string;
+  additionalDirectories?: string[];
+  skipGitRepoCheck?: boolean;
+  modelReasoningEffort?: <span class="str">"minimal"</span> | <span class="str">"low"</span> | <span class="str">"medium"</span> | <span class="str">"high"</span> | <span class="str">"xhigh"</span>;
+  networkAccessEnabled?: boolean;
+  webSearchMode?: <span class="str">"disabled"</span> | <span class="str">"cached"</span> | <span class="str">"live"</span>;
+  webSearchEnabled?: boolean; <span class="cm">// legacy</span>
+  approvalPolicy?: <span class="str">"never"</span> | <span class="str">"on-request"</span> | <span class="str">"on-failure"</span> | <span class="str">"untrusted"</span>;
+};</code></pre>
+          </div>
+        </section>
+
+        <section id="limits">
+          <h2>Know the boundaries</h2>
+          <div class="grid">
+            <article class="card">
+              <h3>Node-only runtime</h3>
+              <p>
+                Requires child processes, filesystem, readline, temp directories, and AbortSignal.
+                It does not run in browsers.
+              </p>
+            </article>
+            <article class="card">
+              <h3>No persistent server</h3>
+              <p>
+                Each turn pays process startup cost and gets a separate stderr/stdout lifecycle.
+              </p>
+            </article>
+            <article class="card">
+              <h3>No JS callback tools</h3>
+              <p>
+                Use runtime tools and configured MCP servers instead of registering local SDK
+                functions.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Small lifecycle surface</h3>
+              <p>Only start and resume are exposed; session administration is not.</p>
+            </article>
+            <article class="card">
+              <h3>No typed error hierarchy</h3>
+              <p>
+                Failures are ordinary errors or stream events, depending on their source and
+                execution mode.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Declarations can lag runtime</h3>
+              <p>
+                JSONL is not runtime-validated, so defensive event handling matters across CLI
+                changes.
+              </p>
+            </article>
+          </div>
+          <div class="callout warn">
+            <strong>Release status:</strong> the source manifest uses <code>0.0.0-dev</code>;
+            release packaging writes the published version and injects its matching CLI dependency.
+            Confirm and pin the package version available in your registry.
+          </div>
+        </section>
+
+        <section id="sources">
+          <h2>Where this guide came from</h2>
+          <p class="section-intro">
+            Findings were checked against implementation, tests, samples, and the Rust JSONL
+            producer. Paths below are relative to <code>sdk/typescript</code>.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>What it establishes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <a href="../src/codex.ts"><code>src/codex.ts</code></a>
+                </td>
+                <td>Client construction and thread creation/resumption.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../src/thread.ts"><code>src/thread.ts</code></a>
+                </td>
+                <td>Input normalization, lazy streaming, ID updates, and buffered results.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../src/exec.ts"><code>src/exec.ts</code></a>
+                </td>
+                <td>
+                  CLI arguments, process lifecycle, environment, config serialization, and failures.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../src/events.ts"><code>src/events.ts</code></a>
+                </td>
+                <td>Public top-level event and usage types.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../src/items.ts"><code>src/items.ts</code></a>
+                </td>
+                <td>Public item payload types.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../src/threadOptions.ts"><code>src/threadOptions.ts</code></a>
+                </td>
+                <td>Complete thread option unions.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../tests/run.test.ts"><code>tests/run.test.ts</code></a>
+                </td>
+                <td>Turn, schema, input, resume, and failure behavior.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="../tests/abort.test.ts"><code>tests/abort.test.ts</code></a>
+                </td>
+                <td>Pre-abort and mid-turn cancellation behavior.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <footer>
+          <strong>Codex TypeScript SDK Field Guide</strong
+          ><span>Self-contained HTML · responsive · no external assets</span>
+        </footer>
+      </main>
+
+      <aside class="toc" aria-label="On this page">
+        <p class="nav-label">On this page</p>
+        <a href="#what-it-is">What it is</a><a href="#architecture">Architecture</a
+        ><a href="#quickstart">Quickstart</a><a href="#threads">Threads &amp; turns</a
+        ><a href="#streaming">Streaming</a><a href="#items">Events &amp; items</a
+        ><a href="#inputs">Inputs</a><a href="#structured">Structured output</a
+        ><a href="#examples">Examples</a><a href="#safety">Safety</a
+        ><a href="#configuration">Configuration</a><a href="#cancellation">Cancellation</a
+        ><a href="#persistence">Persistence</a><a href="#api-map">API map</a
+        ><a href="#limits">Boundaries</a>
+        <div class="source-box">
+          <strong>Research note</strong>Implementation and tests take precedence where package prose
+          or declared types lag the current CLI wire format.
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      document.querySelectorAll(".copy").forEach((button) =>
+        button.addEventListener("click", async () => {
+          const code = button.closest(".code-block").querySelector("code").innerText;
+          await navigator.clipboard.writeText(code);
+          const label = button.textContent;
+          button.textContent = "Copied";
+          window.setTimeout(() => (button.textContent = label), 1400);
+        }),
+      );
+      const menu = document.querySelector(".menu");
+      const sidebar = document.querySelector(".sidebar");
+      menu.addEventListener("click", () => {
+        const open = sidebar.classList.toggle("open");
+        menu.setAttribute("aria-expanded", String(open));
+      });
+      sidebar.querySelectorAll("a").forEach((link) =>
+        link.addEventListener("click", () => {
+          sidebar.classList.remove("open");
+          menu.setAttribute("aria-expanded", "false");
+        }),
+      );
+      const links = [...document.querySelectorAll(".sidebar a, .toc a")];
+      const sections = [...document.querySelectorAll("main section")];
+      const observer = new IntersectionObserver(
+        (entries) =>
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            links.forEach((link) =>
+              link.classList.toggle("active", link.hash === `#${entry.target.id}`),
+            );
+          }),
+        { rootMargin: "-20% 0px -70% 0px" },
+      );
+      sections.forEach((section) => observer.observe(section));
+    </script>
+  </body>
+</html>
