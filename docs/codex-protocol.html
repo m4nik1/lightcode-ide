@@ -1531,6 +1531,7 @@
             <li><strong>Connection failure:</strong> state returns to <code>disconnected</code>, the process is closed, and a later <code>connect()</code> may try again.</li>
             <li><strong>Unexpected exit:</strong> pending requests fail with <code>AppServerProcessError</code> and the client returns to <code>disconnected</code>.</li>
             <li><strong>Explicit close:</strong> <code>closed</code> is terminal; <code>connect()</code> then rejects. Repeated <code>close()</code> calls are safe.</li>
+            <li><strong>Close during a pending connect:</strong> the in-flight <code>connect()</code> rejects with <code>AppServerProcessError</code>, the client stays <code>closed</code>, and later <code>connect()</code> calls reject with <code>AppServerStateError</code>.</li>
           </ul>
 
           <h3>Shutdown</h3>
@@ -1905,7 +1906,7 @@ unsubscribe();</code></pre>
                 </tr>
                 <tr>
                   <td><code>AppServerProcessError</code></td>
-                  <td>The child fails to start, exits, or terminates while work is pending.</td>
+                  <td>The child fails to start, exits, terminates while work is pending, or its stdin pipe errors mid-write.</td>
                   <td><code>exitCode</code>, <code>signal</code>, optional <code>cause</code></td>
                 </tr>
                 <tr>
@@ -1949,6 +1950,7 @@ stopLogs();</code></pre>
           </div>
           <ul>
             <li>Malformed stdout is reported and skipped; it does not crash the line reader.</li>
+            <li>Errors on the child’s stdin pipe (for example <code>EPIPE</code> when the process dies mid-write) are wrapped in <code>AppServerProcessError</code> and emitted to <code>onError()</code> instead of surfacing as an uncaught stream error.</li>
             <li>RPC timeouts remove the pending request. The client does not automatically retry it.</li>
             <li>A process exit rejects every pending request and fails any active <code>streamTurn()</code> queue.</li>
             <li>Stderr is never parsed as protocol JSON and is only delivered to <code>onStderr()</code>.</li>
@@ -2192,6 +2194,8 @@ npm run test:smoke -w @lightcode/codex-protocol</code></pre>
             <li>Fail-closed server requests</li>
             <li>Malformed-message recovery</li>
             <li>Graceful shutdown</li>
+            <li>Close during a pending connect</li>
+            <li>Stdin pipe failure diagnostics</li>
           </ul>
         </section>
 
