@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  AppServerProcessError,
   AppServerStateError,
   NotificationBufferOverflowError,
 } from "../dist/errors.js";
@@ -78,6 +79,21 @@ test("connect initializes once and methods reject before initialization", async 
     1,
   );
   await client.close();
+});
+
+test("close during a pending connect keeps the client closed", async () => {
+  // The fake app-server never answers initialize, so connect stays pending
+  // until close() tears the process down.
+  const { client } = createClient(() => {});
+
+  const pendingConnect = client.connect();
+  const closing = client.close();
+
+  await assert.rejects(pendingConnect, AppServerProcessError);
+  await closing;
+
+  assert.equal(client.state, "closed");
+  await assert.rejects(client.connect(), AppServerStateError);
 });
 
 test("streamTurn retains early events and filters other threads and turns", async () => {

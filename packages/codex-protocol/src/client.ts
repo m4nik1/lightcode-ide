@@ -198,8 +198,10 @@ export class CodexAppServerClient {
         return response;
       })
       .catch(async (error: unknown) => {
-        this.connectPromise = undefined;
-        this.stateValue = "disconnected";
+        if (this.stateValue !== "closed") {
+          this.connectPromise = undefined;
+          this.stateValue = "disconnected";
+        }
         await this.transport.close();
         throw error;
       });

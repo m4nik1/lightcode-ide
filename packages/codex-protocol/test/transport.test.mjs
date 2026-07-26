@@ -154,6 +154,31 @@ test("reports malformed and unrecognized stdout without crashing the reader", as
   await transport.close();
 });
 
+test("surfaces stdin stream errors through onError instead of crashing", async () => {
+  const { child, transport } = createTransport();
+  const errors = [];
+  transport.onError((error) => errors.push(error));
+
+  child.stdin.destroy(new Error("write EPIPE"));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.ok(
+    errors.some(
+      (error) =>
+        error instanceof AppServerProcessError &&
+        error.cause instanceof Error &&
+        error.cause.message === "write EPIPE",
+    ),
+  );
+
+  // Writing to the broken pipe must not throw; the already-destroyed stream
+  // swallows the write error rather than emitting again.
+  assert.doesNotThrow(() => transport.notify({ method: "initialized" }));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  child.exit(1, null);
+});
+
 test("close ends stdin and waits for process exit", async () => {
   const { child, transport } = createTransport();
   await transport.close();

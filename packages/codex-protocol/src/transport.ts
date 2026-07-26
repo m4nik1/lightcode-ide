@@ -149,6 +149,13 @@ export class AppServerTransport {
         }
       }
     });
+    child.stdin.on("error", (cause) => {
+      this.emitError(
+        new AppServerProcessError("Failed to write to Codex app-server", null, null, {
+          cause,
+        }),
+      );
+    });
     child.once("error", (cause) => {
       this.terminateProcess(
         new AppServerProcessError("Failed to start Codex app-server", null, null, {
