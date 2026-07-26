@@ -1,0 +1,44 @@
+{
+  "name": "@lightcode/codex-protocol",
+  "version": "0.1.0",
+  "description": "Typed client and generated TypeScript protocol definitions for Codex app-server.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./protocol": {
+      "types": "./dist/generated/index.d.ts",
+      "import": "./dist/generated/index.js"
+    },
+    "./protocol/v2": {
+      "types": "./dist/generated/v2/index.d.ts",
+      "import": "./dist/generated/v2/index.js"
+    }
+  },
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "protocol:check": "node scripts/check-generated.mjs",
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:smoke": "npm run build && LIGHTCODE_CODEX_SMOKE=1 node --test test/smoke.test.mjs"
+  },
+  "dependencies": {
+    "@openai/codex": "0.140.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^6.0.3"
+  }
+}
