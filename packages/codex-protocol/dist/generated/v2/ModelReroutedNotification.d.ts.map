@@ -1,1 +1,0 @@
-{"version":3,"file":"ModelReroutedNotification.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ModelReroutedNotification.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,yBAAyB,CAAC;AAElE,MAAM,MAAM,yBAAyB,GAAG;IAAE,QAAQ,EAAE,MAAM,CAAC;IAAC,MAAM,EAAE,MAAM,CAAC;IAAC,SAAS,EAAE,MAAM,CAAC;IAAC,OAAO,EAAE,MAAM,CAAC;IAAC,MAAM,EAAE,kBAAkB,CAAC;CAAE,CAAC"}

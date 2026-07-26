@@ -1,1 +1,0 @@
-{"version":3,"file":"InitializeParams.d.ts","sourceRoot":"","sources":["../../src/generated/InitializeParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,iBAAiB,CAAC;AAClD,OAAO,KAAK,EAAE,sBAAsB,EAAE,MAAM,6BAA6B,CAAC;AAE1E,MAAM,MAAM,gBAAgB,GAAG;IAAE,UAAU,EAAE,UAAU,CAAC;IAAC,YAAY,EAAE,sBAAsB,GAAG,IAAI,CAAC;CAAE,CAAC"}

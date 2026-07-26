@@ -1,1 +1,0 @@
-{"version":3,"file":"FsCopyParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/FsCopyParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAE7D;;GAEG;AACH,MAAM,MAAM,YAAY,GAAG;IAC3B;;OAEG;IACH,UAAU,EAAE,eAAe,CAAC;IAC5B;;OAEG;IACH,eAAe,EAAE,eAAe,CAAC;IACjC;;OAEG;IACH,SAAS,CAAC,EAAE,OAAO,CAAC;CAAE,CAAC"}

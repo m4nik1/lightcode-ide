@@ -1,2 +1,0 @@
-export type SandboxMode = "read-only" | "workspace-write" | "danger-full-access";
-//# sourceMappingURL=SandboxMode.d.ts.map

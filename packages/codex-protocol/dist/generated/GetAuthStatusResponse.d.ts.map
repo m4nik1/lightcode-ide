@@ -1,1 +1,0 @@
-{"version":3,"file":"GetAuthStatusResponse.d.ts","sourceRoot":"","sources":["../../src/generated/GetAuthStatusResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AAE9C,MAAM,MAAM,qBAAqB,GAAG;IAAE,UAAU,EAAE,QAAQ,GAAG,IAAI,CAAC;IAAC,SAAS,EAAE,MAAM,GAAG,IAAI,CAAC;IAAC,kBAAkB,EAAE,OAAO,GAAG,IAAI,CAAC;CAAE,CAAC"}

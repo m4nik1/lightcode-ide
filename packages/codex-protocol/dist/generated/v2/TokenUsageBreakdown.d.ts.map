@@ -1,1 +1,0 @@
-{"version":3,"file":"TokenUsageBreakdown.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/TokenUsageBreakdown.ts"],"names":[],"mappings":"AAIA,MAAM,MAAM,mBAAmB,GAAG;IAAE,WAAW,EAAE,MAAM,CAAC;IAAC,WAAW,EAAE,MAAM,CAAC;IAAC,iBAAiB,EAAE,MAAM,CAAC;IAAC,YAAY,EAAE,MAAM,CAAC;IAAC,qBAAqB,EAAE,MAAM,CAAC;CAAE,CAAC"}

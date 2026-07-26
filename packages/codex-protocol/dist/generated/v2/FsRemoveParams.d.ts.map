@@ -1,1 +1,0 @@
-{"version":3,"file":"FsRemoveParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/FsRemoveParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAE7D;;GAEG;AACH,MAAM,MAAM,cAAc,GAAG;IAC7B;;OAEG;IACH,IAAI,EAAE,eAAe,CAAC;IACtB;;OAEG;IACH,SAAS,CAAC,EAAE,OAAO,GAAG,IAAI,CAAC;IAC3B;;OAEG;IACH,KAAK,CAAC,EAAE,OAAO,GAAG,IAAI,CAAC;CAAE,CAAC"}

@@ -1,1 +1,0 @@
-{"version":3,"file":"MarketplaceRemoveResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/MarketplaceRemoveResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAE7D,MAAM,MAAM,yBAAyB,GAAG;IAAE,eAAe,EAAE,MAAM,CAAC;IAAC,aAAa,EAAE,eAAe,GAAG,IAAI,CAAC;CAAE,CAAC"}

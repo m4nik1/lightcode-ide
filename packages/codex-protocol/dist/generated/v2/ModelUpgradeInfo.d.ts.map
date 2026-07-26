@@ -1,1 +1,0 @@
-{"version":3,"file":"ModelUpgradeInfo.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ModelUpgradeInfo.ts"],"names":[],"mappings":"AAIA,MAAM,MAAM,gBAAgB,GAAG;IAAE,KAAK,EAAE,MAAM,CAAC;IAAC,WAAW,EAAE,MAAM,GAAG,IAAI,CAAC;IAAC,SAAS,EAAE,MAAM,GAAG,IAAI,CAAC;IAAC,iBAAiB,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

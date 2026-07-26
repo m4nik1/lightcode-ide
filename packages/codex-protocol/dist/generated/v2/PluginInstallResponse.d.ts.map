@@ -1,1 +1,0 @@
-{"version":3,"file":"PluginInstallResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/PluginInstallResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,iBAAiB,CAAC;AAClD,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,uBAAuB,CAAC;AAE9D,MAAM,MAAM,qBAAqB,GAAG;IAAE,UAAU,EAAE,gBAAgB,CAAC;IAAC,eAAe,EAAE,KAAK,CAAC,UAAU,CAAC,CAAC;CAAE,CAAC"}

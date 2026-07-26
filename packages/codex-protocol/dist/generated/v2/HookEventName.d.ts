@@ -1,2 +1,0 @@
-export type HookEventName = "preToolUse" | "permissionRequest" | "postToolUse" | "preCompact" | "postCompact" | "sessionStart" | "userPromptSubmit" | "subagentStart" | "subagentStop" | "stop";
-//# sourceMappingURL=HookEventName.d.ts.map

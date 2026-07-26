@@ -1,1 +1,0 @@
-{"version":3,"file":"DynamicToolCallResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/DynamicToolCallResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,gCAAgC,EAAE,MAAM,uCAAuC,CAAC;AAE9F,MAAM,MAAM,uBAAuB,GAAG;IAAE,YAAY,EAAE,KAAK,CAAC,gCAAgC,CAAC,CAAC;IAAC,OAAO,EAAE,OAAO,CAAC;CAAE,CAAC"}

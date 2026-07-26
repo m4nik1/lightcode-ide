@@ -1,1 +1,0 @@
-{"version":3,"file":"PluginInstalledParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/PluginInstalledParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAE7D,MAAM,MAAM,qBAAqB,GAAG;IACpC;;OAEG;IACH,IAAI,CAAC,EAAE,KAAK,CAAC,eAAe,CAAC,GAAG,IAAI,CAAC;IACrC;;;OAGG;IACH,4BAA4B,CAAC,EAAE,KAAK,CAAC,MAAM,CAAC,GAAG,IAAI,CAAC;CAAE,CAAC"}

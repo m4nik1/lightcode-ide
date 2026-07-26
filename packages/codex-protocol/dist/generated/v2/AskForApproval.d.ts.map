@@ -1,1 +1,0 @@
-{"version":3,"file":"AskForApproval.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/AskForApproval.ts"],"names":[],"mappings":"AAIA,MAAM,MAAM,cAAc,GAAG,WAAW,GAAG,YAAY,GAAG,YAAY,GAAG;IAAE,UAAU,EAAE;QAAE,gBAAgB,EAAE,OAAO,CAAC;QAAC,KAAK,EAAE,OAAO,CAAC;QAAC,cAAc,EAAE,OAAO,CAAC;QAAC,mBAAmB,EAAE,OAAO,CAAC;QAAC,gBAAgB,EAAE,OAAO,CAAC;KAAE,CAAA;CAAE,GAAG,OAAO,CAAC"}

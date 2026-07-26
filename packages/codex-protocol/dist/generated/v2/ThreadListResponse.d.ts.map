@@ -1,1 +1,0 @@
-{"version":3,"file":"ThreadListResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ThreadListResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,aAAa,CAAC;AAE1C,MAAM,MAAM,kBAAkB,GAAG;IAAE,IAAI,EAAE,KAAK,CAAC,MAAM,CAAC,CAAC;IACvD;;;OAGG;IACH,UAAU,EAAE,MAAM,GAAG,IAAI,CAAC;IAC1B;;;;;OAKG;IACH,eAAe,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

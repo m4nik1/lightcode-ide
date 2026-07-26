@@ -1,1 +1,0 @@
-{"version":3,"file":"McpServerToolCallResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/McpServerToolCallResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,4BAA4B,CAAC;AAE5D,MAAM,MAAM,yBAAyB,GAAG;IAAE,OAAO,EAAE,KAAK,CAAC,SAAS,CAAC,CAAC;IAAC,iBAAiB,CAAC,EAAE,SAAS,CAAC;IAAC,OAAO,CAAC,EAAE,OAAO,CAAC;IAAC,KAAK,CAAC,EAAE,SAAS,CAAC;CAAE,CAAC"}

@@ -1,1 +1,0 @@
-{"version":3,"file":"GetConversationSummaryParams.d.ts","sourceRoot":"","sources":["../../src/generated/GetConversationSummaryParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AAE9C,MAAM,MAAM,4BAA4B,GAAG;IAAE,WAAW,EAAE,MAAM,CAAC;CAAE,GAAG;IAAE,cAAc,EAAE,QAAQ,CAAC;CAAE,CAAC"}

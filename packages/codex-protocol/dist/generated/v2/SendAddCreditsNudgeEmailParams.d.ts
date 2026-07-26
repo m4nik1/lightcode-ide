@@ -1,5 +1,0 @@
-import type { AddCreditsNudgeCreditType } from "./AddCreditsNudgeCreditType.js";
-export type SendAddCreditsNudgeEmailParams = {
-    creditType: AddCreditsNudgeCreditType;
-};
-//# sourceMappingURL=SendAddCreditsNudgeEmailParams.d.ts.map

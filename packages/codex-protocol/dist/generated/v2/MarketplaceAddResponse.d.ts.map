@@ -1,1 +1,0 @@
-{"version":3,"file":"MarketplaceAddResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/MarketplaceAddResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAE7D,MAAM,MAAM,sBAAsB,GAAG;IAAE,eAAe,EAAE,MAAM,CAAC;IAAC,aAAa,EAAE,eAAe,CAAC;IAAC,YAAY,EAAE,OAAO,CAAC;CAAE,CAAC"}
