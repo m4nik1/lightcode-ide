@@ -1,0 +1,1 @@
+{"version":3,"file":"ListMcpServerStatusResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ListMcpServerStatusResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,sBAAsB,CAAC;AAE5D,MAAM,MAAM,2BAA2B,GAAG;IAAE,IAAI,EAAE,KAAK,CAAC,eAAe,CAAC,CAAC;IACzE;;;OAGG;IACH,UAAU,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

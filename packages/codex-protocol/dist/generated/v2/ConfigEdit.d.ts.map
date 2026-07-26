@@ -1,0 +1,1 @@
+{"version":3,"file":"ConfigEdit.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ConfigEdit.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,4BAA4B,CAAC;AAC5D,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,oBAAoB,CAAC;AAExD,MAAM,MAAM,UAAU,GAAG;IAAE,OAAO,EAAE,MAAM,CAAC;IAAC,KAAK,EAAE,SAAS,CAAC;IAAC,aAAa,EAAE,aAAa,CAAC;CAAE,CAAC"}

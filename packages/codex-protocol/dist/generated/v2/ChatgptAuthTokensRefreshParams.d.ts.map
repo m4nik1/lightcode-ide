@@ -1,0 +1,1 @@
+{"version":3,"file":"ChatgptAuthTokensRefreshParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ChatgptAuthTokensRefreshParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,8BAA8B,EAAE,MAAM,qCAAqC,CAAC;AAE1F,MAAM,MAAM,8BAA8B,GAAG;IAAE,MAAM,EAAE,8BAA8B,CAAC;IACtF;;;;;;;;OAQG;IACH,iBAAiB,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

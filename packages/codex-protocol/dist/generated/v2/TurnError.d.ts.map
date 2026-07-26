@@ -1,0 +1,1 @@
+{"version":3,"file":"TurnError.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/TurnError.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,qBAAqB,CAAC;AAE1D,MAAM,MAAM,SAAS,GAAG;IAAE,OAAO,EAAE,MAAM,CAAC;IAAC,cAAc,EAAE,cAAc,GAAG,IAAI,CAAC;IAAC,iBAAiB,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

@@ -1,0 +1,2414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Developer guide and API reference for the private @lightcode/codex-protocol workspace package.">
+  <title>@lightcode/codex-protocol — Developer Guide</title>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("codex-protocol-theme");
+        var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = saved || (dark ? "dark" : "light");
+      } catch (_) {}
+    }());
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #ffffff;
+      --foreground: #09090b;
+      --muted: #f4f4f5;
+      --muted-2: #fafafa;
+      --muted-foreground: #71717a;
+      --subtle-foreground: #52525b;
+      --border: #e4e4e7;
+      --border-strong: #d4d4d8;
+      --card: #ffffff;
+      --accent: #18181b;
+      --accent-foreground: #fafafa;
+      --code: #09090b;
+      --code-border: #27272a;
+      --code-foreground: #e4e4e7;
+      --code-muted: #a1a1aa;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --green-border: #bbf7d0;
+      --amber: #a16207;
+      --amber-bg: #fffbeb;
+      --amber-border: #fde68a;
+      --red: #b91c1c;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+      --blue: #1d4ed8;
+      --blue-bg: #eff6ff;
+      --blue-border: #bfdbfe;
+      --header: rgba(255, 255, 255, 0.82);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.035), 0 8px 30px rgba(0, 0, 0, 0.025);
+      --radius: 8px;
+      --header-height: 58px;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --background: #09090b;
+      --foreground: #fafafa;
+      --muted: #18181b;
+      --muted-2: #0f0f11;
+      --muted-foreground: #a1a1aa;
+      --subtle-foreground: #d4d4d8;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --card: #0c0c0e;
+      --accent: #fafafa;
+      --accent-foreground: #18181b;
+      --code: #050506;
+      --code-border: #27272a;
+      --code-foreground: #e4e4e7;
+      --code-muted: #a1a1aa;
+      --green: #4ade80;
+      --green-bg: #0b1f12;
+      --green-border: #14532d;
+      --amber: #fbbf24;
+      --amber-bg: #201807;
+      --amber-border: #713f12;
+      --red: #f87171;
+      --red-bg: #240d0d;
+      --red-border: #7f1d1d;
+      --blue: #60a5fa;
+      --blue-bg: #0b1730;
+      --blue-border: #1e3a8a;
+      --header: rgba(9, 9, 11, 0.82);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 36px rgba(0, 0, 0, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--header-height) + 24px);
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      letter-spacing: -0.006em;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    a {
+      color: inherit;
+      text-decoration-color: var(--border-strong);
+      text-underline-offset: 3px;
+    }
+
+    a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--foreground);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 10px;
+      left: 10px;
+      transform: translateY(-160%);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--background);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .topbar {
+      position: sticky;
+      z-index: 50;
+      top: 0;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border);
+      background: var(--header);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      backdrop-filter: saturate(180%) blur(12px);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(1440px, 100%);
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 0;
+      height: 0;
+      border-right: 8px solid transparent;
+      border-bottom: 14px solid var(--foreground);
+      border-left: 8px solid transparent;
+    }
+
+    .brand-separator {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+
+    .brand-package {
+      overflow: hidden;
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .source-link,
+    .theme-toggle {
+      display: inline-flex;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--background);
+      color: var(--subtle-foreground);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .source-link {
+      gap: 7px;
+      padding: 0 11px;
+    }
+
+    .theme-toggle {
+      width: 34px;
+      cursor: pointer;
+    }
+
+    .source-link:hover,
+    .theme-toggle:hover {
+      border-color: var(--border-strong);
+      background: var(--muted-2);
+      color: var(--foreground);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero::before {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, var(--border) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      content: "";
+      opacity: 0.22;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(to bottom, black, transparent 80%);
+      mask-image: linear-gradient(to bottom, black, transparent 80%);
+    }
+
+    .hero-inner {
+      position: relative;
+      width: min(1080px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 84px 0 72px;
+    }
+
+    .eyebrow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      min-height: 25px;
+      align-items: center;
+      gap: 7px;
+      padding: 3px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--background);
+      color: var(--subtle-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+      box-shadow: var(--shadow);
+    }
+
+    .badge.stable::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      content: "";
+      box-shadow: 0 0 0 3px var(--green-bg);
+    }
+
+    .badge.private {
+      color: var(--muted-foreground);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 920px;
+      margin-bottom: 22px;
+      font-size: clamp(38px, 6vw, 68px);
+      font-weight: 700;
+      letter-spacing: -0.06em;
+      line-height: 0.99;
+    }
+
+    .hero-description {
+      max-width: 730px;
+      margin-bottom: 30px;
+      color: var(--muted-foreground);
+      font-size: clamp(16px, 2vw, 19px);
+      letter-spacing: -0.02em;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 15px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-foreground);
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 218px minmax(0, 780px) 196px;
+      gap: 52px;
+      width: min(1380px, calc(100% - 48px));
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .toc,
+    .right-rail {
+      position: sticky;
+      top: calc(var(--header-height) + 28px);
+      max-height: calc(100vh - var(--header-height) - 56px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    .toc {
+      padding: 44px 0;
+    }
+
+    .toc-title,
+    .rail-title {
+      margin-bottom: 12px;
+      color: var(--foreground);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding: 0 0 0 12px;
+      border-left: 1px solid var(--border);
+      list-style: none;
+    }
+
+    .toc li {
+      margin: 1px 0;
+    }
+
+    .toc a {
+      position: relative;
+      display: block;
+      padding: 5px 8px;
+      border-radius: 5px;
+      color: var(--muted-foreground);
+      font-size: 12px;
+      line-height: 1.35;
+      text-decoration: none;
+      transition: color 140ms ease, background 140ms ease;
+    }
+
+    .toc a::before {
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: -13px;
+      width: 2px;
+      border-radius: 2px;
+      background: transparent;
+      content: "";
+    }
+
+    .toc a:hover {
+      color: var(--foreground);
+    }
+
+    .toc a.active {
+      background: var(--muted);
+      color: var(--foreground);
+      font-weight: 600;
+    }
+
+    .toc a.active::before {
+      background: var(--foreground);
+    }
+
+    .content {
+      min-width: 0;
+      padding: 14px 0 96px;
+    }
+
+    .doc-section {
+      padding: 66px 0 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doc-section:last-child {
+      border-bottom: 0;
+    }
+
+    .section-kicker {
+      margin-bottom: 8px;
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      font-size: clamp(27px, 3vw, 34px);
+      font-weight: 680;
+      letter-spacing: -0.045em;
+      line-height: 1.15;
+    }
+
+    h3 {
+      margin: 36px 0 12px;
+      font-size: 19px;
+      font-weight: 650;
+      letter-spacing: -0.025em;
+      line-height: 1.3;
+    }
+
+    h4 {
+      margin: 0 0 7px;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .doc-section > p,
+    .prose {
+      max-width: 710px;
+      color: var(--subtle-foreground);
+    }
+
+    p {
+      margin-bottom: 16px;
+    }
+
+    ul,
+    ol {
+      color: var(--subtle-foreground);
+    }
+
+    li + li {
+      margin-top: 6px;
+    }
+
+    strong {
+      color: var(--foreground);
+      font-weight: 620;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.88em;
+    }
+
+    :not(pre) > code {
+      padding: 0.13em 0.35em;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--muted);
+      color: var(--foreground);
+      white-space: nowrap;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .card-grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .card .card-label {
+      display: inline-flex;
+      margin-bottom: 10px;
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .callout {
+      position: relative;
+      margin: 22px 0;
+      padding: 16px 18px 16px 44px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted-2);
+      color: var(--subtle-foreground);
+      font-size: 13px;
+    }
+
+    .callout::before {
+      position: absolute;
+      top: 16px;
+      left: 17px;
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      color: var(--foreground);
+      content: "i";
+      font-family: Georgia, serif;
+      font-size: 12px;
+      font-style: italic;
+      font-weight: 700;
+      line-height: 17px;
+      text-align: center;
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .callout.warning {
+      border-color: var(--amber-border);
+      background: var(--amber-bg);
+    }
+
+    .callout.warning::before {
+      border-color: var(--amber-border);
+      color: var(--amber);
+      content: "!";
+      font-family: inherit;
+      font-style: normal;
+    }
+
+    .callout.danger {
+      border-color: var(--red-border);
+      background: var(--red-bg);
+    }
+
+    .callout.danger::before {
+      border-color: var(--red-border);
+      color: var(--red);
+      content: "×";
+      font-family: inherit;
+      font-style: normal;
+    }
+
+    .code-block {
+      position: relative;
+      margin: 18px 0 26px;
+      overflow: hidden;
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius);
+      background: var(--code);
+      box-shadow: var(--shadow);
+    }
+
+    .code-header {
+      display: flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px 0 14px;
+      border-bottom: 1px solid var(--code-border);
+      background: #111113;
+      color: var(--code-muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      height: 26px;
+      align-items: center;
+      gap: 6px;
+      padding: 0 8px;
+      border: 1px solid #3f3f46;
+      border-radius: 5px;
+      background: #18181b;
+      color: #d4d4d8;
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .copy-button:hover {
+      border-color: #71717a;
+      color: #ffffff;
+    }
+
+    .copy-icon {
+      width: 9px;
+      height: 9px;
+      border: 1px solid currentColor;
+      border-radius: 1px;
+      box-shadow: 3px -3px 0 -1px #18181b, 3px -3px 0 0 currentColor;
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow-x: auto;
+      color: var(--code-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      tab-size: 2;
+    }
+
+    pre code {
+      font-size: inherit;
+    }
+
+    .comment {
+      color: #71717a;
+    }
+
+    .keyword {
+      color: #c4b5fd;
+    }
+
+    .string {
+      color: #86efac;
+    }
+
+    .value {
+      color: #93c5fd;
+    }
+
+    .table-wrap {
+      margin: 22px 0 28px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    caption {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    th {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--muted-2);
+      color: var(--muted-foreground);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--subtle-foreground);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:first-child {
+      color: var(--foreground);
+      font-weight: 550;
+    }
+
+    .type {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10.5px;
+      font-weight: 400;
+    }
+
+    .default {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 1px 5px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--muted);
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+    }
+
+    .lifecycle {
+      display: grid;
+      grid-template-columns: repeat(7, auto);
+      align-items: center;
+      gap: 9px;
+      margin: 25px 0;
+      padding: 20px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted-2);
+      box-shadow: var(--shadow);
+    }
+
+    .lifecycle-node {
+      min-width: 126px;
+      padding: 15px 13px;
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      background: var(--card);
+      text-align: center;
+    }
+
+    .lifecycle-node .node-number {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+    }
+
+    .lifecycle-node strong {
+      display: block;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .lifecycle-node small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted-foreground);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .arrow {
+      color: var(--muted-foreground);
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .state-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 18px 0;
+    }
+
+    .state {
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .state.connected {
+      border-color: var(--green-border);
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .state.closed {
+      border-color: var(--red-border);
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .steps {
+      display: grid;
+      gap: 0;
+      margin: 23px 0;
+    }
+
+    .step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 14px;
+      padding-bottom: 23px;
+    }
+
+    .step:not(:last-child)::before {
+      position: absolute;
+      top: 32px;
+      bottom: 0;
+      left: 16px;
+      width: 1px;
+      background: var(--border);
+      content: "";
+    }
+
+    .step-number {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      width: 34px;
+      height: 34px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      background: var(--background);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 13px;
+    }
+
+    .method-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 18px 0 24px;
+    }
+
+    .method-chip {
+      padding: 4px 7px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--muted-2);
+      color: var(--subtle-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10.5px;
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+      margin: 20px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .checklist li {
+      position: relative;
+      margin: 0;
+      padding: 12px 14px 12px 38px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--card);
+      color: var(--subtle-foreground);
+      font-size: 13px;
+    }
+
+    .checklist li::before {
+      position: absolute;
+      top: 11px;
+      left: 13px;
+      color: var(--green);
+      content: "✓";
+      font-weight: 700;
+    }
+
+    .boundary-grid .card {
+      border-style: dashed;
+      box-shadow: none;
+    }
+
+    .boundary-grid .card-label {
+      color: var(--red);
+    }
+
+    .right-rail {
+      padding: 44px 0;
+    }
+
+    .rail-card {
+      margin-bottom: 18px;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted-2);
+    }
+
+    .fact {
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .fact:first-child {
+      padding-top: 0;
+    }
+
+    .fact:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .fact-label {
+      display: block;
+      color: var(--muted-foreground);
+      font-size: 10px;
+    }
+
+    .fact-value {
+      display: block;
+      margin-top: 1px;
+      color: var(--foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .rail-links {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .rail-links li {
+      margin: 0;
+    }
+
+    .rail-links a {
+      display: block;
+      padding: 5px 0;
+      color: var(--muted-foreground);
+      font-size: 11px;
+      text-decoration: none;
+    }
+
+    .rail-links a:hover {
+      color: var(--foreground);
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-size: 12px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(1080px, calc(100% - 48px));
+      min-height: 88px;
+      margin: 0 auto;
+      gap: 20px;
+    }
+
+    .footer-inner p {
+      margin: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 205px minmax(0, 780px);
+        justify-content: center;
+      }
+
+      .right-rail {
+        display: none;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .layout {
+        display: block;
+        width: min(780px, calc(100% - 36px));
+      }
+
+      .toc {
+        position: static;
+        max-height: none;
+        padding: 28px 0 0;
+        overflow: visible;
+      }
+
+      .toc-title {
+        margin-bottom: 8px;
+      }
+
+      .toc ol {
+        display: flex;
+        padding: 0 0 12px;
+        overflow-x: auto;
+        border-left: 0;
+        gap: 5px;
+        scrollbar-width: thin;
+      }
+
+      .toc li {
+        flex: 0 0 auto;
+      }
+
+      .toc a {
+        padding: 6px 9px;
+        border: 1px solid var(--border);
+        background: var(--muted-2);
+        white-space: nowrap;
+      }
+
+      .toc a::before {
+        display: none;
+      }
+
+      .content {
+        padding-top: 0;
+      }
+
+      .doc-section {
+        padding-top: 54px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      :root {
+        --header-height: 54px;
+      }
+
+      .topbar-inner {
+        padding: 0 16px;
+      }
+
+      .brand-package,
+      .source-label {
+        display: none;
+      }
+
+      .source-link {
+        width: 34px;
+        padding: 0;
+      }
+
+      .hero-inner {
+        width: calc(100% - 32px);
+        padding: 58px 0 50px;
+      }
+
+      h1 {
+        font-size: clamp(36px, 13vw, 50px);
+      }
+
+      .layout {
+        width: calc(100% - 32px);
+      }
+
+      .card-grid,
+      .card-grid.three,
+      .checklist {
+        grid-template-columns: 1fr;
+      }
+
+      .table-wrap {
+        margin-right: -16px;
+        margin-left: -16px;
+        border-right: 0;
+        border-left: 0;
+        border-radius: 0;
+      }
+
+      .lifecycle {
+        grid-template-columns: 1fr;
+        overflow: visible;
+      }
+
+      .lifecycle-node {
+        width: 100%;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        width: calc(100% - 32px);
+        padding: 22px 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media print {
+      :root,
+      html[data-theme="dark"] {
+        color-scheme: light;
+        --background: #fff;
+        --foreground: #000;
+        --muted: #f3f4f6;
+        --muted-2: #fff;
+        --muted-foreground: #4b5563;
+        --subtle-foreground: #1f2937;
+        --border: #d1d5db;
+        --border-strong: #9ca3af;
+        --card: #fff;
+      }
+
+      .topbar,
+      .toc,
+      .right-rail,
+      .hero-actions,
+      .copy-button,
+      .skip-link {
+        display: none !important;
+      }
+
+      .hero::before {
+        display: none;
+      }
+
+      .hero-inner,
+      .layout,
+      .footer-inner {
+        width: 100%;
+      }
+
+      .hero-inner {
+        padding: 30px 0;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .content {
+        padding: 0;
+      }
+
+      .doc-section {
+        padding: 28px 0 10px;
+        break-inside: avoid;
+      }
+
+      .code-block,
+      .card,
+      .table-wrap,
+      .lifecycle,
+      .callout {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .code-block,
+      .code-header,
+      pre {
+        border-color: #333;
+        background: #111 !important;
+        color: #eee !important;
+      }
+
+      a {
+        text-decoration: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to documentation</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="Codex protocol documentation home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Lightcode Docs</span>
+        <span class="brand-separator" aria-hidden="true"></span>
+        <span class="brand-package">@lightcode/codex-protocol</span>
+      </a>
+      <div class="top-actions">
+        <a class="source-link" href="../packages/codex-protocol/README.md" aria-label="Open package README">
+          <span aria-hidden="true">⌘</span>
+          <span class="source-label">README</span>
+        </a>
+        <button class="theme-toggle" type="button" aria-label="Switch to dark theme" title="Toggle color theme">
+          <span class="theme-icon" aria-hidden="true">◐</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="top" aria-labelledby="page-title">
+      <div class="hero-inner">
+        <div class="eyebrow">
+          <span class="badge stable">Stable protocol 0.140.0</span>
+          <span class="badge private">Private workspace package</span>
+          <span class="badge">Node.js 20+</span>
+        </div>
+        <h1 id="page-title">Codex app-server, with types.</h1>
+        <p class="hero-description">
+          A practical guide and exact API reference for the private Node.js client that launches
+          <code>codex app-server --stdio</code>, owns its JSONL transport, and exposes generated,
+          version-matched TypeScript definitions.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#quick-start">Get started <span aria-hidden="true">→</span></a>
+          <a class="button" href="#api-reference">Browse API</a>
+          <a class="button" href="#generated-types">Explore types</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <nav class="toc" aria-label="Documentation sections">
+        <div class="toc-title">On this page</div>
+        <ol>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#installation">Installation</a></li>
+          <li><a href="#quick-start">Quick start</a></li>
+          <li><a href="#lifecycle">Lifecycle</a></li>
+          <li><a href="#thread-operations">Thread operations</a></li>
+          <li><a href="#turn-operations">Turn operations</a></li>
+          <li><a href="#typed-notifications">Typed notifications</a></li>
+          <li><a href="#api-reference">Client API</a></li>
+          <li><a href="#errors">Errors</a></li>
+          <li><a href="#server-requests">Server requests</a></li>
+          <li><a href="#generated-types">Generated types</a></li>
+          <li><a href="#protocol-generation">Generation &amp; drift</a></li>
+          <li><a href="#testing">Testing &amp; troubleshooting</a></li>
+          <li><a href="#boundaries">Package boundaries</a></li>
+        </ol>
+      </nav>
+
+      <article class="content">
+        <section class="doc-section" id="overview" aria-labelledby="overview-title">
+          <div class="section-kicker">01 · Orientation</div>
+          <h2 id="overview-title">Overview</h2>
+          <p>
+            <code>@lightcode/codex-protocol</code> is the workspace’s narrow, typed boundary around
+            the Codex app-server protocol. It starts the Codex CLI as a child process, exchanges
+            newline-delimited JSON over standard I/O, correlates request responses, and presents
+            the supported thread and turn operations as ordinary TypeScript methods.
+          </p>
+          <div class="card-grid three">
+            <div class="card">
+              <span class="card-label">Client</span>
+              <h4>Small typed surface</h4>
+              <p>Connect, create or resume a thread, start or stream a turn, interrupt, subscribe, and close.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Schema</span>
+              <h4>Generated definitions</h4>
+              <p>Request, response, and notification types are emitted by the same pinned Codex CLI version.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Transport</span>
+              <h4>Internal JSONL</h4>
+              <p>The package owns process spawning, JSON envelopes, request IDs, timeouts, stderr, and shutdown.</p>
+            </div>
+          </div>
+          <p>
+            The package is <strong>private</strong>, is not published to npm, requires
+            <strong>Node.js 20 or newer</strong>, and is <strong>ESM-only</strong>. It intentionally
+            pins <code>@openai/codex</code> to <code>0.140.0</code> and initializes the stable
+            protocol with <code>experimentalApi: false</code>.
+          </p>
+          <div class="callout">
+            <strong>Boundary, not application framework</strong>
+            The typed client is the public runtime abstraction. Generated types are the compile-time
+            contract. The JSONL transport remains internal and is not exported from the package root.
+          </div>
+          <p>
+            Source: <a href="../packages/codex-protocol/package.json">package manifest</a>,
+            <a href="../packages/codex-protocol/src/index.ts">root exports</a>, and
+            <a href="../packages/codex-protocol/src/transport.ts">transport implementation</a>.
+          </p>
+        </section>
+
+        <section class="doc-section" id="installation" aria-labelledby="installation-title">
+          <div class="section-kicker">02 · Workspace setup</div>
+          <h2 id="installation-title">Installation</h2>
+          <p>
+            Consume the package through the repository workspace. There is no registry release and no
+            separate binary to install: the exact Codex CLI is already a direct package dependency.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>package.json</span>
+              <button class="copy-button" type="button" aria-label="Copy workspace dependency example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code>{
+  "dependencies": {
+    "@lightcode/codex-protocol": "workspace:*"
+  }
+}</code></pre>
+          </div>
+          <p>
+            The package’s <code>prepare</code> script runs <code>npm run build</code>, producing
+            <code>dist</code> during workspace installation. Build output is reproducible and intentionally
+            not source-controlled.
+          </p>
+
+          <h3>Entry points</h3>
+          <div class="table-wrap">
+            <table>
+              <caption>Package entry points</caption>
+              <thead>
+                <tr><th>Import path</th><th>Purpose</th><th>Runtime</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@lightcode/codex-protocol</code></td>
+                  <td>Typed client, protocol version, errors, common request/response/notification types.</td>
+                  <td>JavaScript + types</td>
+                </tr>
+                <tr>
+                  <td><code>@lightcode/codex-protocol/protocol</code></td>
+                  <td>Full generated root schema, including <code>ClientRequest</code>, <code>ServerRequest</code>, and <code>ServerNotification</code>.</td>
+                  <td>Types</td>
+                </tr>
+                <tr>
+                  <td><code>@lightcode/codex-protocol/protocol/v2</code></td>
+                  <td>Full generated v2 types such as <code>Thread</code>, <code>ThreadItem</code>, and <code>Turn</code>.</td>
+                  <td>Types</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warning">
+            <strong>Use declared package subpaths</strong>
+            In ESM consumers, import the exported entry points above. Do not import package source files or
+            extensionless paths from <code>src/generated</code>.
+          </div>
+        </section>
+
+        <section class="doc-section" id="quick-start" aria-labelledby="quick-start-title">
+          <div class="section-kicker">03 · First connection</div>
+          <h2 id="quick-start-title">Quick start</h2>
+          <p>
+            Construct the client with an identifying <code>clientInfo</code> object, connect once, inspect
+            the typed initialization response, and always close the child process in <code>finally</code>.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>connect.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy quick start example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">import</span> {
+  CodexAppServerClient,
+  CODEX_PROTOCOL_VERSION,
+  <span class="keyword">type</span> InitializeResponse,
+} <span class="keyword">from</span> <span class="string">"@lightcode/codex-protocol"</span>;
+
+<span class="keyword">const</span> client = <span class="keyword">new</span> CodexAppServerClient({
+  clientInfo: {
+    name: <span class="string">"lightcode"</span>,
+    title: <span class="string">"Lightcode"</span>,
+    version: <span class="string">"1.0.0"</span>,
+  },
+});
+
+<span class="keyword">try</span> {
+  <span class="keyword">const</span> server: InitializeResponse = <span class="keyword">await</span> client.connect();
+
+  console.log(CODEX_PROTOCOL_VERSION); <span class="comment">// "0.140.0"</span>
+  console.log(server.userAgent);
+  console.log(server.codexHome);
+  console.log(server.platformFamily, server.platformOs);
+} <span class="keyword">finally</span> {
+  <span class="keyword">await</span> client.close();
+}</code></pre>
+          </div>
+          <div class="callout">
+            <strong>The handshake runs exactly once per live connection</strong>
+            <code>connect()</code> starts <code>codex app-server --stdio</code>, sends
+            <code>initialize</code>, awaits its response, then sends <code>initialized</code>.
+            Concurrent or later calls reuse the same promise or cached <code>InitializeResponse</code>;
+            they do not repeat the handshake.
+          </div>
+        </section>
+
+        <section class="doc-section" id="lifecycle" aria-labelledby="lifecycle-title">
+          <div class="section-kicker">04 · Process &amp; state</div>
+          <h2 id="lifecycle-title">Lifecycle</h2>
+          <p>
+            One client owns one local app-server process. The implementation keeps protocol stdout separate
+            from diagnostic stderr and exposes only a small state machine to consumers.
+          </p>
+          <div class="lifecycle" role="img" aria-label="Consumer calls the typed client, which uses a JSONL transport connected over standard input and output to codex app-server">
+            <div class="lifecycle-node">
+              <span class="node-number">01</span>
+              <strong>Consumer</strong>
+              <small>Your Node.js app</small>
+            </div>
+            <div class="arrow" aria-hidden="true">→</div>
+            <div class="lifecycle-node">
+              <span class="node-number">02</span>
+              <strong>Typed client</strong>
+              <small>Threads &amp; turns</small>
+            </div>
+            <div class="arrow" aria-hidden="true">→</div>
+            <div class="lifecycle-node">
+              <span class="node-number">03</span>
+              <strong>JSONL transport</strong>
+              <small>stdin / stdout</small>
+            </div>
+            <div class="arrow" aria-hidden="true">→</div>
+            <div class="lifecycle-node">
+              <span class="node-number">04</span>
+              <strong>codex app-server</strong>
+              <small>--stdio</small>
+            </div>
+          </div>
+
+          <h3>Connection states</h3>
+          <div class="state-flow" aria-label="Client state progression">
+            <span class="state">disconnected</span>
+            <span aria-hidden="true">→</span>
+            <span class="state">connecting</span>
+            <span aria-hidden="true">→</span>
+            <span class="state connected">connected</span>
+            <span aria-hidden="true">→</span>
+            <span class="state closed">closed</span>
+          </div>
+          <ul>
+            <li><strong>Before connection:</strong> thread and turn methods throw <code>AppServerStateError</code>.</li>
+            <li><strong>Connection failure:</strong> state returns to <code>disconnected</code>, the process is closed, and a later <code>connect()</code> may try again.</li>
+            <li><strong>Unexpected exit:</strong> pending requests fail with <code>AppServerProcessError</code> and the client returns to <code>disconnected</code>.</li>
+            <li><strong>Explicit close:</strong> <code>closed</code> is terminal; <code>connect()</code> then rejects. Repeated <code>close()</code> calls are safe.</li>
+          </ul>
+
+          <h3>Shutdown</h3>
+          <p>
+            <code>close()</code> marks the client closed, ends child stdin, and waits for normal process exit.
+            If the process has not exited after two seconds, the transport sends a kill signal and waits up to
+            another 500 milliseconds. Process-exit listeners are notified, but explicit closure does not move
+            the public state away from <code>closed</code>.
+          </p>
+        </section>
+
+        <section class="doc-section" id="thread-operations" aria-labelledby="thread-title">
+          <div class="section-kicker">05 · Conversations</div>
+          <h2 id="thread-title">Thread operations</h2>
+          <p>
+            A thread is the persistent conversation boundary. Start one for new work or resume an existing ID,
+            then carry the returned <code>thread.id</code> into every turn request.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>threads.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy thread operations example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> started = <span class="keyword">await</span> client.startThread({
+  cwd: <span class="string">"/absolute/path/to/project"</span>,
+  sandbox: <span class="string">"workspace-write"</span>,
+  approvalPolicy: <span class="string">"never"</span>,
+});
+
+<span class="keyword">const</span> threadId = started.thread.id;
+
+<span class="keyword">const</span> resumed = <span class="keyword">await</span> client.resumeThread({
+  threadId,
+  cwd: <span class="string">"/absolute/path/to/project"</span>,
+});
+
+console.log(resumed.thread.id); <span class="comment">// same resumable thread identity</span></code></pre>
+          </div>
+          <p>
+            <code>startThread()</code> and <code>resumeThread()</code> return the server’s typed response,
+            including the resolved model, provider, working directory, approval policy, sandbox policy,
+            instruction sources, and <code>thread</code>. Prefer resuming by <code>threadId</code>; the generated
+            protocol also documents history and path modes, but the public method simply passes the typed
+            <code>ThreadResumeParams</code> through.
+          </p>
+          <div class="callout warning">
+            <strong>No approval UI</strong>
+            <code>approvalPolicy: "never"</code> is the predictable choice for this first client. If the server
+            still initiates an approval or interactive request, the transport responds fail-closed. The package
+            never displays a prompt or grants an approval.
+          </div>
+        </section>
+
+        <section class="doc-section" id="turn-operations" aria-labelledby="turn-title">
+          <div class="section-kicker">06 · Work units</div>
+          <h2 id="turn-title">Turn operations</h2>
+          <p>
+            Use <code>startTurn()</code> when you only need the immediate typed receipt. Use
+            <code>streamTurn()</code> when you want the complete, filtered notification stream through terminal
+            completion.
+          </p>
+
+          <h3>Start a turn</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span>start-turn.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy start turn example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> receipt = <span class="keyword">await</span> client.startTurn({
+  threadId,
+  input: [
+    {
+      type: <span class="string">"text"</span>,
+      text: <span class="string">"Summarize this repository."</span>,
+      text_elements: [],
+    },
+  ],
+});
+
+console.log(receipt.turn.id, receipt.turn.status);</code></pre>
+          </div>
+
+          <h3>Stream through completion</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span>stream-turn.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy stream turn example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">for await</span> (<span class="keyword">const</span> notification <span class="keyword">of</span> client.streamTurn({
+  threadId,
+  input: [
+    {
+      type: <span class="string">"text"</span>,
+      text: <span class="string">"Summarize this repository."</span>,
+      text_elements: [],
+    },
+  ],
+})) {
+  <span class="keyword">switch</span> (notification.method) {
+    <span class="keyword">case</span> <span class="string">"item/agentMessage/delta"</span>:
+      process.stdout.write(notification.params.delta);
+      <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">"turn/completed"</span>:
+      console.log(notification.params.turn.status);
+      <span class="keyword">break</span>;
+  }
+}</code></pre>
+          </div>
+          <div class="steps" aria-label="streamTurn behavior">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div><h4>Subscribe first</h4><p>The client installs its notification listener before it sends <code>turn/start</code>.</p></div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div><h4>Retain early events</h4><p>Same-thread notifications arriving before the start receipt are held in the bounded early-event buffer.</p></div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div><h4>Resolve the turn</h4><p>After the receipt supplies <code>turn.id</code>, early and live events are filtered by both thread and turn.</p></div>
+            </div>
+            <div class="step">
+              <div class="step-number">4</div>
+              <div><h4>Yield the terminal event</h4><p><code>turn/completed</code> is yielded to the consumer, then the async iterator ends and removes its listeners.</p></div>
+            </div>
+          </div>
+
+          <h3>Interrupt an active turn</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span>interrupt.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy interrupt turn example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">await</span> client.interruptTurn({
+  threadId,
+  turnId: <span class="string">"turn-id-from-turn-started"</span>,
+});</code></pre>
+          </div>
+          <p>
+            The interrupt method awaits the server’s <code>turn/interrupt</code> response and resolves
+            <code>void</code>. Observe the turn’s subsequent notifications to determine its final status.
+          </p>
+        </section>
+
+        <section class="doc-section" id="typed-notifications" aria-labelledby="notifications-title">
+          <div class="section-kicker">07 · Events</div>
+          <h2 id="notifications-title">Typed notifications</h2>
+          <p>
+            <code>onNotification()</code> narrows listener parameters from the literal method name. The returned
+            function removes the listener, so subscriptions can be scoped to a component, request, or feature.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>notifications.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy notification subscription example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> unsubscribe = client.onNotification(
+  <span class="string">"turn/started"</span>,
+  ({ threadId, turn }) =&gt; {
+    <span class="comment">// threadId: string; turn: Turn</span>
+    console.log(<span class="string">"turn started"</span>, threadId, turn.id);
+  },
+);
+
+<span class="comment">// Later: stop receiving this method.</span>
+unsubscribe();</code></pre>
+          </div>
+          <div class="method-list" aria-label="Representative notification methods">
+            <span class="method-chip">thread/started</span>
+            <span class="method-chip">thread/status/changed</span>
+            <span class="method-chip">turn/started</span>
+            <span class="method-chip">turn/completed</span>
+            <span class="method-chip">turn/plan/updated</span>
+            <span class="method-chip">item/started</span>
+            <span class="method-chip">item/agentMessage/delta</span>
+            <span class="method-chip">item/completed</span>
+            <span class="method-chip">error</span>
+            <span class="method-chip">warning</span>
+          </div>
+          <div class="card-grid">
+            <div class="card">
+              <span class="card-label">Global subscription</span>
+              <h4><code>onNotification()</code></h4>
+              <p>Receives one named method from every thread and turn until you unsubscribe. It does not buffer or correlate events.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Turn-scoped iterator</span>
+              <h4><code>streamTurn()</code></h4>
+              <p>Starts a turn, retains early events, filters by thread and turn, applies a bounded buffer, and ends after completion.</p>
+            </div>
+          </div>
+          <p>
+            Listener exceptions are reported through <code>onError()</code> and do not stop the stdout reader.
+            Diagnostic callbacks are isolated as well: an exception thrown inside an error listener is ignored
+            so protocol processing can continue.
+          </p>
+        </section>
+
+        <section class="doc-section" id="api-reference" aria-labelledby="api-title">
+          <div class="section-kicker">08 · Reference</div>
+          <h2 id="api-title">Client API reference</h2>
+
+          <h3>Constructor options</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span>signature</span>
+              <button class="copy-button" type="button" aria-label="Copy constructor signature">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">new</span> CodexAppServerClient(options: CodexAppServerClientOptions)</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <caption>CodexAppServerClient constructor options</caption>
+              <thead>
+                <tr><th>Option</th><th>Required</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>clientInfo</code><span class="type">ClientInfo</span></td>
+                  <td>Yes</td>
+                  <td>Client identity sent during initialization: <code>name</code>, nullable <code>title</code>, and <code>version</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>codexPathOverride</code><span class="type">string</span></td>
+                  <td>No</td>
+                  <td>Launch a specific native Codex executable instead of resolving the CLI from the pinned <code>@openai/codex</code> package.</td>
+                </tr>
+                <tr>
+                  <td><code>env</code><span class="type">Record&lt;string, string&gt;</span></td>
+                  <td>No</td>
+                  <td>Adds or overrides child-process environment variables on top of <code>process.env</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>requestTimeoutMs</code><span class="type">number</span></td>
+                  <td>No</td>
+                  <td>Maximum time for each RPC response before <code>AppServerTimeoutError</code>.<span class="default">30,000 ms</span></td>
+                </tr>
+                <tr>
+                  <td><code>notificationBufferSize</code><span class="type">number</span></td>
+                  <td>No</td>
+                  <td>Positive integer capacity for each <code>streamTurn()</code> early/live event queue.<span class="default">1,024</span></td>
+                </tr>
+                <tr>
+                  <td><code>optOutNotificationMethods</code><span class="type">string[]</span></td>
+                  <td>No</td>
+                  <td>Notification methods requested as opt-outs in initialize capabilities.<span class="default">null when omitted</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Methods and properties</h3>
+          <div class="table-wrap">
+            <table>
+              <caption>CodexAppServerClient methods and properties</caption>
+              <thead>
+                <tr><th>Member</th><th>Returns</th><th>Behavior</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>connect()</code></td>
+                  <td><code>Promise&lt;InitializeResponse&gt;</code></td>
+                  <td>Starts the process and performs initialize/initialized once. Reuses the in-flight or cached response.</td>
+                </tr>
+                <tr>
+                  <td><code>close()</code></td>
+                  <td><code>Promise&lt;void&gt;</code></td>
+                  <td>Idempotently closes stdin, waits for exit, and kills after the grace period if necessary.</td>
+                </tr>
+                <tr>
+                  <td><code>startThread(params)</code></td>
+                  <td><code>Promise&lt;ThreadStartResponse&gt;</code></td>
+                  <td>Sends <code>thread/start</code>. Requires the connected state.</td>
+                </tr>
+                <tr>
+                  <td><code>resumeThread(params)</code></td>
+                  <td><code>Promise&lt;ThreadResumeResponse&gt;</code></td>
+                  <td>Sends <code>thread/resume</code>. Requires the connected state.</td>
+                </tr>
+                <tr>
+                  <td><code>startTurn(params)</code></td>
+                  <td><code>Promise&lt;TurnStartResponse&gt;</code></td>
+                  <td>Sends <code>turn/start</code> and resolves with the typed turn receipt.</td>
+                </tr>
+                <tr>
+                  <td><code>streamTurn(params)</code></td>
+                  <td><code>AsyncIterable&lt;ServerNotification&gt;</code></td>
+                  <td>Starts a turn and yields correlated notifications through <code>turn/completed</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>interruptTurn(params)</code></td>
+                  <td><code>Promise&lt;void&gt;</code></td>
+                  <td>Sends <code>turn/interrupt</code> for a thread and turn ID.</td>
+                </tr>
+                <tr>
+                  <td><code>onNotification(method, listener)</code></td>
+                  <td><code>() =&gt; void</code></td>
+                  <td>Subscribes to one typed notification method and returns an unsubscribe function.</td>
+                </tr>
+                <tr>
+                  <td><code>onError(listener)</code></td>
+                  <td><code>() =&gt; void</code></td>
+                  <td>Subscribes to protocol diagnostics, rejected server requests, and listener failures.</td>
+                </tr>
+                <tr>
+                  <td><code>onStderr(listener)</code></td>
+                  <td><code>() =&gt; void</code></td>
+                  <td>Subscribes to raw text chunks from child stderr, separate from protocol stdout.</td>
+                </tr>
+                <tr>
+                  <td><code>state</code></td>
+                  <td><code>AppServerClientState</code></td>
+                  <td>Read-only getter: <code>disconnected</code>, <code>connecting</code>, <code>connected</code>, or <code>closed</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Authoritative definitions: <a href="../packages/codex-protocol/src/client.ts">client.ts</a> and <a href="../packages/codex-protocol/src/types.ts">types.ts</a>.</p>
+        </section>
+
+        <section class="doc-section" id="errors" aria-labelledby="errors-title">
+          <div class="section-kicker">09 · Failure model</div>
+          <h2 id="errors-title">Errors and failure behavior</h2>
+          <p>
+            All package-specific errors inherit from <code>AppServerError</code>. RPC and lifecycle failures
+            reject the relevant operation; diagnostic protocol failures and fail-closed server requests are
+            also emitted to <code>onError()</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <caption>Exported error classes</caption>
+              <thead>
+                <tr><th>Error class</th><th>When it occurs</th><th>Useful fields</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>AppServerError</code></td>
+                  <td>Base class for all exported app-server-specific errors.</td>
+                  <td><code>name</code>, <code>message</code></td>
+                </tr>
+                <tr>
+                  <td><code>AppServerStateError</code></td>
+                  <td>Wrong client/transport state, or a non-positive/non-integer notification capacity.</td>
+                  <td><code>message</code></td>
+                </tr>
+                <tr>
+                  <td><code>AppServerProtocolError</code></td>
+                  <td>Invalid JSON, non-object or unrecognized envelope, unknown response ID.</td>
+                  <td><code>payload</code></td>
+                </tr>
+                <tr>
+                  <td><code>AppServerRpcError</code></td>
+                  <td>The server returns an RPC error object for a pending request.</td>
+                  <td><code>method</code>, <code>requestId</code>, <code>code</code>, <code>data</code></td>
+                </tr>
+                <tr>
+                  <td><code>AppServerTimeoutError</code></td>
+                  <td>No RPC response arrives within <code>requestTimeoutMs</code>.</td>
+                  <td><code>method</code>, <code>requestId</code>, <code>timeoutMs</code></td>
+                </tr>
+                <tr>
+                  <td><code>AppServerProcessError</code></td>
+                  <td>The child fails to start, exits, or terminates while work is pending.</td>
+                  <td><code>exitCode</code>, <code>signal</code>, optional <code>cause</code></td>
+                </tr>
+                <tr>
+                  <td><code>UnsupportedServerRequestError</code></td>
+                  <td>The server initiates a request without a safe built-in response.</td>
+                  <td><code>method</code></td>
+                </tr>
+                <tr>
+                  <td><code>ServerRequestRejectedError</code></td>
+                  <td>A known approval, elicitation, input, or tool request is answered fail-closed.</td>
+                  <td><code>method</code></td>
+                </tr>
+                <tr>
+                  <td><code>NotificationBufferOverflowError</code></td>
+                  <td>A <code>streamTurn()</code> early/live queue reaches capacity before the consumer drains it.</td>
+                  <td><code>capacity</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Observe diagnostics and stderr</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span>diagnostics.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy diagnostics example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> stopErrors = client.onError((error) =&gt; {
+  console.error(error.name, error.message);
+});
+
+<span class="keyword">const</span> stopLogs = client.onStderr((text) =&gt; {
+  process.stderr.write(text);
+});
+
+<span class="comment">// Clean up subscriptions when their owner is disposed.</span>
+stopErrors();
+stopLogs();</code></pre>
+          </div>
+          <ul>
+            <li>Malformed stdout is reported and skipped; it does not crash the line reader.</li>
+            <li>RPC timeouts remove the pending request. The client does not automatically retry it.</li>
+            <li>A process exit rejects every pending request and fails any active <code>streamTurn()</code> queue.</li>
+            <li>Stderr is never parsed as protocol JSON and is only delivered to <code>onStderr()</code>.</li>
+          </ul>
+          <p>Authoritative definitions: <a href="../packages/codex-protocol/src/errors.ts">errors.ts</a>.</p>
+        </section>
+
+        <section class="doc-section" id="server-requests" aria-labelledby="requests-title">
+          <div class="section-kicker">10 · Fail closed</div>
+          <h2 id="requests-title">Server-initiated requests</h2>
+          <p>
+            App-server communication is bidirectional, but this package deliberately has no interactive
+            approval surface. The transport answers every server request immediately with either a safe
+            negative result or an unsupported-method error.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <caption>Built-in server request responses</caption>
+              <thead>
+                <tr><th>Server method</th><th>Response</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>item/commandExecution/requestApproval</code></td>
+                  <td>Decline.</td>
+                </tr>
+                <tr>
+                  <td><code>item/fileChange/requestApproval</code></td>
+                  <td>Decline.</td>
+                </tr>
+                <tr>
+                  <td><code>applyPatchApproval</code></td>
+                  <td>Denied with a non-interactive-client rejection reason.</td>
+                </tr>
+                <tr>
+                  <td><code>execCommandApproval</code></td>
+                  <td>Denied with a non-interactive-client rejection reason.</td>
+                </tr>
+                <tr>
+                  <td><code>mcpServer/elicitation/request</code></td>
+                  <td>Cancel with null content and metadata.</td>
+                </tr>
+                <tr>
+                  <td><code>item/tool/requestUserInput</code></td>
+                  <td>Return an empty answers object.</td>
+                </tr>
+                <tr>
+                  <td><code>item/tool/call</code></td>
+                  <td>Return no content items and <code>success: false</code>.</td>
+                </tr>
+                <tr>
+                  <td>Any other method</td>
+                  <td>RPC error <code>-32601</code> and <code>UnsupportedServerRequestError</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout danger">
+            <strong>No request is intentionally left unanswered</strong>
+            Known interactive operations are declined, denied, cancelled, or completed with an empty negative
+            response. Unknown operations receive an explicit unsupported-request response. Both paths emit a
+            typed diagnostic error to subscribers.
+          </div>
+        </section>
+
+        <section class="doc-section" id="generated-types" aria-labelledby="types-title">
+          <div class="section-kicker">11 · Type surface</div>
+          <h2 id="types-title">Generated protocol types</h2>
+          <p>
+            The root package entry point re-exports the common types needed by the typed client. The two
+            protocol subpaths expose the complete generated schema for consumers that need lower-level
+            unions or richer response models.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>protocol-types.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy generated type imports">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">import type</span> {
+  ClientRequest,
+  ServerNotification,
+  ServerRequest,
+} <span class="keyword">from</span> <span class="string">"@lightcode/codex-protocol/protocol"</span>;
+
+<span class="keyword">import type</span> {
+  Thread,
+  ThreadItem,
+  Turn,
+} <span class="keyword">from</span> <span class="string">"@lightcode/codex-protocol/protocol/v2"</span>;</code></pre>
+          </div>
+          <div class="card-grid">
+            <div class="card">
+              <span class="card-label">Root exports</span>
+              <h4>Common client types</h4>
+              <p><code>ClientInfo</code>, <code>InitializeResponse</code>, <code>ServerNotification</code>, thread/turn params and responses, options, and state.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Full schema</span>
+              <h4>Generated unions and models</h4>
+              <p>The <code>/protocol</code> and <code>/protocol/v2</code> barrels mirror the stable generator output from the pinned CLI.</p>
+            </div>
+          </div>
+          <p>
+            The package asks Codex to generate its <strong>stable</strong> surface and does not enable the
+            experimental API during initialization. Generated TypeScript supplies compile-time checking;
+            at runtime the transport validates only the basic response, request, and notification envelope
+            shapes. It does not perform full JSON Schema validation of every payload because the client and
+            locally spawned CLI are version-matched.
+          </p>
+          <div class="callout">
+            <strong>Type-only imports are intentional</strong>
+            Generated modules contain type declarations rather than runtime validators. Use
+            <code>import type</code> when importing from either protocol subpath.
+          </div>
+        </section>
+
+        <section class="doc-section" id="protocol-generation" aria-labelledby="generation-title">
+          <div class="section-kicker">12 · Version control</div>
+          <h2 id="generation-title">Protocol generation and version drift</h2>
+          <p>
+            Protocol definitions are generated by the exact Codex CLI the package depends on. The manifest,
+            generation script, and exported <code>CODEX_PROTOCOL_VERSION</code> all pin
+            <code>0.140.0</code>.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>shell</span>
+              <button class="copy-button" type="button" aria-label="Copy protocol generation commands">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="comment"># Regenerate checked-in protocol definitions.</span>
+npm run generate -w @lightcode/codex-protocol
+
+<span class="comment"># Generate into a temporary directory and compare for drift.</span>
+npm run protocol:check -w @lightcode/codex-protocol</code></pre>
+          </div>
+          <div class="steps" aria-label="Protocol upgrade workflow">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div><h4>Update both pins</h4><p>Change the exact <code>@openai/codex</code> dependency and <code>PINNED_CODEX_VERSION</code> in <code>scripts/generate.mjs</code>.</p></div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div><h4>Generate stable definitions</h4><p>The script runs <code>codex app-server generate-ts</code> from the resolved package CLI.</p></div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div><h4>Normalize for Node ESM</h4><p>Relative generated imports receive explicit <code>.js</code> or <code>/index.js</code> specifiers.</p></div>
+            </div>
+            <div class="step">
+              <div class="step-number">4</div>
+              <div><h4>Check drift</h4><p>The check compares all files and verifies <code>src/version.ts</code> without replacing the checked-in directory.</p></div>
+            </div>
+          </div>
+          <div class="callout warning">
+            <strong>Never edit <code>src/generated</code> manually</strong>
+            Regeneration replaces the generated directory as a unit. Hand edits will either disappear on the
+            next run or fail the drift check.
+          </div>
+          <p>
+            Source: <a href="../packages/codex-protocol/scripts/generate.mjs">generate.mjs</a> and
+            <a href="../packages/codex-protocol/scripts/check-generated.mjs">check-generated.mjs</a>.
+          </p>
+        </section>
+
+        <section class="doc-section" id="testing" aria-labelledby="testing-title">
+          <div class="section-kicker">13 · Verification</div>
+          <h2 id="testing-title">Testing and troubleshooting</h2>
+          <div class="code-block">
+            <div class="code-header">
+              <span>shell</span>
+              <button class="copy-button" type="button" aria-label="Copy verification commands">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="comment"># Compile dist.</span>
+npm run build -w @lightcode/codex-protocol
+
+<span class="comment"># Check package source without emitting.</span>
+npm run typecheck -w @lightcode/codex-protocol
+
+<span class="comment"># Build, then run transport, client, and consumer-compile tests.</span>
+npm test -w @lightcode/codex-protocol
+
+<span class="comment"># Verify generated files match the pinned CLI.</span>
+npm run protocol:check -w @lightcode/codex-protocol
+
+<span class="comment"># Optional: initialize and close the real local app-server.</span>
+npm run test:smoke -w @lightcode/codex-protocol</code></pre>
+          </div>
+          <p>
+            The smoke test only initializes and closes the real process; it does not create a thread. The
+            regular test suite also compiles built-package consumers under both <strong>NodeNext</strong> and
+            <strong>Bundler</strong> module resolution.
+          </p>
+
+          <h3>Common problems</h3>
+          <div class="table-wrap">
+            <table>
+              <caption>Common issues and resolutions</caption>
+              <thead>
+                <tr><th>Symptom</th><th>What to check</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>“Call connect() before…”</td>
+                  <td>Await <code>connect()</code> before any thread or turn operation. Inspect <code>client.state</code> when coordinating owners.</td>
+                </tr>
+                <tr>
+                  <td>Process fails to start</td>
+                  <td>Build/install the workspace dependency. If necessary, pass <code>codexPathOverride</code> pointing to a runnable native Codex executable.</td>
+                </tr>
+                <tr>
+                  <td>Requests time out</td>
+                  <td>Observe stderr and errors first. Increase <code>requestTimeoutMs</code> only when the local process legitimately needs longer.</td>
+                </tr>
+                <tr>
+                  <td>Notification overflow</td>
+                  <td>Drain <code>streamTurn()</code> promptly or raise <code>notificationBufferSize</code>. Every stream has its own bounded queue.</td>
+                </tr>
+                <tr>
+                  <td>ESM resolution error</td>
+                  <td>Use Node.js 20+, consume a declared package entry point, and do not import unbuilt source or extensionless generated paths.</td>
+                </tr>
+                <tr>
+                  <td>Logs look like protocol failures</td>
+                  <td>Keep <code>onStderr()</code> separate from protocol stdout. The transport already parses only child stdout as JSONL.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="checklist">
+            <li>Out-of-order response correlation</li>
+            <li>One-time initialize handshake</li>
+            <li>Early-event retention and filtering</li>
+            <li>Buffer overflow behavior</li>
+            <li>RPC, timeout, and process errors</li>
+            <li>Fail-closed server requests</li>
+            <li>Malformed-message recovery</li>
+            <li>Graceful shutdown</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="boundaries" aria-labelledby="boundaries-title">
+          <div class="section-kicker">14 · Explicit non-goals</div>
+          <h2 id="boundaries-title">Package boundaries</h2>
+          <p>
+            This first package version stays deliberately small. Its omissions are part of the contract, not
+            missing setup steps.
+          </p>
+          <div class="card-grid boundary-grid">
+            <div class="card">
+              <span class="card-label">Not included</span>
+              <h4>No application integration</h4>
+              <p>No server or desktop application code imports this package yet; consumers choose their own ownership and UI model.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Not included</span>
+              <h4>No WebSocket transport</h4>
+              <p>The only transport is a locally spawned app-server using newline-delimited JSON over stdio.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Not included</span>
+              <h4>No experimental API</h4>
+              <p>The initialize handshake explicitly sends <code>experimentalApi: false</code>; generation uses the stable surface.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Not included</span>
+              <h4>No auth or approval UI</h4>
+              <p>The package does not authenticate users, render prompts, or accept approvals. Interactive requests fail closed.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Not included</span>
+              <h4>No npm publication</h4>
+              <p>The manifest is private. Other packages consume it through the repository workspace.</p>
+            </div>
+            <div class="card">
+              <span class="card-label">Not included</span>
+              <h4>No full runtime schema validation</h4>
+              <p>Runtime checks validate envelope shape, while generated TypeScript checks payload structure at compile time.</p>
+            </div>
+          </div>
+          <div class="callout">
+            <strong>Current behavior is authoritative</strong>
+            This page documents the checked-in implementation only. For concise setup, see the
+            <a href="../packages/codex-protocol/README.md">package README</a>; for the public surface, see
+            <a href="../packages/codex-protocol/src/index.ts">src/index.ts</a>.
+          </div>
+        </section>
+      </article>
+
+      <aside class="right-rail" aria-label="Package context">
+        <div class="rail-title">Package</div>
+        <div class="rail-card">
+          <div class="fact"><span class="fact-label">Package</span><span class="fact-value">@lightcode/codex-protocol</span></div>
+          <div class="fact"><span class="fact-label">Package version</span><span class="fact-value">0.1.0</span></div>
+          <div class="fact"><span class="fact-label">Protocol</span><span class="fact-value">0.140.0 · stable</span></div>
+          <div class="fact"><span class="fact-label">Runtime</span><span class="fact-value">Node.js ≥20 · ESM</span></div>
+          <div class="fact"><span class="fact-label">Transport</span><span class="fact-value">JSONL · stdio</span></div>
+        </div>
+        <div class="rail-title">Source</div>
+        <ul class="rail-links">
+          <li><a href="../packages/codex-protocol/README.md">README ↗</a></li>
+          <li><a href="../packages/codex-protocol/package.json">package.json ↗</a></li>
+          <li><a href="../packages/codex-protocol/src/client.ts">client.ts ↗</a></li>
+          <li><a href="../packages/codex-protocol/src/transport.ts">transport.ts ↗</a></li>
+          <li><a href="../packages/codex-protocol/src/errors.ts">errors.ts ↗</a></li>
+          <li><a href="../packages/codex-protocol/test/client.test.mjs">client tests ↗</a></li>
+        </ul>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <div class="footer-inner">
+      <p><strong>@lightcode/codex-protocol</strong> · checked-in implementation reference</p>
+      <p>Self-contained · no network dependencies · print friendly</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var root = document.documentElement;
+      var themeButton = document.querySelector(".theme-toggle");
+      var media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+      function currentTheme() {
+        return root.dataset.theme === "dark" ? "dark" : "light";
+      }
+
+      function updateThemeButton() {
+        if (!themeButton) return;
+        var next = currentTheme() === "dark" ? "light" : "dark";
+        themeButton.setAttribute("aria-label", "Switch to " + next + " theme");
+        themeButton.setAttribute("title", "Switch to " + next + " theme");
+        var icon = themeButton.querySelector(".theme-icon");
+        if (icon) icon.textContent = currentTheme() === "dark" ? "☼" : "◐";
+      }
+
+      function setTheme(theme, persist) {
+        root.dataset.theme = theme === "dark" ? "dark" : "light";
+        updateThemeButton();
+        if (persist) {
+          try {
+            localStorage.setItem("codex-protocol-theme", root.dataset.theme);
+          } catch (_) {}
+        }
+      }
+
+      updateThemeButton();
+      if (themeButton) {
+        themeButton.addEventListener("click", function () {
+          setTheme(currentTheme() === "dark" ? "light" : "dark", true);
+        });
+      }
+
+      if (media) {
+        var followSystem = function (event) {
+          try {
+            if (!localStorage.getItem("codex-protocol-theme")) {
+              setTheme(event.matches ? "dark" : "light", false);
+            }
+          } catch (_) {}
+        };
+        if (typeof media.addEventListener === "function") {
+          media.addEventListener("change", followSystem);
+        } else if (typeof media.addListener === "function") {
+          media.addListener(followSystem);
+        }
+      }
+
+      function fallbackCopy(text) {
+        var input = document.createElement("textarea");
+        input.value = text;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        var copied = false;
+        try {
+          copied = document.execCommand("copy");
+        } catch (_) {}
+        document.body.removeChild(input);
+        return copied;
+      }
+
+      function showCopyResult(button, copied) {
+        var label = button.querySelector("span:last-child");
+        if (!label) return;
+        var original = label.textContent;
+        label.textContent = copied ? "Copied" : "Select";
+        window.setTimeout(function () {
+          label.textContent = original;
+        }, 1500);
+      }
+
+      Array.prototype.forEach.call(document.querySelectorAll(".copy-button"), function (button) {
+        button.addEventListener("click", function () {
+          var block = button.closest(".code-block");
+          var code = block && block.querySelector("pre code");
+          if (!code) return;
+          var text = code.textContent || "";
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            navigator.clipboard.writeText(text).then(
+              function () { showCopyResult(button, true); },
+              function () { showCopyResult(button, fallbackCopy(text)); }
+            );
+          } else {
+            showCopyResult(button, fallbackCopy(text));
+          }
+        });
+      });
+
+      var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".toc a[href^='#']"));
+      var linkById = {};
+      tocLinks.forEach(function (link) {
+        linkById[link.getAttribute("href").slice(1)] = link;
+      });
+      var sections = Object.keys(linkById).map(function (id) {
+        return document.getElementById(id);
+      }).filter(Boolean);
+
+      function activate(id) {
+        tocLinks.forEach(function (link) {
+          var active = link === linkById[id];
+          link.classList.toggle("active", active);
+          if (active) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      }
+
+      if ("IntersectionObserver" in window && sections.length) {
+        var visible = {};
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) visible[entry.target.id] = entry.boundingClientRect.top;
+            else delete visible[entry.target.id];
+          });
+          var ids = Object.keys(visible).sort(function (a, b) { return visible[a] - visible[b]; });
+          if (ids.length) activate(ids[0]);
+        }, { rootMargin: "-18% 0px -68% 0px", threshold: [0, 0.01] });
+        sections.forEach(function (section) { observer.observe(section); });
+      } else if (tocLinks.length) {
+        activate(tocLinks[0].getAttribute("href").slice(1));
+      }
+
+      window.addEventListener("hashchange", function () {
+        var id = window.location.hash.slice(1);
+        if (linkById[id]) activate(id);
+      });
+
+      var initialId = window.location.hash.slice(1);
+      activate(linkById[initialId] ? initialId : "overview");
+    }());
+  </script>
+</body>
+</html>

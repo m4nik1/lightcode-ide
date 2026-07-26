@@ -1,0 +1,1 @@
+{"version":3,"file":"AppsDefaultConfig.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/AppsDefaultConfig.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,wBAAwB,CAAC;AAEhE,MAAM,MAAM,iBAAiB,GAAG;IAAE,OAAO,EAAE,OAAO,CAAC;IAAC,kBAAkB,EAAE,iBAAiB,GAAG,IAAI,CAAC;IAAC,mBAAmB,EAAE,OAAO,CAAC;IAAC,kBAAkB,EAAE,OAAO,CAAC;CAAE,CAAC"}

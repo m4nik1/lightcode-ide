@@ -1,0 +1,28 @@
+import type { CommandExecOutputStream } from "./CommandExecOutputStream.js";
+/**
+ * Base64-encoded output chunk emitted for a streaming `command/exec` request.
+ *
+ * These notifications are connection-scoped. If the originating connection
+ * closes, the server terminates the process.
+ */
+export type CommandExecOutputDeltaNotification = {
+    /**
+     * Client-supplied, connection-scoped `processId` from the original
+     * `command/exec` request.
+     */
+    processId: string;
+    /**
+     * Output stream for this chunk.
+     */
+    stream: CommandExecOutputStream;
+    /**
+     * Base64-encoded output bytes.
+     */
+    deltaBase64: string;
+    /**
+     * `true` on the final streamed chunk for a stream when `outputBytesCap`
+     * truncated later output on that stream.
+     */
+    capReached: boolean;
+};
+//# sourceMappingURL=CommandExecOutputDeltaNotification.d.ts.map

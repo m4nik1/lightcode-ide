@@ -1,0 +1,1 @@
+{"version":3,"file":"SkillsConfigWriteParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/SkillsConfigWriteParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAE7D,MAAM,MAAM,uBAAuB,GAAG;IACtC;;OAEG;IACH,IAAI,CAAC,EAAE,eAAe,GAAG,IAAI,CAAC;IAC9B;;OAEG;IACH,IAAI,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;IAAC,OAAO,EAAE,OAAO,CAAC;CAAE,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"ModelListResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ModelListResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,KAAK,EAAE,MAAM,YAAY,CAAC;AAExC,MAAM,MAAM,iBAAiB,GAAG;IAAE,IAAI,EAAE,KAAK,CAAC,KAAK,CAAC,CAAC;IACrD;;;OAGG;IACH,UAAU,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

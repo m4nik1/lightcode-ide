@@ -1,0 +1,1 @@
+{"version":3,"file":"PluginShareListItem.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/PluginShareListItem.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAC7D,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,oBAAoB,CAAC;AAExD,MAAM,MAAM,mBAAmB,GAAG;IAAE,MAAM,EAAE,aAAa,CAAC;IAAC,eAAe,EAAE,eAAe,GAAG,IAAI,CAAC;CAAE,CAAC"}

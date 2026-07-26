@@ -1,0 +1,1 @@
+{"version":3,"file":"PluginShareUpdateTargetsResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/PluginShareUpdateTargetsResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,0BAA0B,EAAE,MAAM,iCAAiC,CAAC;AAClF,OAAO,KAAK,EAAE,oBAAoB,EAAE,MAAM,2BAA2B,CAAC;AAEtE,MAAM,MAAM,gCAAgC,GAAG;IAAE,UAAU,EAAE,KAAK,CAAC,oBAAoB,CAAC,CAAC;IAAC,eAAe,EAAE,0BAA0B,CAAC;CAAE,CAAC"}

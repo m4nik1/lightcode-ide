@@ -1,0 +1,1 @@
+{"version":3,"file":"McpServerOauthLoginParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/McpServerOauthLoginParams.ts"],"names":[],"mappings":"AAIA,MAAM,MAAM,yBAAyB,GAAG;IAAE,IAAI,EAAE,MAAM,CAAC;IAAC,MAAM,CAAC,EAAE,KAAK,CAAC,MAAM,CAAC,GAAG,IAAI,CAAC;IAAC,WAAW,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CAAE,CAAC"}

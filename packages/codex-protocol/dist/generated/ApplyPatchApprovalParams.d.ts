@@ -1,0 +1,23 @@
+import type { FileChange } from "./FileChange.js";
+import type { ThreadId } from "./ThreadId.js";
+export type ApplyPatchApprovalParams = {
+    conversationId: ThreadId;
+    /**
+     * Use to correlate this with [codex_protocol::protocol::PatchApplyBeginEvent]
+     * and [codex_protocol::protocol::PatchApplyEndEvent].
+     */
+    callId: string;
+    fileChanges: {
+        [key in string]?: FileChange;
+    };
+    /**
+     * Optional explanatory reason (e.g. request for extra write access).
+     */
+    reason: string | null;
+    /**
+     * When set, the agent is asking the user to allow writes under this root
+     * for the remainder of the session (unclear if this is honored today).
+     */
+    grantRoot: string | null;
+};
+//# sourceMappingURL=ApplyPatchApprovalParams.d.ts.map

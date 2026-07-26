@@ -1,0 +1,1 @@
+{"version":3,"file":"ConfigRequirementsReadResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ConfigRequirementsReadResponse.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,yBAAyB,CAAC;AAElE,MAAM,MAAM,8BAA8B,GAAG;IAC7C;;OAEG;IACH,YAAY,EAAE,kBAAkB,GAAG,IAAI,CAAC;CAAE,CAAC"}

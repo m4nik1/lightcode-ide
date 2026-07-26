@@ -1,0 +1,1 @@
+{"version":3,"file":"ReviewStartParams.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/ReviewStartParams.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,qBAAqB,CAAC;AAC1D,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,mBAAmB,CAAC;AAEtD,MAAM,MAAM,iBAAiB,GAAG;IAAE,QAAQ,EAAE,MAAM,CAAC;IAAC,MAAM,EAAE,YAAY,CAAC;IACzE;;;OAGG;IACH,QAAQ,CAAC,EAAE,cAAc,GAAG,IAAI,CAAC;CAAE,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"HookCompletedNotification.d.ts","sourceRoot":"","sources":["../../../src/generated/v2/HookCompletedNotification.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,qBAAqB,CAAC;AAE1D,MAAM,MAAM,yBAAyB,GAAG;IAAE,QAAQ,EAAE,MAAM,CAAC;IAAC,MAAM,EAAE,MAAM,GAAG,IAAI,CAAC;IAAC,GAAG,EAAE,cAAc,CAAC;CAAE,CAAC"}
