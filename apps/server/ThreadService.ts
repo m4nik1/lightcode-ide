@@ -9,6 +9,7 @@ import {
   nextMessageSequence,
   storeMessage,
 } from "./lightQueries.ts";
+import { CodexAppServerClient } from "@lightcode/codex-protocol";
 
 type AIMessage = {
   threadID: string;
@@ -23,8 +24,8 @@ type AIMessage = {
 export class ThreadService {
   recentThreads: lightThread[];
   threads: Map<string, lightThread>;
-  codexInstance: Codex;
-  constructor(AIDriver: Codex) {
+  codexInstance: CodexAppServerClient;
+  constructor(AIDriver: CodexAppServerClient) {
     this.recentThreads = [];
     this.threads = new Map();
     this.codexInstance = AIDriver;
@@ -47,7 +48,7 @@ export class ThreadService {
 
     let runningThread : lightThread = this.threads.get(threadID)
 
-
+    runningThread.stopQuery()
   } 
 
   async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {

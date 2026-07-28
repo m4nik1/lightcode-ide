@@ -1,6 +1,7 @@
 import { publicProcedure, router } from "./trpc.ts";
 import { Codex } from "@openai/codex-sdk";
 import { z } from "zod";
+import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import { ThreadService } from "./ThreadService.ts";
 import {
   createProject,
@@ -14,7 +15,13 @@ import {
 } from "./lightQueries.ts";
 
 const threadService = new ThreadService(
-  new Codex({ config: { show_raw_agent_reasoning: true } }),
+  new CodexAppServerClient({
+    clientInfo: {
+      name: "lightcode-ide",
+      title: 'Lightcode',
+      version: '0.0.1',
+    }
+  }),
 );
 
 export const appRouter = router({
