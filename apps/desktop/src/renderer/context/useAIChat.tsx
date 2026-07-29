@@ -12,7 +12,7 @@ type AIContext = {
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
   isTurning: boolean;
-  stopTurn: (thread_id : string) => void;
+  stopTurn: (thread_id: string) => void;
 };
 
 type AIModel = {
@@ -98,37 +98,37 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       if (!isTurning) setTurn(true);
     }
 
-    const threadTitle = await trpcClient.generateThreadMessage.mutate({
-      id: threadID,
-      message: text,
-    });
+    // const threadTitle = await trpcClient.generateThreadMessage.mutate({
+    //   id: threadID,
+    //   message: text,
+    // });
 
-    if (
-      !threadTitle ||
-      typeof threadTitle.id !== "string" ||
-      typeof threadTitle.name !== "string"
-    ) {
-      console.error(
-        "Generated thread title has an invalid response:",
-        threadTitle,
-      );
-      return;
-    }
+    // if (
+    //   !threadTitle ||
+    //   typeof threadTitle.id !== "string" ||
+    //   typeof threadTitle.name !== "string"
+    // ) {
+    //   console.error(
+    //     "Generated thread title has an invalid response:",
+    //     threadTitle,
+    //   );
+    //   return;
+    // }
 
-    const titleThreadID = threadTitle.id;
-    const title = threadTitle.name;
+    // const titleThreadID = threadTitle.id;
+    // const title = threadTitle.name;
 
-    setThread((current) =>
-      current?.id === titleThreadID ? { ...current, title } : current,
-    );
+    // setThread((current) =>
+    //   current?.id === titleThreadID ? { ...current, title } : current,
+    // );
 
     await projectsQuery.refetch();
   }
 
-  function stopTurn(thread_id : string) {
-    console.log("Stopping the current turn")
+  function stopTurn(thread_id: string) {
+    console.log("Stopping the current turn");
 
-    trpcClient.stopTurn.query(); 
+    trpcClient.stopTurn.query();
   }
 
   async function createProject() {
@@ -185,7 +185,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         currentThread,
         setCurrentThread,
         isTurning,
-        stopTurn
+        stopTurn,
       }}
     >
       {children}

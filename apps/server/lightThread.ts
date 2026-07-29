@@ -1,8 +1,6 @@
 import { type ModelReasoningEffort } from "@openai/codex-sdk";
-import {
-  CodexAppServerClient,
-  ThreadStartResponse,
-} from '@lightcode/codex-protocol'
+import { CodexAppServerClient } from '@lightcode/codex-protocol'
+import type { ThreadStartResponse } from '@lightcode/codex-protocol'
 
 export default class lightThread {
   codexInstance: CodexAppServerClient;

@@ -1,5 +1,4 @@
 import { publicProcedure, router } from "./trpc.ts";
-import { Codex } from "@openai/codex-sdk";
 import { z } from "zod";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import { ThreadService } from "./ThreadService.ts";
@@ -11,7 +10,6 @@ import {
   type ThreadRecord,
   getThreads,
   loadMessagesFromThread,
-  renameThread,
 } from "./lightQueries.ts";
 
 const threadService = new ThreadService(
@@ -56,8 +54,8 @@ export const appRouter = router({
     .input(
       z.object({ threadID: z.string() })
     )
-    .query(function ({input}) {
-      threadService.stopTurn(input.threadID)
+    .query(async function ({input}) {
+      await threadService.stopTurn(input.threadID)
     }),
 
   loadMessages: publicProcedure
@@ -86,13 +84,13 @@ export const appRouter = router({
         path: input.path
       })
     }),
-  generateThreadMessage: publicProcedure
-    .input(z.object({ id: z.string(), message: z.string() }))
-    .mutation(async ({ input }) => {
-      const threadTitle = await threadService.generateThreadTitle(input.message);
+  // generateThreadMessage: publicProcedure
+  //   .input(z.object({ id: z.string(), message: z.string() }))
+  //   .mutation(async ({ input }) => {
+  //     const threadTitle = await threadService.generateThreadTitle(input.message);
 
-      return renameThread.get(threadTitle, input.id);
-    }),
+  //     return renameThread.get(threadTitle, input.id);
+  //   }),
 
   addThread: publicProcedure
     .input(z.object({ threadName: z.string(), projectId: z.string() }))
