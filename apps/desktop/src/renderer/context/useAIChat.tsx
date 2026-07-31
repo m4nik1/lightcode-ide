@@ -76,11 +76,12 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     });
 
     for await (const chunk of streamChat) {
+      console.log("Received chunk:", chunk);
       if (
-        chunk.type === "item.completed" &&
-        chunk.item.type === "agent_message"
+        chunk.method == "item/agentMessage/delta"
+        // && chunk.item.type === "agent_message"
       ) {
-        const responseText = chunk.item.text;
+        const responseText = chunk.params.delta;
 
         setMessagesByThread((current) => ({
           ...current,
@@ -93,9 +94,13 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
               : message,
           ),
         }));
+      }
+
+      if(chunk.method === "turn/completed") {
+        console.log("Turn completed");
         setTurn(false);
       }
-      if (!isTurning) setTurn(true);
+      setTurn(true);
     }
 
     // const threadTitle = await trpcClient.generateThreadMessage.mutate({
@@ -103,11 +108,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     //   message: text,
     // });
 
-    // if (
-    //   !threadTitle ||
-    //   typeof threadTitle.id !== "string" ||
-    //   typeof threadTitle.name !== "string"
-    // ) {
+    // if (!threadTitle) {
     //   console.error(
     //     "Generated thread title has an invalid response:",
     //     threadTitle,
@@ -128,7 +129,11 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   function stopTurn(thread_id: string) {
     console.log("Stopping the current turn");
 
-    trpcClient.stopTurn.query();
+    trpcClient.stopTurn.query({ threadID: thread_id }).then(() => {
+      setTurn(false);
+    }).catch((error) => {
+      console.error("Error something went wrong", error);
+    });
   }
 
   async function createProject() {
