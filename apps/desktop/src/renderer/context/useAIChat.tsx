@@ -79,7 +79,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       console.log("Received chunk:", chunk);
       if (
         chunk.method == "item/agentMessage/delta"
-        // && chunk.item.type === "agent_message"
       ) {
         const responseText = chunk.params.delta;
 

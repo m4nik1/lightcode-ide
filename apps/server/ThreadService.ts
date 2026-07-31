@@ -95,16 +95,20 @@ export class ThreadService {
       if (
         event.method === "turn/completed"
       ) {
-        // storeMessage.get(
-        //   crypto.randomUUID(),
-        //   input.threadID,
-        //   event.params.,
-        //   input.model.model,
-        //   input.model.thinking,
-        //   "assistant",
-        //   nextMessageSequence(input.threadID),
-        // );
-        // console.log("event: ", event)
+        console.log("event: ", event)
+      }
+      else if(event.method == 'item/completed' 
+        && event.params.item.phase == 'final_answer') {
+        storeMessage.get(
+          crypto.randomUUID(),
+          input.threadID,
+          event.params.item.text,
+          input.model.model,
+          input.model.thinking,
+          "assistant",
+          nextMessageSequence(input.threadID),
+        );
+        // console.log("Final answer received: ", event.params.item.text);
       }
       yield event;
     }
