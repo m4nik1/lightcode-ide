@@ -76,7 +76,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     });
 
     for await (const chunk of streamChat) {
-      console.log("Received chunk:", chunk);
       if (
         chunk.method == "item/agentMessage/delta"
       ) {
