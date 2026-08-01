@@ -101,6 +101,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       setTurn(true);
     }
 
+    
+
     // const threadTitle = await trpcClient.generateThreadMessage.mutate({
     //   id: threadID,
     //   message: text,
@@ -176,6 +178,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       ...current,
       [thread.id]: threadMessages,
     }));
+  }
+
+  function setThreadTitle() {
+    console.log("Setting thread title");
   }
 
   return (

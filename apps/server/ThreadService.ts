@@ -92,12 +92,8 @@ export class ThreadService {
     console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
     for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.message)) {
-      if (
-        event.method === "turn/completed"
-      ) {
-        console.log("event: ", event)
-      }
-      else if(event.method == 'item/completed' 
+      console.log("Event received: ", event);
+      if(event.method == 'item/completed' 
         && event.params.item.phase == 'final_answer') {
         storeMessage.get(
           crypto.randomUUID(),
