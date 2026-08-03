@@ -1573,6 +1573,24 @@
 
 console.log(resumed.thread.id); <span class="comment">// same resumable thread identity</span></code></pre>
           </div>
+          <h3>Read a thread title</h3>
+          <p>
+            Call <code>readThread()</code> to retrieve the current thread record. Its nullable
+            <code>thread.name</code> field is the user-facing title; use <code>thread.preview</code> when
+            no title has been assigned.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>thread-title.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy thread title example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> { thread } = <span class="keyword">await</span> client.readThread({ threadId });
+<span class="keyword">const</span> title = thread.name ?? thread.preview;
+
+console.log(title);</code></pre>
+          </div>
           <p>
             <code>startThread()</code> and <code>resumeThread()</code> return the server’s typed response,
             including the resolved model, provider, working directory, approval policy, sandbox policy,
@@ -1979,6 +1997,11 @@ unsubscribe();</code></pre>
                   <td><code>resumeThread(params)</code></td>
                   <td><code>Promise&lt;ThreadResumeResponse&gt;</code></td>
                   <td>Sends <code>thread/resume</code>. Requires the connected state.</td>
+                </tr>
+                <tr>
+                  <td><code>readThread(params)</code></td>
+                  <td><code>Promise&lt;ThreadReadResponse&gt;</code></td>
+                  <td>Sends <code>thread/read</code>. Read the nullable user-facing title from <code>response.thread.name</code>.</td>
                 </tr>
                 <tr>
                   <td><code>startTurn(params)</code></td>

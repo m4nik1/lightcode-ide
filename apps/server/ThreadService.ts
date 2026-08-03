@@ -1,11 +1,15 @@
 import {
+  Codex,
   type ModelReasoningEffort,
 } from "@openai/codex-sdk";
 import lightThread from "./lightThread.ts";
 import {
   getProjectByThreadID,
+  getThreadByID,
+  loadMessagesFromThread,
   nextMessageSequence,
   storeMessage,
+  renameThread,
 } from "./lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import type { ServerNotification } from "@lightcode/codex-protocol";
@@ -108,6 +112,58 @@ export class ThreadService {
       }
       yield event;
     }
+  }
+
+  async getThreadTitle(threadID: string) {
+    const threadLookup = this.threads.get(threadID);
+
+    if (!threadLookup) {
+      return null;
+    }
+  }
+
+  async generateTitle(threadID: string): Promise<string> {
+    const existing = getThreadByID(threadID);
+    if (existing && existing.name && existing.name !== "Untitled chat") {
+      return existing.name;
+    }
+
+    // Get the first message from the thread
+    const messages = loadMessagesFromThread(threadID);
+    const firstMessage = messages.find((message) => message.role === "user")?.text;
+
+    if (!firstMessage) {
+      throw new Error("No user message found in the thread");
+    }
+
+    let title = "";
+
+    const runningThread = await this.codexInstance.startThread({});
+
+    for await (const event of this.codexInstance.streamTurn({
+      threadId: runningThread.thread.id,
+      model: "gpt-5.4-mini",
+      effort: "low",
+      input: [
+        {
+          type: "text",
+          text: `Generate a short title only for this user message:\n${firstMessage}`,
+          text_elements: [],
+        },
+      ],
+    })) {
+      if (
+        event.method === "item/completed" &&
+        event.params.item.type === "agentMessage"
+      ) {
+        title = event.params.item.text.trim();
+      }
+    }
+
+    renameThread.get(title, threadID);
+
+    // The turn is completed here
+    return title;
   }
 
   getRecentThreads() {

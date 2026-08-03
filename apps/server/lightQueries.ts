@@ -43,9 +43,24 @@ const getThreads = database.prepare(
    ORDER BY created_at DESC, rowid DESC`,
 );
 
+const getThreadByIDStatement = database.prepare(
+  `SELECT *
+   FROM threads
+   WHERE id = ?`,
+);
+
 const renameThread = database.prepare(
   `UPDATE threads SET name = ? WHERE id = ? RETURNING id, name`,
 );
+
+const updateThreadExternalID = database.prepare(`
+  UPDATE threads
+  SET external_thread_id = ?
+  WHERE id = ?
+  RETURNING id, external_thread_id
+`);
+
+
 
 const getMessagesFromThread = database.prepare(`
   SELECT *
@@ -100,6 +115,10 @@ export function getProjectByThreadID(threadID: string) {
     | undefined;
 }
 
+export function getThreadByID(threadID: string) {
+  return getThreadByIDStatement.get(threadID) as ThreadRecord | undefined;
+}
+
 export function loadMessagesFromThread(threadID: string) {
   return getMessagesFromThread.all(threadID) as MessageRecord[];
 }
@@ -118,5 +137,6 @@ export {
   createThread,
   getThreads,
   storeMessage,
-  renameThread
+  renameThread,
+  updateThreadExternalID
 }

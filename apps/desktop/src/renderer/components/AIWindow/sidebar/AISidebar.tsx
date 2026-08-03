@@ -43,10 +43,12 @@ export default function AISidebar() {
       threadName: thread.title,
       projectId: thread.projectId,
     });
-    const createdThread = {
+    if (!threadCreate?.id || !threadCreate.name) return;
+
+    const createdThread: thread = {
       ...thread,
-      id: threadCreate.id,
-      title: threadCreate.name,
+      id: String(threadCreate.id),
+      title: String(threadCreate.name),
     };
 
     console.log("Create thread: ", threadCreate);

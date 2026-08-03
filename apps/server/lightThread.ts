@@ -7,11 +7,13 @@ export default class lightThread {
   thread: null | ThreadStartResponse;
   turnId: null | string;
   id: null | string;
+  title: string;
   constructor(codexInstance: CodexAppServerClient) {
     this.codexInstance = codexInstance
     this.thread = null;
     this.id = null;
     this.turnId = null;
+    this.title = "Untitled Thread"
   }
 
   async createThread(path : string) {

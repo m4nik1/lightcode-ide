@@ -88,6 +88,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
               ? {
                   ...message,
                   text: message.text + responseText,
+
                 }
               : message,
           ),
@@ -101,8 +102,18 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       setTurn(true);
     }
 
-    
+    const threadTitle = await trpcClient.getThreadTitle.mutate({
+      threadID
+    });
 
+    console.log("Thread title generated: ", threadTitle);
+
+    setThread((current) => {
+      return current?.id === threadID ? { ...current, title: threadTitle } : current;
+    });
+
+
+    // ---------------------- Debate to take this out ------------------------------
     // const threadTitle = await trpcClient.generateThreadMessage.mutate({
     //   id: threadID,
     //   message: text,
@@ -119,17 +130,17 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     // const titleThreadID = threadTitle.id;
     // const title = threadTitle.name;
 
-    // setThread((current) =>
-    //   current?.id === titleThreadID ? { ...current, title } : current,
-    // );
+
 
     await projectsQuery.refetch();
   }
 
-  function stopTurn(thread_id: string) {
+  function stopTurn() {
+    if (!currentThread) return;
+
     console.log("Stopping the current turn");
 
-    trpcClient.stopTurn.query({ threadID: thread_id }).then(() => {
+    trpcClient.stopTurn.query({ threadID: currentThread.id }).then(() => {
       setTurn(false);
     }).catch((error) => {
       console.error("Error something went wrong", error);

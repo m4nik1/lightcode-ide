@@ -50,6 +50,19 @@ export const appRouter = router({
       }
     }),
   
+  getThreadTitle: publicProcedure
+    .input(
+      z.object({
+        threadID: z.string()
+      }),
+    )
+    .mutation(async function ({ input }) {
+      // return await threadService.getThreadTitle(input.threadID);
+      const generatedTitle = await threadService.generateTitle(input.threadID)
+      //TODO: Change this placeholder
+      return generatedTitle
+    }),
+
   stopTurn: publicProcedure
     .input(
       z.object({ threadID: z.string() })
