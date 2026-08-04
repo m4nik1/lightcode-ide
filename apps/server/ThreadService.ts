@@ -14,14 +14,15 @@ import {
 } from "./lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import type { ServerNotification } from "@lightcode/codex-protocol";
+import type { AIModelId, AIReasoningEffort } from "./aiModelConfig.ts";
 
 type AIMessage = {
   threadID: string;
   projectID?: string;
   message: string;
   model: {
-    model: string;
-    thinking: string;
+    model: AIModelId;
+    thinking: AIReasoningEffort;
   };
 };
 

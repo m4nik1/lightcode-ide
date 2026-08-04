@@ -2,6 +2,7 @@ import { publicProcedure, router } from "./trpc.ts";
 import { z } from "zod";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import { ThreadService } from "./ThreadService.ts";
+import { AI_MODEL_IDS, REASONING_EFFORTS } from "./aiModelConfig.ts";
 import {
   createProject,
   getProjects,
@@ -41,7 +42,10 @@ export const appRouter = router({
       z.object({
         threadID: z.string(),
         message: z.string(),
-        model: z.object({ model: z.string(), thinking: z.string() }),
+        model: z.object({
+          model: z.enum(AI_MODEL_IDS),
+          thinking: z.enum(REASONING_EFFORTS),
+        }),
       }),
     )
     .query(async function* ({ input }) {

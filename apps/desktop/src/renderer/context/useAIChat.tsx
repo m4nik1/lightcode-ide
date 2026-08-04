@@ -3,11 +3,12 @@ import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import type { ChatMessage } from "@/components/AIWindow/ChatMessages";
 import type { thread } from "@/components/AIWindow/sidebar/types";
+import type { AIModelId, AIReasoningEffort } from "@/lib/aiModelConfig";
 
 type AIContext = {
   messages: ChatMessage[];
   messageSend: (value: string) => Promise<void>;
-  modelSet: (model: string, thinking: string) => void;
+  modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   createProject: () => void;
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
@@ -16,8 +17,8 @@ type AIContext = {
 };
 
 type AIModel = {
-  model: string;
-  thinking: string;
+  model: AIModelId;
+  thinking: AIReasoningEffort;
 };
 
 const aiContext = createContext<AIContext | undefined>(undefined);
@@ -148,7 +149,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     await projectsQuery.refetch();
   }
 
-  function modelSet(model: string, thinking: string) {
+  function modelSet(model: AIModelId, thinking: AIReasoningEffort) {
     setModel({ model, thinking });
   }
 
