@@ -12,7 +12,7 @@ type AIContext = {
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
   isTurning: boolean;
-  stopTurn: (thread_id: string) => void;
+  stopTurn: () => void;
 };
 
 type AIModel = {
