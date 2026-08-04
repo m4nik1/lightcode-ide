@@ -60,6 +60,10 @@ const updateThreadExternalID = database.prepare(`
   RETURNING id, external_thread_id
 `);
 
+const deleteThread = database.prepare(`
+  DELETE FROM threads
+  WHERE id = ?
+`);
 
 
 const getMessagesFromThread = database.prepare(`
@@ -138,5 +142,6 @@ export {
   getThreads,
   storeMessage,
   renameThread,
-  updateThreadExternalID
+  updateThreadExternalID,
+  deleteThread
 }

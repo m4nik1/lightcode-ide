@@ -10,6 +10,7 @@ import {
   nextMessageSequence,
   storeMessage,
   renameThread,
+  deleteThread,
 } from "./lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import type { ServerNotification } from "@lightcode/codex-protocol";
@@ -120,6 +121,14 @@ export class ThreadService {
     if (!threadLookup) {
       return null;
     }
+  }
+
+  deleteThread(threadID: string) {
+    if(this.threads.has(threadID)) {
+      this.threads.delete(threadID);
+    }
+
+    deleteThread.get(threadID);
   }
 
   async generateTitle(threadID: string): Promise<string> {

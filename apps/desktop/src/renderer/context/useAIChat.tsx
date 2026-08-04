@@ -109,7 +109,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     setThread((current) => {
       return current?.id === threadID ? { ...current, title: threadTitle } : current;
     });
-    
+
     await projectsQuery.refetch();
   }
 
@@ -167,10 +167,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       ...current,
       [thread.id]: threadMessages,
     }));
-  }
-
-  function setThreadTitle() {
-    console.log("Setting thread title");
   }
 
   return (

@@ -111,6 +111,12 @@ export const appRouter = router({
       )
     }),
 
+  deleteThread: publicProcedure
+    .input(z.object({ threadID: z.string() }))
+    .mutation(({ input }) => {
+      return threadService.deleteThread(input.threadID)
+    }),
+
   getThreads: publicProcedure
     .input(z.object({ projectID: z.string() }))
     .query(({ input }) => {

@@ -55,8 +55,6 @@ export default function AISidebar() {
       title: String(threadCreate.name),
     };
 
-    console.log("Create thread: ", threadCreate);
-
     setProjects((current) =>
       current.map((project) =>
         project.id === projectId
@@ -65,6 +63,21 @@ export default function AISidebar() {
       ),
     );
     setCurrentThread(createdThread);
+  }
+
+  function deleteThread(threadID: string) {
+    if (!currentThread) return;
+
+    setProjects((current) => 
+      current.map((project) =>
+        project.id === currentThread.projectId
+          ? {
+              ...project,
+              threads: project.threads.filter((thread) => thread.id !== threadID),
+            }
+          : project,
+      ),
+    )
   }
 
   useEffect(() => {
@@ -145,6 +158,7 @@ export default function AISidebar() {
             key={project.id}
             project={project}
             onCreateThread={() => handleNewChat(project.id)}
+            onDeleteThread={deleteThread}
           />
         ))}
       </div>

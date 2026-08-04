@@ -4,17 +4,20 @@ import { ThreadIcon } from "./icons";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "@/context/useAIChat";
+import { trpcClient } from "@/utils/trpc";
 
 type ThreadItemProps = {
   thread: thread;
+  onDeleteThread: (threadID: string) => void;
 };
 
-export function ThreadItem({ thread }: ThreadItemProps) {
+export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
   const { currentThread, setCurrentThread } = useAIChat();
   const isSelected = currentThread?.id === thread.id;
 
   function handleDeleteThread() {
-    // TODO: Delete the thread.
+    onDeleteThread(thread.id);
+    trpcClient.deleteThread.mutate({ threadID: thread.id });
   }
 
   return (
