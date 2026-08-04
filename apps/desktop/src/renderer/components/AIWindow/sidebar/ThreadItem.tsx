@@ -15,9 +15,13 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
   const { currentThread, setCurrentThread } = useAIChat();
   const isSelected = currentThread?.id === thread.id;
 
-  function handleDeleteThread() {
-    onDeleteThread(thread.id);
-    trpcClient.deleteThread.mutate({ threadID: thread.id });
+  async function handleDeleteThread() {
+    try {
+      await trpcClient.deleteThread.mutate({ threadID: thread.id });
+      onDeleteThread(thread.id);
+    } catch (error) {
+      console.error("Failed to delete thread", error);
+    }
   }
 
   return (

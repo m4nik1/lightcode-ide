@@ -69,15 +69,11 @@ export default function AISidebar() {
     if (!currentThread) return;
 
     setProjects((current) => 
-      current.map((project) =>
-        project.id === currentThread.projectId
-          ? {
-              ...project,
-              threads: project.threads.filter((thread) => thread.id !== threadID),
-            }
-          : project,
-      ),
-    )
+      current.map((project) => ({
+        ...project,
+        threads: project.threads.filter((thread) => thread.id !== threadID),
+      })),
+    );
   }
 
   useEffect(() => {

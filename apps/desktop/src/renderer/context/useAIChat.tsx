@@ -75,6 +75,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       model: model,
     });
 
+    setTurn(true);
+
     for await (const chunk of streamChat) {
       if (
         chunk.method == "item/agentMessage/delta"
@@ -99,7 +101,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         console.log("Turn completed");
         setTurn(false);
       }
-      setTurn(true);
     }
 
     const threadTitle = await trpcClient.getThreadTitle.mutate({

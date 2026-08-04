@@ -46,7 +46,7 @@ export class ThreadService {
       throw new Error(`No active thread found for ${threadID}`)
     }
 
-    await runningThread.stopQuery()
+    await runningThread.stopTurn()
   } 
 
   async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification> {
@@ -148,8 +148,10 @@ export class ThreadService {
       }
     }
 
-    renameThread.get(title, threadID);
-
+    if(title == '' || title === "Untitled chat") {
+      renameThread.get(title, threadID);
+    }
+        
     // The turn is completed here
     return title;
   }

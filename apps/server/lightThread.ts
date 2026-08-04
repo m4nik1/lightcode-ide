@@ -31,16 +31,18 @@ export default class lightThread {
     return this;
   }
 
-  async stopQuery() {
+  async stopTurn() {
     // The thread should stop here
     if(this.thread === null || this.id === null || this.turnId === null) {
       throw new Error("Thread has not been created or turn has not been started")
     }
 
-    await this.codexInstance.interruptTurn({
+    const turnInterrupt = await this.codexInstance.interruptTurn({
       threadId: this.id,
       turnId: this.turnId
     })
+
+    console.log("Turn interrupted: ", turnInterrupt)
   }
 
   async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string) {
