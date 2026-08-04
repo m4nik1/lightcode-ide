@@ -53,13 +53,6 @@ const renameThread = database.prepare(
   `UPDATE threads SET name = ? WHERE id = ? RETURNING id, name`,
 );
 
-const updateThreadExternalID = database.prepare(`
-  UPDATE threads
-  SET external_thread_id = ?
-  WHERE id = ?
-  RETURNING id, external_thread_id
-`);
-
 const deleteThread = database.prepare(`
   DELETE FROM threads
   WHERE id = ?
@@ -84,9 +77,6 @@ const getProjects = database.prepare(`
     FROM projects
 `)
 
-const getProjectsID = database.prepare(`
-    SELECT * FROM projects WHERE id = ?
-`)
 
 const getProjectByThreadIDStatement = database.prepare(`
     SELECT projects.id, projects.project_name as name, projects.path
@@ -136,12 +126,10 @@ export function nextMessageSequence(threadID: string) {
 }
 
 export {
-  getProjectsID,
   getProjects,
   createThread,
   getThreads,
   storeMessage,
   renameThread,
-  updateThreadExternalID,
   deleteThread
 }

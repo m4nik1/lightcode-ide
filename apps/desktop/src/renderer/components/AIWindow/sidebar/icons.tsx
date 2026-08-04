@@ -24,19 +24,6 @@ export function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
-export function FolderIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path
-        d="M1.5 4.5H5.2L6.5 3H12.5V11.5H1.5V4.5Z"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function ThreadIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>

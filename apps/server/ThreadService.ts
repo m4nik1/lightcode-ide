@@ -35,19 +35,7 @@ export class ThreadService {
     this.codexInstance = AIDriver;
 
     this.codexInstance.connect();
-  }
-
-  // async generateThreadTitle(userMessage: string): Promise<string> {
-  //   const thread = this.codexInstance.startThread({
-  //     model: "gpt-5.4-mini",
-  //     modelReasoningEffort: "low",
-  //   });
-  //   const result = await thread.run(
-  //     `Generate a short title only for this user message:\n${userMessage}`,
-  //   );
-
-  //   return result.finalResponse.trim();
-  // }
+  }0
 
   async stopTurn(threadID: string) {
     console.log("Interrupting turn")
@@ -109,17 +97,8 @@ export class ThreadService {
           "assistant",
           nextMessageSequence(input.threadID),
         );
-        // console.log("Final answer received: ", event.params.item.text);
       }
       yield event;
-    }
-  }
-
-  async getThreadTitle(threadID: string) {
-    const threadLookup = this.threads.get(threadID);
-
-    if (!threadLookup) {
-      return null;
     }
   }
 
@@ -173,9 +152,5 @@ export class ThreadService {
 
     // The turn is completed here
     return title;
-  }
-
-  getRecentThreads() {
-    return this.recentThreads;
   }
 }
