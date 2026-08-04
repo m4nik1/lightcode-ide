@@ -106,32 +106,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       threadID
     });
 
-    console.log("Thread title generated: ", threadTitle);
-
     setThread((current) => {
       return current?.id === threadID ? { ...current, title: threadTitle } : current;
     });
-
-
-    // ---------------------- Debate to take this out ------------------------------
-    // const threadTitle = await trpcClient.generateThreadMessage.mutate({
-    //   id: threadID,
-    //   message: text,
-    // });
-
-    // if (!threadTitle) {
-    //   console.error(
-    //     "Generated thread title has an invalid response:",
-    //     threadTitle,
-    //   );
-    //   return;
-    // }
-
-    // const titleThreadID = threadTitle.id;
-    // const title = threadTitle.name;
-
-
-
+    
     await projectsQuery.refetch();
   }
 

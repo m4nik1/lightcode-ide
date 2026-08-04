@@ -21,6 +21,10 @@ export default function AISidebar() {
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
   const { createProject, currentThread, setCurrentThread } = useAIChat();
 
+  const currentTitle = currentThread
+    ? `${currentThread.id}:${currentThread.title}`
+    : null;
+
   const draftCount = useRef(0);
 
   async function handleNewChat(projectId = currentThread?.projectId) {
@@ -100,7 +104,7 @@ export default function AISidebar() {
     return () => {
       cancelled = true;
     };
-  }, [projectsQuery.data]);
+  }, [projectsQuery.data, currentTitle]);
 
   return (
     <aside

@@ -57,9 +57,8 @@ export const appRouter = router({
       }),
     )
     .mutation(async function ({ input }) {
-      // return await threadService.getThreadTitle(input.threadID);
       const generatedTitle = await threadService.generateTitle(input.threadID)
-      //TODO: Change this placeholder
+
       return generatedTitle
     }),
 
@@ -67,7 +66,7 @@ export const appRouter = router({
     .input(
       z.object({ threadID: z.string() })
     )
-    .query(async function ({input}) {
+    .query(async function ({ input }) {
       await threadService.stopTurn(input.threadID)
     }),
 
@@ -97,13 +96,6 @@ export const appRouter = router({
         path: input.path
       })
     }),
-  // generateThreadMessage: publicProcedure
-  //   .input(z.object({ id: z.string(), message: z.string() }))
-  //   .mutation(async ({ input }) => {
-  //     const threadTitle = await threadService.generateThreadTitle(input.message);
-
-  //     return renameThread.get(threadTitle, input.id);
-  //   }),
 
   addThread: publicProcedure
     .input(z.object({ threadName: z.string(), projectId: z.string() }))
