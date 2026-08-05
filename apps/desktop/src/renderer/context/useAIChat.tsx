@@ -101,6 +101,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       if(chunk.method === "turn/completed") {
         console.log("Turn completed");
         setTurn(false);
+      } else {
+        setTurn(true);
       }
     }
 
