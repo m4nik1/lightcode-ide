@@ -36,7 +36,7 @@ export class ThreadService {
     this.codexInstance = AIDriver;
 
     this.codexInstance.connect();
-  }0
+  }
 
   async stopTurn(threadID: string) {
     console.log("Interrupting turn")
@@ -48,7 +48,7 @@ export class ThreadService {
     }
 
     await runningThread.stopTurn()
-  } 
+  }
 
   async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification> {
     let findThread = this.threads.get(input.threadID);
