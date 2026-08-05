@@ -15,6 +15,7 @@ const initDatabase = `
     CREATE TABLE IF NOT EXISTS threads (
         id TEXT PRIMARY KEY,
         project_id STRING,
+        external_thread_id STRING,
         name TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL

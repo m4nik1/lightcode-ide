@@ -1,23 +1,28 @@
 import {
-  type Codex,
+  Codex,
   type ModelReasoningEffort,
-  type ThreadEvent,
 } from "@openai/codex-sdk";
 import lightThread from "./lightThread.ts";
 import {
   getProjectByThreadID,
+  getThreadByID,
+  loadMessagesFromThread,
   nextMessageSequence,
   storeMessage,
+  renameThread,
+  deleteThread,
 } from "./lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
+import type { ServerNotification } from "@lightcode/codex-protocol";
+import type { AIModelId, AIReasoningEffort } from "./aiModelConfig.ts";
 
 type AIMessage = {
   threadID: string;
   projectID?: string;
   message: string;
   model: {
-    model: string;
-    thinking: string;
+    model: AIModelId;
+    thinking: AIReasoningEffort;
   };
 };
 
@@ -29,33 +34,27 @@ export class ThreadService {
     this.recentThreads = [];
     this.threads = new Map();
     this.codexInstance = AIDriver;
-  }
 
-  async generateThreadTitle(userMessage: string): Promise<string> {
-    const thread = this.codexInstance.startThread({
-      model: "gpt-5.4-mini",
-      modelReasoningEffort: "low",
-    });
-    const result = await thread.run(
-      `Generate a short title only for this user message:\n${userMessage}`,
-    );
+    this.codexInstance.connect();
+  }0
 
-    return result.finalResponse.trim();
-  }
-
-  stopTurn(threadID: string) {
+  async stopTurn(threadID: string) {
     console.log("Interrupting turn")
 
-    let runningThread : lightThread = this.threads.get(threadID)
+    const runningThread = this.threads.get(threadID)
 
-    runningThread.stopQuery()
+    if(!runningThread) {
+      throw new Error(`No active thread found for ${threadID}`)
+    }
+
+    await runningThread.stopTurn()
   } 
 
-  async *sendMessage(input: AIMessage): AsyncGenerator<ThreadEvent> {
-    let thread = this.threads.get(input.threadID);
+  async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification> {
+    let findThread = this.threads.get(input.threadID);
 
     // Making new thread...
-    if (!thread) {
+    if (!findThread) {
       console.log("A thread does not exist making a new one...")
       const project = getProjectByThreadID(input.threadID);
 
@@ -63,13 +62,14 @@ export class ThreadService {
         throw new Error(`No project found for thread ${input.threadID}`);
       }
 
-      thread = new lightThread(this.codexInstance).createThread(
-        input.model.model,
-        input.model.thinking as ModelReasoningEffort,
-        project.path,
+      findThread = new lightThread(this.codexInstance)
+      
+      findThread = await findThread.createThread(
+        project.path
       );
-      this.threads.set(input.threadID, thread);
-      this.recentThreads.push(thread);
+
+      this.threads.set(input.threadID, findThread);
+      this.recentThreads.push(findThread);
     }
 
     // A thread already exists
@@ -83,20 +83,16 @@ export class ThreadService {
       nextMessageSequence(input.threadID),
     );
 
-    const events = await thread.sendQueryStream(input.message);
-
-    console.log("events: ", events)
     console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
-    for await (const event of events) {
-      if (
-        event.type === "item.completed" &&
-        event.item.type === "agent_message"
-      ) {
+    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.message)) {
+      console.log("Event received: ", event);
+      if(event.method == 'item/completed' 
+        && event.params.item.phase == 'final_answer') {
         storeMessage.get(
           crypto.randomUUID(),
           input.threadID,
-          event.item.text,
+          event.params.item.text,
           input.model.model,
           input.model.thinking,
           "assistant",
@@ -107,7 +103,57 @@ export class ThreadService {
     }
   }
 
-  getRecentThreads() {
-    return this.recentThreads;
+  deleteThread(threadID: string) {
+    if(this.threads.has(threadID)) {
+      this.threads.delete(threadID);
+    }
+
+    deleteThread.get(threadID);
+  }
+
+  async generateTitle(threadID: string): Promise<string> {
+    const existing = getThreadByID(threadID);
+    if (existing && existing.name && existing.name !== "Untitled chat") {
+      return existing.name;
+    }
+
+    // Get the first message from the thread
+    const messages = loadMessagesFromThread(threadID);
+    const firstMessage = messages.find((message) => message.role === "user")?.text;
+
+    if (!firstMessage) {
+      throw new Error("No user message found in the thread");
+    }
+
+    let title = "";
+
+    const runningThread = await this.codexInstance.startThread({});
+
+    for await (const event of this.codexInstance.streamTurn({
+      threadId: runningThread.thread.id,
+      model: "gpt-5.4-mini",
+      effort: "low",
+      input: [
+        {
+          type: "text",
+          text: `Generate a short title only for this user message:\n${firstMessage}`,
+          text_elements: [],
+        },
+      ],
+    })) {
+      if (
+        event.method === "item/completed" &&
+        event.params.item.type === "agentMessage"
+      ) {
+        title = event.params.item.text.trim();
+      }
+    }
+
+    if(title == '' || title === "Untitled chat") {
+      renameThread.get(title, threadID);
+    }
+        
+    // The turn is completed here
+    return title;
   }
 }

@@ -1,6 +1,7 @@
 import type { ClientRequest } from "./generated/ClientRequest.js";
 import type { InitializeResponse } from "./generated/InitializeResponse.js";
 import type { ThreadResumeResponse } from "./generated/v2/ThreadResumeResponse.js";
+import type { ThreadReadResponse } from "./generated/v2/ThreadReadResponse.js";
 import type { ThreadStartResponse } from "./generated/v2/ThreadStartResponse.js";
 import type { TurnInterruptResponse } from "./generated/v2/TurnInterruptResponse.js";
 import type { TurnStartResponse } from "./generated/v2/TurnStartResponse.js";
@@ -9,6 +10,7 @@ export interface CoreMethodResults {
   initialize: InitializeResponse;
   "thread/start": ThreadStartResponse;
   "thread/resume": ThreadResumeResponse;
+  "thread/read": ThreadReadResponse;
   "turn/start": TurnStartResponse;
   "turn/interrupt": TurnInterruptResponse;
 }

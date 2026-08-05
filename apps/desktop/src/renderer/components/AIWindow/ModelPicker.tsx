@@ -9,14 +9,15 @@ import {
 import { cn } from "../../lib/utils";
 import { aiThemeClassNames } from "./theme";
 import { useAIChat } from "@/context/useAIChat";
+import type { AIModelId, AIReasoningEffort } from "@/lib/aiModelConfig";
 
-type PickerOption = {
+type PickerOption<TValue extends string> = {
   label: string;
-  value: string;
+  value: TValue;
   description?: string;
 };
 
-const modelOptions: PickerOption[] = [
+const modelOptions: PickerOption<AIModelId>[] = [
   { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
   {
     label: "GPT-5.6-Sol",
@@ -30,25 +31,25 @@ const modelOptions: PickerOption[] = [
   },
 ];
 
-const thinkingOptions: PickerOption[] = [
+const thinkingOptions: PickerOption<AIReasoningEffort>[] = [
   { label: "Low", value: "low" },
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" },
 ];
 
-type PickerDropdownProps = {
-  options: PickerOption[];
-  value: string;
-  onSelect: (value: string) => void;
+type PickerDropdownProps<TValue extends string> = {
+  options: PickerOption<TValue>[];
+  value: TValue;
+  onSelect: (value: TValue) => void;
   menuWidth: string;
 };
 
-function PickerDropdown({
+function PickerDropdown<TValue extends string>({
   options,
   value,
   onSelect,
   menuWidth,
-}: PickerDropdownProps) {
+}: PickerDropdownProps<TValue>) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? options[0].label;
 
@@ -117,12 +118,12 @@ export default function ModelPicker() {
   const [selectedModel, setSelectedModel] = useState(modelOptions[0].value);
   const [thinkingLevel, setThinking] = useState(thinkingOptions[0].value);
 
-  function modelSelected(model: string) {
+  function modelSelected(model: AIModelId) {
     setSelectedModel(model);
     modelSet(model, thinkingLevel);
   }
 
-  function thinkingSelected(thinking: string) {
+  function thinkingSelected(thinking: AIReasoningEffort) {
     setThinking(thinking);
     modelSet(selectedModel, thinking);
   }

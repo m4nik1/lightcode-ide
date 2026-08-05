@@ -1559,6 +1559,7 @@
             </div>
             <pre><code><span class="keyword">const</span> started = <span class="keyword">await</span> client.startThread({
   cwd: <span class="string">"/absolute/path/to/project"</span>,
+  model: <span class="string">"gpt-5.5"</span>,
   sandbox: <span class="string">"workspace-write"</span>,
   approvalPolicy: <span class="string">"never"</span>,
 });
@@ -1572,13 +1573,114 @@
 
 console.log(resumed.thread.id); <span class="comment">// same resumable thread identity</span></code></pre>
           </div>
+          <h3>Read a thread title</h3>
+          <p>
+            Call <code>readThread()</code> to retrieve the current thread record. Its nullable
+            <code>thread.name</code> field is the user-facing title; use <code>thread.preview</code> when
+            no title has been assigned.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>thread-title.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy thread title example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> { thread } = <span class="keyword">await</span> client.readThread({ threadId });
+<span class="keyword">const</span> title = thread.name ?? thread.preview;
+
+console.log(title);</code></pre>
+          </div>
           <p>
             <code>startThread()</code> and <code>resumeThread()</code> return the server’s typed response,
             including the resolved model, provider, working directory, approval policy, sandbox policy,
-            instruction sources, and <code>thread</code>. Prefer resuming by <code>threadId</code>; the generated
-            protocol also documents history and path modes, but the public method simply passes the typed
-            <code>ThreadResumeParams</code> through.
+            reasoning effort, instruction sources, and <code>thread</code>. The emitted
+            <code>ThreadResumeParams</code> requires <code>threadId</code> and accepts configuration overrides;
+            the public method passes that typed object through unchanged.
           </p>
+
+          <h3>Thread configuration</h3>
+          <p>
+            Set <code>model</code> when starting a thread to choose its initial model. The same field on
+            <code>resumeThread()</code> overrides the model of the resumed thread. Inspect the returned
+            <code>model</code>, <code>modelProvider</code>, <code>serviceTier</code>, and
+            <code>reasoningEffort</code> fields to see the settings the server resolved.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <caption>Thread start and resume parameters</caption>
+              <thead>
+                <tr><th>Parameter</th><th>Applies to</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>threadId</code><span class="type">string</span></td>
+                  <td>Resume</td>
+                  <td>Required identity of the thread to resume.</td>
+                </tr>
+                <tr>
+                  <td><code>model</code><span class="type">string | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Initial model or model override, for example <code>"gpt-5.5"</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>modelProvider</code><span class="type">string | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Overrides the configured model provider.</td>
+                </tr>
+                <tr>
+                  <td><code>serviceTier</code><span class="type">string | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Overrides the service tier used by the thread.</td>
+                </tr>
+                <tr>
+                  <td><code>cwd</code><span class="type">string | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Working directory for repository and tool operations.</td>
+                </tr>
+                <tr>
+                  <td><code>approvalPolicy</code><span class="type">AskForApproval | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Controls when the app-server requests approval.</td>
+                </tr>
+                <tr>
+                  <td><code>approvalsReviewer</code><span class="type">ApprovalsReviewer | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Overrides where approval requests are routed.</td>
+                </tr>
+                <tr>
+                  <td><code>sandbox</code><span class="type">SandboxMode | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Selects the sandbox mode, such as <code>"workspace-write"</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>config</code><span class="type">Record&lt;string, JsonValue&gt; | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Supplies additional app-server configuration overrides.</td>
+                </tr>
+                <tr>
+                  <td><code>baseInstructions</code>, <code>developerInstructions</code><span class="type">string | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Overrides instruction text for the thread.</td>
+                </tr>
+                <tr>
+                  <td><code>personality</code><span class="type">"none" | "friendly" | "pragmatic" | null</span></td>
+                  <td>Start, resume</td>
+                  <td>Sets the assistant personality.</td>
+                </tr>
+                <tr>
+                  <td><code>serviceName</code>, <code>ephemeral</code></td>
+                  <td>Start</td>
+                  <td>Sets optional service metadata and ephemeral-thread behavior.</td>
+                </tr>
+                <tr>
+                  <td><code>sessionStartSource</code>, <code>threadSource</code></td>
+                  <td>Start</td>
+                  <td>Classifies how and where the thread was started for session metadata and analytics.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div class="callout warning">
             <strong>No approval UI</strong>
             <code>approvalPolicy: "never"</code> is the predictable choice for this first client. If the server
@@ -1593,7 +1695,8 @@ console.log(resumed.thread.id); <span class="comment">// same resumable thread i
           <p>
             Use <code>startTurn()</code> when you only need the immediate typed receipt. Use
             <code>streamTurn()</code> when you want the complete, filtered notification stream through terminal
-            completion.
+            completion. Both methods accept the same <code>TurnStartParams</code>, including model and reasoning
+            overrides.
           </p>
 
           <h3>Start a turn</h3>
@@ -1606,6 +1709,8 @@ console.log(resumed.thread.id); <span class="comment">// same resumable thread i
             </div>
             <pre><code><span class="keyword">const</span> receipt = <span class="keyword">await</span> client.startTurn({
   threadId,
+  model: <span class="string">"gpt-5.5"</span>,
+  effort: <span class="string">"low"</span>,
   input: [
     {
       type: <span class="string">"text"</span>,
@@ -1616,6 +1721,76 @@ console.log(resumed.thread.id); <span class="comment">// same resumable thread i
 });
 
 console.log(receipt.turn.id, receipt.turn.status);</code></pre>
+          </div>
+
+          <div class="callout">
+            <strong>Turn overrides persist</strong>
+            <code>model</code>, <code>effort</code>, <code>cwd</code>, approval, sandbox, service-tier,
+            summary, and personality overrides apply to this turn and subsequent turns on the thread.
+            The reasoning field is named <code>effort</code> in this protocol, not
+            <code>modelReasoningEffort</code>.
+          </div>
+
+          <h3>Turn parameters</h3>
+          <div class="table-wrap">
+            <table>
+              <caption>Turn start parameters</caption>
+              <thead>
+                <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>threadId</code><span class="type">string</span></td>
+                  <td>Yes</td>
+                  <td>Thread that owns the new turn.</td>
+                </tr>
+                <tr>
+                  <td><code>input</code><span class="type">UserInput[]</span></td>
+                  <td>Yes</td>
+                  <td>Text, remote image, local image, skill, or mention input items.</td>
+                </tr>
+                <tr>
+                  <td><code>clientUserMessageId</code><span class="type">string | null</span></td>
+                  <td>No</td>
+                  <td>Optional client-owned identity for the user message.</td>
+                </tr>
+                <tr>
+                  <td><code>model</code><span class="type">string | null</span></td>
+                  <td>No</td>
+                  <td>Overrides the model for this and subsequent turns.</td>
+                </tr>
+                <tr>
+                  <td><code>effort</code><span class="type">ReasoningEffort | null</span></td>
+                  <td>No</td>
+                  <td>Overrides model reasoning effort, for example <code>"low"</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>summary</code><span class="type">"auto" | "concise" | "detailed" | "none" | null</span></td>
+                  <td>No</td>
+                  <td>Controls the requested reasoning summary.</td>
+                </tr>
+                <tr>
+                  <td><code>serviceTier</code><span class="type">string | null</span></td>
+                  <td>No</td>
+                  <td>Overrides the service tier for this and subsequent turns.</td>
+                </tr>
+                <tr>
+                  <td><code>cwd</code>, <code>approvalPolicy</code>, <code>approvalsReviewer</code>, <code>sandboxPolicy</code></td>
+                  <td>No</td>
+                  <td>Override the working directory and execution policy for this and subsequent turns.</td>
+                </tr>
+                <tr>
+                  <td><code>personality</code><span class="type">Personality | null</span></td>
+                  <td>No</td>
+                  <td>Overrides the assistant personality.</td>
+                </tr>
+                <tr>
+                  <td><code>outputSchema</code><span class="type">JsonValue | null</span></td>
+                  <td>No</td>
+                  <td>JSON Schema that constrains the final assistant message for the turn.</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <h3>Stream through completion</h3>
@@ -1824,6 +1999,11 @@ unsubscribe();</code></pre>
                   <td>Sends <code>thread/resume</code>. Requires the connected state.</td>
                 </tr>
                 <tr>
+                  <td><code>readThread(params)</code></td>
+                  <td><code>Promise&lt;ThreadReadResponse&gt;</code></td>
+                  <td>Sends <code>thread/read</code>. Read the nullable user-facing title from <code>response.thread.name</code>.</td>
+                </tr>
+                <tr>
                   <td><code>startTurn(params)</code></td>
                   <td><code>Promise&lt;TurnStartResponse&gt;</code></td>
                   <td>Sends <code>turn/start</code> and resolves with the typed turn receipt.</td>
@@ -2002,6 +2182,18 @@ stopLogs();</code></pre>
                   <td>Return no content items and <code>success: false</code>.</td>
                 </tr>
                 <tr>
+                  <td><code>item/permissions/requestApproval</code></td>
+                  <td>RPC error <code>-32601</code> and <code>UnsupportedServerRequestError</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>account/chatgptAuthTokens/refresh</code></td>
+                  <td>RPC error <code>-32601</code> and <code>UnsupportedServerRequestError</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>attestation/generate</code></td>
+                  <td>RPC error <code>-32601</code> and <code>UnsupportedServerRequestError</code>.</td>
+                </tr>
+                <tr>
                   <td>Any other method</td>
                   <td>RPC error <code>-32601</code> and <code>UnsupportedServerRequestError</code>.</td>
                 </tr>
@@ -2062,6 +2254,22 @@ stopLogs();</code></pre>
             shapes. It does not perform full JSON Schema validation of every payload because the client and
             locally spawned CLI are version-matched.
           </p>
+          <h3>Schema coverage versus client coverage</h3>
+          <p>
+            For protocol <code>0.140.0</code>, the generated <code>ClientRequest</code> union contains 87
+            request methods and <code>ServerNotification</code> contains 67 notification methods. These include
+            thread lifecycle and search, model discovery, configuration, filesystem, skills, plugins, MCP,
+            account, command execution, reasoning, realtime, and sandbox operations. The notification chips
+            above are representative rather than exhaustive; use the generated unions for the complete literal
+            method list and correctly narrowed parameter types.
+          </p>
+          <div class="callout warning">
+            <strong>Generated types do not add client methods</strong>
+            <code>CodexAppServerClient</code> intentionally exposes only connection/initialization, thread start and
+            resume, turn start and interrupt, streaming, subscriptions, and shutdown. Types such as
+            <code>ThreadForkParams</code>, <code>ModelListParams</code>, or <code>TurnSteerParams</code> describe
+            the wire protocol but are not callable through a public generic request method in this package.
+          </div>
           <div class="callout">
             <strong>Type-only imports are intentional</strong>
             Generated modules contain type declarations rather than runtime validators. Use
@@ -2209,8 +2417,8 @@ npm run test:smoke -w @lightcode/codex-protocol</code></pre>
           <div class="card-grid boundary-grid">
             <div class="card">
               <span class="card-label">Not included</span>
-              <h4>No application integration</h4>
-              <p>No server or desktop application code imports this package yet; consumers choose their own ownership and UI model.</p>
+              <h4>No application policy</h4>
+              <p>The server application consumes this package, but ownership, persistence, model selection, and UI behavior remain application concerns.</p>
             </div>
             <div class="card">
               <span class="card-label">Not included</span>

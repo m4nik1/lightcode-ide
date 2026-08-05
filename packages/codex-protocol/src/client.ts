@@ -7,6 +7,8 @@ import type { InitializeResponse } from "./generated/InitializeResponse.js";
 import type { ServerNotification } from "./generated/ServerNotification.js";
 import type { ThreadResumeParams } from "./generated/v2/ThreadResumeParams.js";
 import type { ThreadResumeResponse } from "./generated/v2/ThreadResumeResponse.js";
+import type { ThreadReadParams } from "./generated/v2/ThreadReadParams.js";
+import type { ThreadReadResponse } from "./generated/v2/ThreadReadResponse.js";
 import type { ThreadStartParams } from "./generated/v2/ThreadStartParams.js";
 import type { ThreadStartResponse } from "./generated/v2/ThreadStartResponse.js";
 import type { TurnInterruptParams } from "./generated/v2/TurnInterruptParams.js";
@@ -227,6 +229,11 @@ export class CodexAppServerClient {
   resumeThread(params: ThreadResumeParams): Promise<ThreadResumeResponse> {
     this.assertConnected();
     return this.transport.request("thread/resume", params);
+  }
+
+  readThread(params: ThreadReadParams): Promise<ThreadReadResponse> {
+    this.assertConnected();
+    return this.transport.request("thread/read", params);
   }
 
   startTurn(params: TurnStartParams): Promise<TurnStartResponse> {

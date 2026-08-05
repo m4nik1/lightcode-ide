@@ -81,6 +81,27 @@ test("connect initializes once and methods reject before initialization", async 
   await client.close();
 });
 
+test("readThread returns the optional user-facing thread title", async () => {
+  const { client } = createClient((message, process) => {
+    if (message.method === "initialize") {
+      process.send(initializeResponse(message.id));
+      return;
+    }
+    if (message.method === "thread/read") {
+      process.send({
+        id: message.id,
+        result: { thread: { id: "thread-1", name: "Repository summary" } },
+      });
+    }
+  });
+
+  await client.connect();
+  const response = await client.readThread({ threadId: "thread-1" });
+
+  assert.equal(response.thread.name, "Repository summary");
+  await client.close();
+});
+
 test("close during a pending connect keeps the client closed", async () => {
   // The fake app-server never answers initialize, so connect stays pending
   // until close() tears the process down.

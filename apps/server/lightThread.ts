@@ -1,27 +1,22 @@
-import { type ModelReasoningEffort, type Codex, type Thread } from "@openai/codex-sdk";
-import {
-  CodexAppServerClient,
-  ThreadStartResponse,
-  type InitializeThreadResponse,
-} from '@lightcode/codex-protocol'
+import { type ModelReasoningEffort } from "@openai/codex-sdk";
+import { CodexAppServerClient } from '@lightcode/codex-protocol'
+import type { ThreadStartResponse } from '@lightcode/codex-protocol'
 
 export default class lightThread {
   codexInstance: CodexAppServerClient;
   thread: null | ThreadStartResponse;
   turnId: null | string;
   id: null | string;
+  title: string;
   constructor(codexInstance: CodexAppServerClient) {
     this.codexInstance = codexInstance
     this.thread = null;
     this.id = null;
     this.turnId = null;
+    this.title = "Untitled Thread"
   }
 
-  async createThread(model: string, thinking: ModelReasoningEffort, path : string) {
-    console.log("Creating thread, model: ", model, " thinking: ", thinking)
-
-    // this.thread = this.codexInstance.startThread({model, modelReasoningEffort: thinking, workingDirectory: path});
-
+  async createThread(path : string) {
     // The approval policy is about the full access dropdown that is shown
     this.thread = await this.codexInstance.startThread({
       cwd: path,
@@ -36,25 +31,29 @@ export default class lightThread {
     return this;
   }
 
-  async stopQuery() {
+  async stopTurn() {
     // The thread should stop here
     if(this.thread === null || this.id === null || this.turnId === null) {
       throw new Error("Thread has not been created or turn has not been started")
     }
 
-    await this.codexInstance.interruptTurn({
+    const turnInterrupt = await this.codexInstance.interruptTurn({
       threadId: this.id,
       turnId: this.turnId
     })
+
+    console.log("Turn interrupted: ", turnInterrupt)
   }
 
-  async *sendQueryStream(query: string) {
+  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
     }
 
     for await (const event of this.codexInstance.streamTurn({
       threadId: this.id,
+      model: model,
+      effort: thinking,
       input: [
         {
           type: "text",

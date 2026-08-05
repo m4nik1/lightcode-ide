@@ -9,11 +9,13 @@ import { ThreadItem } from "./ThreadItem";
 type ProjectDropdownProps = {
   project: Project;
   onCreateThread: () => void;
+  onDeleteThread: (threadID: string) => void;
 };
 
 export function ProjectDropdown({
   project,
   onCreateThread,
+  onDeleteThread,
 }: ProjectDropdownProps) {
   const expanded = true;
   return (
@@ -56,7 +58,7 @@ export function ProjectDropdown({
       </div>
 
       {project.threads.map((t: thread) => (
-        <ThreadItem key={t.id} thread={t} />
+        <ThreadItem key={t.id} thread={t} onDeleteThread={onDeleteThread} />
       ))}
     </div>
   );

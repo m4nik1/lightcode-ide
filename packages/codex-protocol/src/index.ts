@@ -21,6 +21,8 @@ export type { InitializeResponse } from "./generated/InitializeResponse.js";
 export type { ServerNotification } from "./generated/ServerNotification.js";
 export type { ThreadResumeParams } from "./generated/v2/ThreadResumeParams.js";
 export type { ThreadResumeResponse } from "./generated/v2/ThreadResumeResponse.js";
+export type { ThreadReadParams } from "./generated/v2/ThreadReadParams.js";
+export type { ThreadReadResponse } from "./generated/v2/ThreadReadResponse.js";
 export type { ThreadStartParams } from "./generated/v2/ThreadStartParams.js";
 export type { ThreadStartResponse } from "./generated/v2/ThreadStartResponse.js";
 export type { TurnInterruptParams } from "./generated/v2/TurnInterruptParams.js";

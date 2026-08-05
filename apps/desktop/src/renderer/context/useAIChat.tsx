@@ -3,21 +3,22 @@ import { trpcClient, trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import type { ChatMessage } from "@/components/AIWindow/ChatMessages";
 import type { thread } from "@/components/AIWindow/sidebar/types";
+import type { AIModelId, AIReasoningEffort } from "@/lib/aiModelConfig";
 
 type AIContext = {
   messages: ChatMessage[];
   messageSend: (value: string) => Promise<void>;
-  modelSet: (model: string, thinking: string) => void;
+  modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   createProject: () => void;
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
   isTurning: boolean;
-  stopTurn: (thread_id : string) => void;
+  stopTurn: () => void;
 };
 
 type AIModel = {
-  model: string;
-  thinking: string;
+  model: AIModelId;
+  thinking: AIReasoningEffort;
 };
 
 const aiContext = createContext<AIContext | undefined>(undefined);
@@ -75,12 +76,13 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       model: model,
     });
 
+    setTurn(true);
+
     for await (const chunk of streamChat) {
       if (
-        chunk.type === "item.completed" &&
-        chunk.item.type === "agent_message"
+        chunk.method == "item/agentMessage/delta"
       ) {
-        const responseText = chunk.item.text;
+        const responseText = chunk.params.delta;
 
         setMessagesByThread((current) => ({
           ...current,
@@ -89,46 +91,42 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
               ? {
                   ...message,
                   text: message.text + responseText,
+
                 }
               : message,
           ),
         }));
-        setTurn(false);
       }
-      if (!isTurning) setTurn(true);
+
+      if(chunk.method === "turn/completed") {
+        console.log("Turn completed");
+        setTurn(false);
+      } else {
+        setTurn(true);
+      }
     }
 
-    const threadTitle = await trpcClient.generateThreadMessage.mutate({
-      id: threadID,
-      message: text,
+    const threadTitle = await trpcClient.getThreadTitle.mutate({
+      threadID
     });
 
-    if (
-      !threadTitle ||
-      typeof threadTitle.id !== "string" ||
-      typeof threadTitle.name !== "string"
-    ) {
-      console.error(
-        "Generated thread title has an invalid response:",
-        threadTitle,
-      );
-      return;
-    }
-
-    const titleThreadID = threadTitle.id;
-    const title = threadTitle.name;
-
-    setThread((current) =>
-      current?.id === titleThreadID ? { ...current, title } : current,
-    );
+    setThread((current) => {
+      return current?.id === threadID ? { ...current, title: threadTitle } : current;
+    });
 
     await projectsQuery.refetch();
   }
 
-  function stopTurn(thread_id : string) {
-    console.log("Stopping the current turn")
+  function stopTurn() {
+    if (!currentThread) return;
 
-    trpcClient.stopTurn.query(); 
+    console.log("Stopping the current turn");
+
+    trpcClient.stopTurn.query({ threadID: currentThread.id }).then(() => {
+      setTurn(false);
+    }).catch((error) => {
+      console.error("Error something went wrong", error);
+    });
   }
 
   async function createProject() {
@@ -153,7 +151,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     await projectsQuery.refetch();
   }
 
-  function modelSet(model: string, thinking: string) {
+  function modelSet(model: AIModelId, thinking: AIReasoningEffort) {
     setModel({ model, thinking });
   }
 
@@ -185,7 +183,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         currentThread,
         setCurrentThread,
         isTurning,
-        stopTurn
+        stopTurn,
       }}
     >
       {children}

@@ -21,6 +21,10 @@ export default function AISidebar() {
   const projectsQuery = useQuery(trpc.getProjects.queryOptions());
   const { createProject, currentThread, setCurrentThread } = useAIChat();
 
+  const currentTitle = currentThread
+    ? `${currentThread.id}:${currentThread.title}`
+    : null;
+
   const draftCount = useRef(0);
 
   async function handleNewChat(projectId = currentThread?.projectId) {
@@ -43,13 +47,13 @@ export default function AISidebar() {
       threadName: thread.title,
       projectId: thread.projectId,
     });
-    const createdThread = {
-      ...thread,
-      id: threadCreate.id,
-      title: threadCreate.name,
-    };
+    if (!threadCreate?.id || !threadCreate.name) return;
 
-    console.log("Create thread: ", threadCreate);
+    const createdThread: thread = {
+      ...thread,
+      id: String(threadCreate.id),
+      title: String(threadCreate.name),
+    };
 
     setProjects((current) =>
       current.map((project) =>
@@ -59,6 +63,17 @@ export default function AISidebar() {
       ),
     );
     setCurrentThread(createdThread);
+  }
+
+  function deleteThread(threadID: string) {
+    if (!currentThread) return;
+
+    setProjects((current) => 
+      current.map((project) => ({
+        ...project,
+        threads: project.threads.filter((thread) => thread.id !== threadID),
+      })),
+    );
   }
 
   useEffect(() => {
@@ -98,7 +113,7 @@ export default function AISidebar() {
     return () => {
       cancelled = true;
     };
-  }, [projectsQuery.data]);
+  }, [projectsQuery.data, currentTitle]);
 
   return (
     <aside
@@ -139,6 +154,7 @@ export default function AISidebar() {
             key={project.id}
             project={project}
             onCreateThread={() => handleNewChat(project.id)}
+            onDeleteThread={deleteThread}
           />
         ))}
       </div>

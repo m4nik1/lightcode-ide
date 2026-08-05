@@ -43,9 +43,21 @@ const getThreads = database.prepare(
    ORDER BY created_at DESC, rowid DESC`,
 );
 
+const getThreadByIDStatement = database.prepare(
+  `SELECT *
+   FROM threads
+   WHERE id = ?`,
+);
+
 const renameThread = database.prepare(
   `UPDATE threads SET name = ? WHERE id = ? RETURNING id, name`,
 );
+
+const deleteThread = database.prepare(`
+  DELETE FROM threads
+  WHERE id = ?
+`);
+
 
 const getMessagesFromThread = database.prepare(`
   SELECT *
@@ -65,9 +77,6 @@ const getProjects = database.prepare(`
     FROM projects
 `)
 
-const getProjectsID = database.prepare(`
-    SELECT * FROM projects WHERE id = ?
-`)
 
 const getProjectByThreadIDStatement = database.prepare(`
     SELECT projects.id, projects.project_name as name, projects.path
@@ -100,6 +109,10 @@ export function getProjectByThreadID(threadID: string) {
     | undefined;
 }
 
+export function getThreadByID(threadID: string) {
+  return getThreadByIDStatement.get(threadID) as ThreadRecord | undefined;
+}
+
 export function loadMessagesFromThread(threadID: string) {
   return getMessagesFromThread.all(threadID) as MessageRecord[];
 }
@@ -113,10 +126,10 @@ export function nextMessageSequence(threadID: string) {
 }
 
 export {
-  getProjectsID,
   getProjects,
   createThread,
   getThreads,
   storeMessage,
-  renameThread
+  renameThread,
+  deleteThread
 }
