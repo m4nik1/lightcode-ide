@@ -5,7 +5,7 @@ spawns the pinned Codex CLI over stdio, owns the JSONL wire format, and exposes
 generated TypeScript request, response, and notification types.
 
 The package intentionally uses the stable protocol surface from
-`@openai/codex@0.140.0`. It does not enable `experimentalApi`.
+`@openai/codex@0.146.1`. It does not enable `experimentalApi`.
 
 ## Workspace dependency
 

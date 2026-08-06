@@ -12,7 +12,7 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PINNED_CODEX_VERSION = "0.140.0";
+const PINNED_CODEX_VERSION = "0.146.1";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.dirname(scriptDirectory);
 const generatedDirectory = path.join(packageDirectory, "src", "generated");

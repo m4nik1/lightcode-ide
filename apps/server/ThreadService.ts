@@ -87,7 +87,8 @@ export class ThreadService {
 
     for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.message)) {
       console.log("Event received: ", event);
-      if(event.method == 'item/completed' 
+      if(event.method == 'item/completed'
+        && event.params.item.type === 'agentMessage'
         && event.params.item.phase == 'final_answer') {
         storeMessage.get(
           crypto.randomUUID(),
