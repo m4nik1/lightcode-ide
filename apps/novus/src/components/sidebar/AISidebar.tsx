@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { SidebarHeader } from "./SidebarHeader";
 import type { thread } from "./types";
-import { aiThemeClassNames } from "../theme";
-import { cn } from "../../../lib/utils";
+import { aiThemeClassNames } from "../../theme";
+import { cn } from "../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
-import { trpc, trpcClient } from "@/utils/trpc";
+import { trpcClient } from "../../utils/trpc";
 import { useQuery } from "@tanstack/react-query";
-import { useAIChat } from "@/context/useAIChat";
+import { useAIChat } from "../../context/useAIChat";
 
 export interface Project {
   id: string;
@@ -18,7 +18,10 @@ export interface Project {
 
 export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const projectsQuery = useQuery(trpc.getProjects.queryOptions());
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => trpcClient.getProjects.query(),
+  });
   const { createProject, currentThread, setCurrentThread } = useAIChat();
 
   const currentTitle = currentThread

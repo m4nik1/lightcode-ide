@@ -1,10 +1,10 @@
 import { Trash2 } from "lucide-react";
-import { cn } from "../../../lib/utils";
-import { ThreadIcon } from "./icons";
+import { cn } from "../../lib/utils";
+import { CodexIcon } from "./icons";
 import type { thread } from "./types";
-import { aiThemeClassNames } from "../theme";
-import { useAIChat } from "@/context/useAIChat";
-import { trpcClient } from "@/utils/trpc";
+import { aiThemeClassNames } from "../../theme";
+import { useAIChat } from "../../context/useAIChat";
+import { trpcClient } from "../../utils/trpc";
 
 type ThreadItemProps = {
   thread: thread;
@@ -27,7 +27,7 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
   return (
     <div
       className={cn(
-        "group relative flex min-h-7 w-full select-none items-center rounded-xl text-xs transition-colors",
+        "group relative flex min-h-8 w-full select-none items-center rounded-xl text-[13px] transition-colors",
         isSelected
           ? cn(aiThemeClassNames.selectedSurface, aiThemeClassNames.textPrimary)
           : cn(
@@ -42,18 +42,18 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
         aria-pressed={isSelected}
         onClick={() => setCurrentThread(thread)}
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-1.5 rounded-xl py-1 pr-1 pl-[30px] text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+          "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 pr-1 pl-[30px] text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
           aiThemeClassNames.borderFocus,
         )}
       >
         <span
           className={cn(
-            "flex size-3 shrink-0 items-center justify-center transition-colors",
+            "flex size-4 shrink-0 items-center justify-center transition-colors",
             aiThemeClassNames.textMuted,
             aiThemeClassNames.hoverTextPrimary,
           )}
         >
-          <ThreadIcon />
+          <CodexIcon />
         </span>
         <span className="min-w-0 truncate">{thread.title}</span>
       </button>
@@ -71,7 +71,7 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
           aiThemeClassNames.borderFocus,
         )}
       >
-        <Trash2 className="size-3.5" />
+        <Trash2 className="size-4" />
       </button>
     </div>
   );

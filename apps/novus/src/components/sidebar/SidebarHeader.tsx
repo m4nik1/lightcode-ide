@@ -1,6 +1,6 @@
 import { SquarePen } from "lucide-react";
-import { cn } from "../../../lib/utils";
-import { aiThemeClassNames } from "../theme";
+import { cn } from "../../lib/utils";
+import { aiThemeClassNames } from "../../theme";
 
 type SidebarHeaderProps = {
   onNewChat?: () => void;

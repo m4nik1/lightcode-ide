@@ -1,9 +1,9 @@
 import { SquarePen } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utils";
 import { ChevronIcon } from "./icons";
 import type { thread } from "./types";
-import type { Project } from "@/components/AIWindow/sidebar/AISidebar";
-import { aiThemeClassNames } from "../theme";
+import type { Project } from "./AISidebar";
+import { aiThemeClassNames } from "../../theme";
 import { ThreadItem } from "./ThreadItem";
 
 type ProjectDropdownProps = {

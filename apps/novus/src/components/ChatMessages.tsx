@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { aiThemeClassNames } from "./theme";
-import { Shimmer } from "../ai-elements/shimmer";
-import { cn } from "../../lib/utils";
-import { useAIChat } from "../../context/useAIChat";
+import { aiThemeClassNames } from "../theme";
+import { Shimmer } from "./ai-elements/shimmer";
+import { cn } from "../lib/utils";
+import { useAIChat } from "../context/useAIChat";
 
 const markdownComponents: Components = {
   a: ({ children }) => (
