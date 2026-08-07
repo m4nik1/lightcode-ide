@@ -13,7 +13,7 @@ const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1500,
-    height: 900,
+    height: 1000,
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: 'hidden' } : { frame: false }),
     webPreferences: {
