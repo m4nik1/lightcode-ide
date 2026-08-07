@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Implementation guide for running the Lightcode tRPC server in an Electron utility process." />
+  <title>Electron Server Process · Lightcode</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #09090b;
+      --foreground: #fafafa;
+      --card: #0c0c0f;
+      --card-2: #111114;
+      --muted: #a1a1aa;
+      --muted-2: #71717a;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --primary: #fafafa;
+      --primary-foreground: #09090b;
+      --code: #050506;
+      --green: #34d399;
+      --blue: #60a5fa;
+      --purple: #c084fc;
+      --pink: #f472b6;
+      --orange: #fbbf24;
+      --red: #fb7185;
+      --radius: 14px;
+      --max: 1160px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--background);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--foreground);
+      background:
+        radial-gradient(circle at 18% -8%, rgba(96, 165, 250, 0.15), transparent 28rem),
+        radial-gradient(circle at 82% 2%, rgba(192, 132, 252, 0.12), transparent 26rem),
+        var(--background);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    .shell {
+      width: min(var(--max), calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(9, 9, 11, 0.8);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 650;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      color: var(--primary-foreground);
+      background: var(--primary);
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .nav a {
+      padding: 7px 10px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      transition: 160ms ease;
+    }
+
+    .nav a:hover {
+      color: var(--foreground);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .hero {
+      padding: 92px 0 54px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      padding: 5px 12px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12.5px;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 999px;
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.75);
+    }
+
+    h1 {
+      max-width: 920px;
+      margin: 0 auto;
+      color: transparent;
+      background: linear-gradient(180deg, #fff 28%, #a1a1aa 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 1.03;
+      letter-spacing: -0.05em;
+      font-weight: 760;
+    }
+
+    .lede {
+      max-width: 720px;
+      margin: 22px auto 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .pills {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 28px;
+    }
+
+    .pill,
+    code.inline {
+      color: #e4e4e7;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .pill {
+      padding: 5px 11px;
+      font-size: 12px;
+      border-radius: 999px;
+    }
+
+    code.inline {
+      padding: 2px 6px;
+      font-size: 0.86em;
+    }
+
+    main { padding-bottom: 104px; }
+
+    section {
+      margin-top: 56px;
+      scroll-margin-top: 88px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.25;
+      letter-spacing: -0.025em;
+    }
+
+    .section-kicker {
+      margin-left: auto;
+      color: var(--muted-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .step {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: var(--foreground);
+      background: var(--card-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      padding: 26px 28px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.006));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card + .card { margin-top: 16px; }
+
+    .grid-2 .card + .card { margin-top: 0; }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      letter-spacing: -0.015em;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+
+    .card p + p { margin-top: 12px; }
+    .card strong { color: var(--foreground); font-weight: 600; }
+
+    .card ul,
+    .card ol {
+      margin: 12px 0 0;
+      padding-left: 21px;
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+
+    .card li + li { margin-top: 7px; }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .node {
+      padding: 18px;
+      text-align: center;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .node small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted-2);
+      font-size: 12px;
+    }
+
+    .arrow {
+      align-self: center;
+      color: var(--muted-2);
+      font-size: 19px;
+    }
+
+    .code-block {
+      margin-top: 18px;
+      overflow: hidden;
+      background: var(--code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .code-head {
+      display: flex;
+      align-items: center;
+      min-height: 43px;
+      gap: 10px;
+      padding: 8px 10px 8px 15px;
+      color: var(--muted);
+      background: var(--card-2);
+      border-bottom: 1px solid var(--border);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .dots { display: inline-flex; gap: 5px; }
+
+    .dots i {
+      width: 8px;
+      height: 8px;
+      background: var(--border-strong);
+      border-radius: 999px;
+    }
+
+    .filename {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .copy {
+      margin-left: auto;
+      padding: 5px 9px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: 150ms ease;
+    }
+
+    .copy:hover {
+      color: var(--foreground);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px 20px;
+      overflow-x: auto;
+      color: #e4e4e7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      tab-size: 2;
+    }
+
+    .kw { color: var(--pink); }
+    .fn { color: var(--purple); }
+    .str { color: var(--green); }
+    .prop { color: var(--blue); }
+    .num { color: var(--orange); }
+    .cm { color: var(--muted-2); font-style: italic; }
+
+    .callout {
+      display: flex;
+      gap: 13px;
+      margin-top: 18px;
+      padding: 15px 17px;
+      background: rgba(96, 165, 250, 0.07);
+      border: 1px solid rgba(96, 165, 250, 0.28);
+      border-radius: 11px;
+    }
+
+    .callout.warning {
+      background: rgba(251, 191, 36, 0.06);
+      border-color: rgba(251, 191, 36, 0.28);
+    }
+
+    .callout-icon { flex: 0 0 auto; }
+    .callout p { font-size: 14px; }
+
+    .file-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    .file-table th {
+      padding: 10px 13px;
+      color: var(--muted-2);
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .file-table td {
+      padding: 12px 13px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .file-table tr:last-child td { border-bottom: 0; }
+
+    .file-table td:first-child {
+      color: var(--foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: nowrap;
+    }
+
+    .check-list {
+      margin: 0 !important;
+      padding: 0 !important;
+      list-style: none;
+      counter-reset: checks;
+    }
+
+    .check-list li {
+      counter-increment: checks;
+      display: flex;
+      gap: 13px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .check-list li:last-child { border-bottom: 0; }
+
+    .check-list li::before {
+      content: counter(checks);
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      color: var(--foreground);
+      background: var(--card-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    footer {
+      padding: 30px 0 42px;
+      color: var(--muted-2);
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 12.5px;
+    }
+
+    @media (max-width: 820px) {
+      .nav { display: none; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-2 .card + .card { margin-top: 0; }
+      .architecture { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); justify-self: center; }
+      .section-kicker { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 24px, var(--max)); }
+      .hero { padding: 68px 0 30px; }
+      .lede { font-size: 15px; }
+      section { margin-top: 42px; }
+      .card { padding: 20px; }
+      .section-head { align-items: flex-start; }
+      .file-table { display: block; overflow-x: auto; }
+      pre { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="#top">
+        <span class="brand-mark">L</span>
+        <span>Lightcode · implementation guide</span>
+      </a>
+      <nav class="nav" aria-label="On this page">
+        <a href="#architecture">Architecture</a>
+        <a href="#server">Server</a>
+        <a href="#electron">Electron</a>
+        <a href="#packaging">Packaging</a>
+        <a href="#files">Files</a>
+        <a href="#verify">Verify</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="shell" id="top">
+    <header class="hero">
+      <span class="badge"><span class="badge-dot"></span> Ready to implement</span>
+      <h1>Run the server in an Electron utility process</h1>
+      <p class="lede">
+        Start the local tRPC server with the desktop app, wait until it is listening before opening a window,
+        package the native Codex runtime, and shut the entire process tree down with Electron.
+      </p>
+      <div class="pills">
+        <span class="pill">Electron utilityProcess</span>
+        <span class="pill">tRPC 11</span>
+        <span class="pill">127.0.0.1:2024</span>
+        <span class="pill">Electron Forge + Vite</span>
+      </div>
+    </header>
+
+    <main>
+      <section id="architecture">
+        <div class="section-head">
+          <h2>Target architecture</h2>
+          <span class="section-kicker">one app · three processes</span>
+        </div>
+        <div class="card">
+          <p>
+            Electron owns the server lifecycle. The renderer keeps using the existing
+            <code class="inline">http://localhost:2024</code> tRPC URL, while the server binds only to loopback.
+          </p>
+          <div class="architecture" aria-label="Electron process architecture">
+            <div class="node">
+              <strong>Electron main</strong>
+              <small>Starts, monitors, and stops the server</small>
+            </div>
+            <span class="arrow">→</span>
+            <div class="node">
+              <strong>Utility process</strong>
+              <small>Runs HTTP + tRPC on port 2024</small>
+            </div>
+            <span class="arrow">→</span>
+            <div class="node">
+              <strong>Codex app-server</strong>
+              <small>Native child process over stdio</small>
+            </div>
+          </div>
+          <div class="callout">
+            <span class="callout-icon">ℹ</span>
+            <p>
+              <strong>Why utilityProcess?</strong> It gives Electron a Node-capable child process without
+              requiring a system Node installation. It also exposes a parent message port for an explicit
+              readiness handshake.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="server">
+        <div class="section-head">
+          <span class="step">1</span>
+          <h2>Make the HTTP server utility-aware</h2>
+          <span class="section-kicker">apps/server/index.ts</span>
+        </div>
+        <div class="card">
+          <p>
+            Bind to loopback, preserve the existing CORS rules, and notify Electron only after the
+            <code class="inline">listening</code> event fires.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="filename">apps/server/index.ts</span>
+              <button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { createServer } <span class="kw">from</span> <span class="str">"node:http"</span>;
+<span class="kw">import</span> { createHTTPHandler } <span class="kw">from</span> <span class="str">"@trpc/server/adapters/standalone"</span>;
+<span class="kw">import</span> { appRouter } <span class="kw">from</span> <span class="str">"./appRouter.ts"</span>;
+
+<span class="kw">const</span> PORT = <span class="num">2024</span>;
+<span class="kw">const</span> HOST = <span class="str">"127.0.0.1"</span>;
+<span class="kw">const</span> ALLOWED_ORIGINS = <span class="kw">new</span> Set([
+  <span class="str">"null"</span>,
+  <span class="str">"http://localhost:5173"</span>,
+  <span class="str">"http://127.0.0.1:5173"</span>,
+]);
+
+<span class="kw">const</span> trpcHandler = <span class="fn">createHTTPHandler</span>({
+  <span class="prop">router</span>: appRouter,
+  <span class="fn">createContext</span>: () =&gt; ({}),
+});
+
+<span class="kw">type</span> UtilityParentPort = {
+  <span class="fn">postMessage</span>(message: unknown): void;
+};
+
+<span class="kw">const</span> parentPort = (
+  process <span class="kw">as</span> NodeJS.Process &amp; { <span class="prop">parentPort</span>?: UtilityParentPort }
+).parentPort;
+
+<span class="kw">const</span> server = <span class="fn">createServer</span>((req, res) =&gt; {
+  <span class="kw">const</span> origin = req.headers.origin;
+
+  <span class="kw">if</span> (origin &amp;&amp; ALLOWED_ORIGINS.<span class="fn">has</span>(origin)) {
+    res.<span class="fn">setHeader</span>(<span class="str">"Access-Control-Allow-Origin"</span>, origin);
+    res.<span class="fn">setHeader</span>(<span class="str">"Vary"</span>, <span class="str">"Origin"</span>);
+    res.<span class="fn">setHeader</span>(<span class="str">"Access-Control-Allow-Methods"</span>, <span class="str">"GET,POST,OPTIONS"</span>);
+    res.<span class="fn">setHeader</span>(<span class="str">"Access-Control-Allow-Headers"</span>, <span class="str">"content-type,trpc-accept"</span>);
+  }
+
+  <span class="kw">if</span> (req.method === <span class="str">"OPTIONS"</span>) {
+    res.statusCode = <span class="num">204</span>;
+    res.<span class="fn">end</span>();
+    <span class="kw">return</span>;
+  }
+
+  <span class="fn">trpcHandler</span>(req, res);
+});
+
+server.<span class="fn">once</span>(<span class="str">"error"</span>, (error) =&gt; {
+  parentPort?.<span class="fn">postMessage</span>({
+    <span class="prop">type</span>: <span class="str">"startup-error"</span>,
+    <span class="prop">message</span>: error.message,
+  });
+  process.exitCode = <span class="num">1</span>;
+});
+
+server.<span class="fn">listen</span>(PORT, HOST, () =&gt; {
+  <span class="kw">const</span> url = <span class="str">`http://${HOST}:${PORT}`</span>;
+  console.<span class="fn">log</span>(<span class="str">`Server listening at ${url}`</span>);
+  parentPort?.<span class="fn">postMessage</span>({ <span class="prop">type</span>: <span class="str">"ready"</span>, url });
+});
+
+<span class="kw">function</span> <span class="fn">shutdown</span>() {
+  server.<span class="fn">close</span>(() =&gt; process.<span class="fn">exit</span>(<span class="num">0</span>));
+}
+
+process.<span class="fn">once</span>(<span class="str">"SIGINT"</span>, shutdown);
+process.<span class="fn">once</span>(<span class="str">"SIGTERM"</span>, shutdown);</code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Pass the native Codex executable through</h3>
+          <p>
+            A utility process has an Electron helper as <code class="inline">process.execPath</code>.
+            Override the Codex executable so the protocol client spawns the packaged native binary directly.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="filename">apps/server/appRouter.ts</span>
+              <button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">const</span> threadService = <span class="kw">new</span> <span class="fn">ThreadService</span>(
+  <span class="kw">new</span> <span class="fn">CodexAppServerClient</span>({
+    <span class="prop">clientInfo</span>: {
+      <span class="prop">name</span>: <span class="str">"lightcode-ide"</span>,
+      <span class="prop">title</span>: <span class="str">"Lightcode"</span>,
+      <span class="prop">version</span>: <span class="str">"0.0.1"</span>,
+    },
+    <span class="prop">codexPathOverride</span>: process.env.LIGHTCODE_CODEX_PATH,
+  }),
+);</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="electron">
+        <div class="section-head">
+          <span class="step">2</span>
+          <h2>Add the Electron utility entry</h2>
+          <span class="section-kicker">apps/server/electronServer.ts</span>
+        </div>
+        <div class="card">
+          <p>The extra entry gives Forge a stable output name without changing the standalone server command.</p>
+          <div class="code-block">
+            <div class="code-head">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="filename">apps/server/electronServer.ts</span>
+              <button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> <span class="str">"./index.ts"</span>;</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="controller">
+        <div class="section-head">
+          <span class="step">3</span>
+          <h2>Own the process from Electron main</h2>
+          <span class="section-kicker">src/main/serverProcess.ts</span>
+        </div>
+        <div class="card">
+          <p>
+            Resolve the correct platform package, fork the bundled server, forward its logs, and wait for
+            <code class="inline">ready</code>. A timeout or early exit prevents a broken renderer from opening.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="filename">apps/desktop/src/main/serverProcess.ts</span>
+              <button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> { app, utilityProcess, <span class="kw">type</span> UtilityProcess } <span class="kw">from</span> <span class="str">"electron"</span>;
+<span class="kw">import</span> { createRequire } <span class="kw">from</span> <span class="str">"node:module"</span>;
+<span class="kw">import</span> path <span class="kw">from</span> <span class="str">"node:path"</span>;
+
+<span class="kw">let</span> child: UtilityProcess | undefined;
+<span class="kw">let</span> startPromise: Promise&lt;void&gt; | undefined;
+
+<span class="kw">const</span> targets = {
+  <span class="str">"linux-x64"</span>: [<span class="str">"@openai/codex-linux-x64"</span>, <span class="str">"x86_64-unknown-linux-musl"</span>],
+  <span class="str">"linux-arm64"</span>: [<span class="str">"@openai/codex-linux-arm64"</span>, <span class="str">"aarch64-unknown-linux-musl"</span>],
+  <span class="str">"darwin-x64"</span>: [<span class="str">"@openai/codex-darwin-x64"</span>, <span class="str">"x86_64-apple-darwin"</span>],
+  <span class="str">"darwin-arm64"</span>: [<span class="str">"@openai/codex-darwin-arm64"</span>, <span class="str">"aarch64-apple-darwin"</span>],
+  <span class="str">"win32-x64"</span>: [<span class="str">"@openai/codex-win32-x64"</span>, <span class="str">"x86_64-pc-windows-msvc"</span>],
+  <span class="str">"win32-arm64"</span>: [<span class="str">"@openai/codex-win32-arm64"</span>, <span class="str">"aarch64-pc-windows-msvc"</span>],
+} <span class="kw">as const</span>;
+
+<span class="kw">function</span> <span class="fn">getTarget</span>() {
+  <span class="kw">const</span> key = <span class="str">`${process.platform}-${process.arch}`</span> <span class="kw">as keyof typeof</span> targets;
+  <span class="kw">const</span> target = targets[key];
+  <span class="kw">if</span> (!target) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`Unsupported platform: ${key}`</span>);
+  <span class="kw">return</span> target;
+}
+
+<span class="kw">function</span> <span class="fn">resolveCodexPath</span>() {
+  <span class="kw">const</span> [packageName, triple] = <span class="fn">getTarget</span>();
+  <span class="kw">const</span> executable = process.platform === <span class="str">"win32"</span> ? <span class="str">"codex.exe"</span> : <span class="str">"codex"</span>;
+
+  <span class="kw">if</span> (app.isPackaged) {
+    <span class="kw">return</span> path.<span class="fn">join</span>(process.resourcesPath, triple, <span class="str">"bin"</span>, executable);
+  }
+
+  <span class="kw">const</span> runtimeRequire = <span class="fn">createRequire</span>(
+    path.<span class="fn">join</span>(app.<span class="fn">getAppPath</span>(), <span class="str">"package.json"</span>),
+  );
+  <span class="kw">const</span> packageJson = runtimeRequire.<span class="fn">resolve</span>(<span class="str">`${packageName}/package.json`</span>);
+
+  <span class="kw">return</span> path.<span class="fn">join</span>(
+    path.<span class="fn">dirname</span>(packageJson),
+    <span class="str">"vendor"</span>,
+    triple,
+    <span class="str">"bin"</span>,
+    executable,
+  );
+}
+
+<span class="kw">export function</span> <span class="fn">startServerProcess</span>() {
+  <span class="kw">if</span> (startPromise) <span class="kw">return</span> startPromise;
+
+  startPromise = <span class="kw">new</span> Promise&lt;void&gt;((resolve, reject) =&gt; {
+    <span class="kw">const</span> server = utilityProcess.<span class="fn">fork</span>(
+      path.<span class="fn">join</span>(__dirname, <span class="str">"electronServer.js"</span>),
+      [],
+      {
+        <span class="prop">serviceName</span>: <span class="str">"Lightcode Server"</span>,
+        <span class="prop">stdio</span>: <span class="str">"pipe"</span>,
+        <span class="prop">env</span>: {
+          ...process.env,
+          <span class="prop">LIGHTCODE_CODEX_PATH</span>: <span class="fn">resolveCodexPath</span>(),
+        },
+      },
+    );
+
+    child = server;
+    server.stdout?.<span class="fn">on</span>(<span class="str">"data"</span>, (data) =&gt;
+      console.<span class="fn">log</span>(<span class="str">`[server] ${data.toString().trimEnd()}`</span>),
+    );
+    server.stderr?.<span class="fn">on</span>(<span class="str">"data"</span>, (data) =&gt;
+      console.<span class="fn">error</span>(<span class="str">`[server] ${data.toString().trimEnd()}`</span>),
+    );
+
+    <span class="kw">const</span> timeout = <span class="fn">setTimeout</span>(() =&gt; {
+      server.<span class="fn">kill</span>();
+      <span class="fn">reject</span>(<span class="kw">new</span> <span class="fn">Error</span>(<span class="str">"Server startup timed out"</span>));
+    }, <span class="num">15_000</span>);
+
+    server.<span class="fn">on</span>(<span class="str">"message"</span>, (message: unknown) =&gt; {
+      <span class="kw">if</span> (!message || <span class="kw">typeof</span> message !== <span class="str">"object"</span> || !(<span class="str">"type"</span> <span class="kw">in</span> message)) <span class="kw">return</span>;
+
+      <span class="kw">if</span> (message.type === <span class="str">"ready"</span>) {
+        <span class="fn">clearTimeout</span>(timeout);
+        <span class="fn">resolve</span>();
+      } <span class="kw">else if</span> (message.type === <span class="str">"startup-error"</span>) {
+        <span class="fn">clearTimeout</span>(timeout);
+        <span class="fn">reject</span>(<span class="kw">new</span> <span class="fn">Error</span>(String(message.message)));
+      }
+    });
+
+    server.<span class="fn">on</span>(<span class="str">"exit"</span>, (code) =&gt; {
+      child = undefined;
+      startPromise = undefined;
+      <span class="kw">if</span> (code !== <span class="num">0</span>) {
+        console.<span class="fn">error</span>(<span class="str">`Lightcode server exited with code ${code}`</span>);
+      }
+    });
+  });
+
+  <span class="kw">return</span> startPromise;
+}
+
+<span class="kw">export function</span> <span class="fn">stopServerProcess</span>() {
+  child?.<span class="fn">kill</span>();
+  child = undefined;
+  startPromise = undefined;
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="startup">
+        <div class="section-head">
+          <span class="step">4</span>
+          <h2>Wait before opening windows</h2>
+          <span class="section-kicker">src/main/main.ts</span>
+        </div>
+        <div class="card">
+          <p>
+            Start after Electron is ready, then create the requested window. A startup failure shows one
+            actionable dialog and exits.
+          </p>
+          <div class="code-block">
+            <div class="code-head">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="filename">apps/desktop/src/main/main.ts</span>
+              <button class="copy" type="button">Copy</button>
+            </div>
+            <pre><code><span class="kw">import</span> {
+  startServerProcess,
+  stopServerProcess,
+} <span class="kw">from</span> <span class="str">"./serverProcess"</span>;
+
+app.<span class="fn">on</span>(<span class="str">"ready"</span>, <span class="kw">async</span> () =&gt; {
+  <span class="kw">try</span> {
+    <span class="kw">await</span> <span class="fn">startServerProcess</span>();
+
+    <span class="kw">if</span> (isMac) {
+      app.dock?.<span class="fn">setIcon</span>(iconPath);
+      <span class="fn">createMacApplicationMenu</span>();
+    }
+
+    <span class="kw">if</span> (shouldOpenAIWindowOnly) {
+      <span class="fn">createAIWindow</span>();
+    } <span class="kw">else</span> {
+      <span class="fn">createWindow</span>();
+    }
+  } <span class="kw">catch</span> (error) {
+    dialog.<span class="fn">showErrorBox</span>(
+      <span class="str">"Unable to start Lightcode"</span>,
+      error <span class="kw">instanceof</span> Error ? error.message : String(error),
+    );
+    app.<span class="fn">quit</span>();
+  }
+});
+
+app.<span class="fn">on</span>(<span class="str">"before-quit"</span>, () =&gt; {
+  <span class="fn">stopServerProcess</span>();
+});</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="packaging">
+        <div class="section-head">
+          <span class="step">5</span>
+          <h2>Bundle the entry and Codex runtime</h2>
+          <span class="section-kicker">forge.config.ts</span>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Add the Vite entry</h3>
+            <p>Forge builds the server beside <code class="inline">main.js</code> and <code class="inline">preload.js</code>.</p>
+            <div class="code-block">
+              <div class="code-head">
+                <span class="dots"><i></i><i></i><i></i></span>
+                <span class="filename">apps/desktop/forge.config.ts</span>
+                <button class="copy" type="button">Copy</button>
+              </div>
+              <pre><code>{
+  <span class="prop">entry</span>: <span class="str">"../server/electronServer.ts"</span>,
+  <span class="prop">config</span>: <span class="str">"vite.main.config.ts"</span>,
+  <span class="prop">target</span>: <span class="str">"main"</span>,
+},</code></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Copy the complete vendor target</h3>
+            <p>
+              Add the resolved <code class="inline">vendor/&lt;target-triple&gt;</code> directory to
+              <code class="inline">packagerConfig.extraResource</code>, not only the main executable.
+            </p>
+            <div class="callout warning">
+              <span class="callout-icon">⚠</span>
+              <p>
+                Codex also ships <strong>bwrap</strong>, <strong>rg</strong>, shell resources, and package
+                metadata beside the binary. Preserve that directory layout under
+                <code class="inline">process.resourcesPath</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="files">
+        <div class="section-head">
+          <h2>File changes</h2>
+          <span class="section-kicker">implementation map</span>
+        </div>
+        <div class="card">
+          <table class="file-table">
+            <thead>
+              <tr><th>File</th><th>Change</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>apps/server/index.ts</td>
+                <td>Bind to loopback, post readiness, report startup errors, and close on signals.</td>
+              </tr>
+              <tr>
+                <td>apps/server/appRouter.ts</td>
+                <td>Pass <code class="inline">LIGHTCODE_CODEX_PATH</code> to the Codex protocol client.</td>
+              </tr>
+              <tr>
+                <td>apps/server/electronServer.ts</td>
+                <td>New stable Vite entry for the utility-process bundle.</td>
+              </tr>
+              <tr>
+                <td>…/src/main/serverProcess.ts</td>
+                <td>Resolve Codex, fork the server, wait for readiness, forward logs, and stop it.</td>
+              </tr>
+              <tr>
+                <td>…/src/main/main.ts</td>
+                <td>Await the server before creating windows and stop it before quit.</td>
+              </tr>
+              <tr>
+                <td>apps/desktop/forge.config.ts</td>
+                <td>Add the server build entry and platform-specific Codex extra resource.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="verify">
+        <div class="section-head">
+          <h2>Verification</h2>
+          <span class="section-kicker">definition of done</span>
+        </div>
+        <div class="card">
+          <ol class="check-list">
+            <li>Run <code class="inline">npm run desktop</code> without starting <code class="inline">npm run server</code> separately.</li>
+            <li>Confirm the renderer opens only after the server logs <code class="inline">Server listening at http://127.0.0.1:2024</code>.</li>
+            <li>Call a tRPC route and send an AI request to prove both child-process layers work.</li>
+            <li>Quit Electron and confirm port 2024 and the Codex process are both gone.</li>
+            <li>Occupy port 2024, launch Electron, and confirm it shows a startup error without opening a renderer.</li>
+            <li>Package the desktop app and confirm the target-triple Codex directory exists under the application resources.</li>
+            <li>Launch the packaged app without a system Node installation and repeat the tRPC and AI smoke tests.</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="shell">Lightcode · Electron server process guide · July 2026</div>
+  </footer>
+
+  <script>
+    document.querySelectorAll(".copy").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const code = button.closest(".code-block")?.querySelector("code")?.textContent ?? "";
+        await navigator.clipboard.writeText(code);
+        const previous = button.textContent;
+        button.textContent = "Copied";
+        window.setTimeout(() => {
+          button.textContent = previous;
+        }, 1200);
+      });
+    });
+  </script>
+</body>
+</html>
