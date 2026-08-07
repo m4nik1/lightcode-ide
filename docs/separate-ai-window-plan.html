@@ -1,0 +1,1905 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Implementation plan for separating the Lightcode AI window into an independent Electron workspace." />
+  <title>Lightcode AI Window Separation Plan</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #000000;
+      --foreground: #fafafa;
+      --card: #09090b;
+      --card-hover: #0f0f12;
+      --secondary: #18181b;
+      --muted: #a1a1aa;
+      --muted-2: #71717a;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --accent: #fafafa;
+      --accent-foreground: #09090b;
+      --blue: #3291ff;
+      --green: #45d483;
+      --amber: #f5a623;
+      --purple: #a78bfa;
+      --red: #f87171;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.48);
+      --page-width: 1240px;
+      --content-width: 860px;
+      --header-height: 64px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--background);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--foreground);
+      background:
+        radial-gradient(circle at 50% -16rem, rgba(255, 255, 255, 0.08), transparent 32rem),
+        var(--background);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      text-rendering: optimizeLegibility;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    code,
+    pre,
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    code {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--secondary);
+      padding: 0.12rem 0.35rem;
+      color: #e4e4e7;
+      font-size: 0.88em;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      transform: translateY(-160%);
+      border-radius: var(--radius-sm);
+      background: var(--foreground);
+      color: var(--background);
+      padding: 8px 12px;
+      font-weight: 650;
+      transition: transform 150ms ease;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--header-height);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.76);
+      backdrop-filter: saturate(150%) blur(18px);
+    }
+
+    .topbar-inner {
+      width: min(var(--page-width), calc(100% - 40px));
+      height: 100%;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 650;
+      letter-spacing: -0.015em;
+    }
+
+    .brand-mark {
+      width: 20px;
+      height: 18px;
+      flex: 0 0 auto;
+      color: white;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.22));
+    }
+
+    .brand-separator {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .brand-page {
+      color: var(--muted);
+      font-weight: 450;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .topnav a {
+      border-radius: var(--radius-sm);
+      padding: 7px 9px;
+      transition: color 140ms ease, background 140ms ease;
+    }
+
+    .topnav a:hover {
+      background: var(--secondary);
+      color: var(--foreground);
+    }
+
+    .status-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-left: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: #d4d4d8;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 9px rgba(69, 212, 131, 0.7);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -26rem;
+      width: 58rem;
+      height: 58rem;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(50, 145, 255, 0.16), rgba(167, 139, 250, 0.06) 38%, transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      width: min(920px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 106px 0 86px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(9, 9, 11, 0.72);
+      padding: 5px 11px;
+      color: var(--muted);
+      font-size: 12px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .hero h1 {
+      max-width: 850px;
+      margin: 0 auto;
+      font-size: clamp(42px, 7vw, 76px);
+      font-weight: 730;
+      line-height: 1.02;
+      letter-spacing: -0.055em;
+      background: linear-gradient(180deg, #ffffff 24%, #a1a1aa 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .hero-lede {
+      max-width: 690px;
+      margin: 25px auto 0;
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 19px);
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      background: var(--card);
+      color: var(--foreground);
+      font-size: 13px;
+      font-weight: 580;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+
+    .button:hover {
+      border-color: var(--border-strong);
+      background: var(--card-hover);
+    }
+
+    .button:active {
+      transform: translateY(1px);
+    }
+
+    .button-primary {
+      border-color: var(--foreground);
+      background: var(--foreground);
+      color: var(--accent-foreground);
+    }
+
+    .button-primary:hover {
+      border-color: #d4d4d8;
+      background: #d4d4d8;
+    }
+
+    .hero-meta {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 30px;
+      color: var(--muted-2);
+      font-size: 12px;
+    }
+
+    .hero-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-meta svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .page-grid {
+      width: min(var(--page-width), calc(100% - 40px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, var(--content-width)) 250px;
+      justify-content: space-between;
+      gap: 72px;
+      padding: 72px 0 120px;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .toc {
+      position: sticky;
+      top: calc(var(--header-height) + 28px);
+      align-self: start;
+      max-height: calc(100vh - var(--header-height) - 56px);
+      overflow: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
+
+    .toc-title {
+      margin-bottom: 11px;
+      color: var(--foreground);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .toc li {
+      margin: 1px 0;
+    }
+
+    .toc a {
+      position: relative;
+      display: block;
+      border-left: 1px solid var(--border);
+      padding: 5px 0 5px 14px;
+      color: var(--muted-2);
+      font-size: 13px;
+      line-height: 1.35;
+      transition: color 140ms ease, border-color 140ms ease;
+    }
+
+    .toc a:hover {
+      color: var(--muted);
+    }
+
+    .toc a.active {
+      border-left-color: var(--foreground);
+      color: var(--foreground);
+    }
+
+    .doc-section {
+      scroll-margin-top: calc(var(--header-height) + 26px);
+      padding: 0 0 72px;
+    }
+
+    .doc-section + .doc-section {
+      border-top: 1px solid var(--border);
+      padding-top: 72px;
+    }
+
+    .section-kicker {
+      margin-bottom: 9px;
+      color: var(--muted-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    h2,
+    h3,
+    h4 {
+      scroll-margin-top: calc(var(--header-height) + 24px);
+      color: var(--foreground);
+      letter-spacing: -0.025em;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(27px, 4vw, 36px);
+      font-weight: 690;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin: 34px 0 10px;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    h4 {
+      margin: 24px 0 8px;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    p {
+      margin: 13px 0;
+      color: var(--muted);
+    }
+
+    .section-intro {
+      max-width: 730px;
+      margin: 15px 0 28px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    strong {
+      color: #e4e4e7;
+      font-weight: 620;
+    }
+
+    ul,
+    ol {
+      margin: 14px 0;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    li {
+      padding-left: 4px;
+      margin: 7px 0;
+    }
+
+    li::marker {
+      color: var(--muted-2);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent), var(--card);
+      padding: 20px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--secondary);
+      color: var(--foreground);
+    }
+
+    .card-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .card h3,
+    .card h4 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      letter-spacing: -0.012em;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      margin-top: 26px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--border);
+    }
+
+    .fact {
+      min-width: 0;
+      background: var(--card);
+      padding: 16px;
+    }
+
+    .fact-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted-2);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .fact-value {
+      display: block;
+      overflow: hidden;
+      color: var(--foreground);
+      font-size: 13px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr 42px 1fr 42px 1fr;
+      align-items: stretch;
+      margin: 30px 0 6px;
+    }
+
+    .architecture-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 132px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .architecture-node small {
+      color: var(--muted-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .architecture-node strong {
+      margin-top: 4px;
+      color: var(--foreground);
+      font-size: 14px;
+    }
+
+    .architecture-node span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .architecture-arrow {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-2);
+      font-size: 20px;
+    }
+
+    .architecture-arrow::before {
+      content: "";
+      width: 100%;
+      height: 1px;
+      background: var(--border-strong);
+    }
+
+    .architecture-arrow::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      width: 6px;
+      height: 6px;
+      border-top: 1px solid var(--border-strong);
+      border-right: 1px solid var(--border-strong);
+      transform: rotate(45deg);
+    }
+
+    .callout {
+      position: relative;
+      margin: 24px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(24, 24, 27, 0.5);
+      padding: 16px 18px 16px 44px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .callout::before {
+      content: "i";
+      position: absolute;
+      top: 17px;
+      left: 17px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      color: var(--foreground);
+      font-family: Georgia, serif;
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--foreground);
+    }
+
+    .code-block {
+      position: relative;
+      overflow: hidden;
+      margin: 20px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #050505;
+      box-shadow: var(--shadow);
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 42px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 10px 0 14px;
+      background: var(--card);
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      padding: 5px 7px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .copy-button:hover {
+      border-color: var(--border);
+      background: var(--secondary);
+      color: var(--foreground);
+    }
+
+    .copy-button svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    pre {
+      margin: 0;
+      overflow: auto;
+      padding: 18px;
+      color: #d4d4d8;
+      font-size: 12.5px;
+      line-height: 1.65;
+      tab-size: 2;
+    }
+
+    pre code {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    .tree .folder { color: var(--blue); }
+    .tree .file { color: #d4d4d8; }
+    .tree .comment { color: var(--muted-2); }
+    .syntax-keyword { color: #c084fc; }
+    .syntax-type { color: #67e8f9; }
+    .syntax-string { color: #86efac; }
+
+    .phase-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .phase {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 22px 22px 22px 72px;
+    }
+
+    .phase-number {
+      position: absolute;
+      top: 22px;
+      left: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      background: var(--secondary);
+      color: var(--foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .phase h3 {
+      margin: 0 0 9px;
+      font-size: 18px;
+    }
+
+    .phase > p:first-of-type {
+      margin-top: 0;
+    }
+
+    .phase ul {
+      margin-bottom: 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 22px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: rgba(24, 24, 27, 0.72);
+      color: var(--foreground);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:first-child {
+      color: #e4e4e7;
+      font-weight: 540;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .tag-add { border-color: rgba(69, 212, 131, 0.3); color: #86efac; }
+    .tag-change { border-color: rgba(50, 145, 255, 0.35); color: #7dd3fc; }
+    .tag-remove { border-color: rgba(248, 113, 113, 0.34); color: #fca5a5; }
+    .tag-keep { border-color: rgba(167, 139, 250, 0.34); color: #c4b5fd; }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .checklist {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .checklist li {
+      position: relative;
+      margin: 0;
+      padding: 8px 0 8px 29px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .checklist li::before {
+      content: "";
+      position: absolute;
+      top: 11px;
+      left: 0;
+      width: 15px;
+      height: 15px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: var(--secondary);
+    }
+
+    .checklist li::after {
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 5px;
+      width: 4px;
+      height: 7px;
+      border-right: 1.5px solid var(--green);
+      border-bottom: 1.5px solid var(--green);
+      transform: rotate(45deg);
+    }
+
+    .timeline {
+      position: relative;
+      margin: 26px 0 0 7px;
+      padding-left: 30px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      bottom: 8px;
+      left: 0;
+      width: 1px;
+      background: var(--border-strong);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 0 0 26px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      left: -34px;
+      width: 7px;
+      height: 7px;
+      border: 2px solid var(--background);
+      border-radius: 50%;
+      background: var(--foreground);
+      box-shadow: 0 0 0 1px var(--border-strong);
+    }
+
+    .timeline-item h3 {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+
+    .timeline-item p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .assumptions {
+      display: grid;
+      gap: 1px;
+      overflow: hidden;
+      margin-top: 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--border);
+    }
+
+    .assumption {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 12px;
+      background: var(--card);
+      padding: 15px 17px;
+    }
+
+    .assumption-index {
+      color: var(--muted-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+
+    .assumption p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      color: var(--muted-2);
+    }
+
+    .footer-inner {
+      width: min(var(--page-width), calc(100% - 40px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 94px;
+      font-size: 12px;
+    }
+
+    .footer a:hover {
+      color: var(--foreground);
+    }
+
+    .mobile-index {
+      display: none;
+      margin: 0 0 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+
+    .mobile-index summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      color: var(--foreground);
+      font-size: 13px;
+      font-weight: 620;
+    }
+
+    .mobile-index nav {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      border-top: 1px solid var(--border);
+      background: var(--border);
+    }
+
+    .mobile-index a {
+      background: var(--card);
+      padding: 9px 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1040px) {
+      .page-grid {
+        grid-template-columns: minmax(0, 1fr) 220px;
+        gap: 42px;
+      }
+
+      .facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topnav a:not(.status-nav) {
+        display: none;
+      }
+
+      .page-grid {
+        display: block;
+        width: min(var(--content-width), calc(100% - 32px));
+        padding-top: 44px;
+      }
+
+      .toc {
+        display: none;
+      }
+
+      .mobile-index {
+        display: block;
+      }
+
+      .hero-inner {
+        width: min(720px, calc(100% - 32px));
+        padding: 82px 0 68px;
+      }
+
+      .cards,
+      .check-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .architecture {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .architecture-arrow {
+        height: 38px;
+      }
+
+      .architecture-arrow::before {
+        width: 1px;
+        height: 100%;
+      }
+
+      .architecture-arrow::after {
+        right: auto;
+        bottom: 0;
+        width: 6px;
+        height: 6px;
+        border-top: 0;
+        border-right: 1px solid var(--border-strong);
+        border-bottom: 1px solid var(--border-strong);
+        transform: rotate(45deg);
+      }
+    }
+
+    @media (max-width: 560px) {
+      :root {
+        --header-height: 58px;
+      }
+
+      .topbar-inner,
+      .footer-inner {
+        width: calc(100% - 28px);
+      }
+
+      .brand-page,
+      .brand-separator,
+      .status-nav span:last-child {
+        display: none;
+      }
+
+      .hero-inner {
+        padding: 68px 0 56px;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 13vw, 54px);
+      }
+
+      .hero-actions {
+        display: grid;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .hero-meta {
+        display: grid;
+        gap: 8px;
+      }
+
+      .page-grid {
+        width: calc(100% - 28px);
+        padding-bottom: 80px;
+      }
+
+      .doc-section {
+        padding-bottom: 54px;
+      }
+
+      .doc-section + .doc-section {
+        padding-top: 54px;
+      }
+
+      .facts,
+      .mobile-index nav {
+        grid-template-columns: 1fr;
+      }
+
+      .phase {
+        padding: 65px 17px 18px;
+      }
+
+      .phase-number {
+        top: 17px;
+        left: 17px;
+      }
+
+      .card {
+        padding: 17px;
+      }
+
+      .table-wrap {
+        margin-right: -14px;
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        padding: 24px 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+        --background: #ffffff;
+        --foreground: #09090b;
+        --card: #ffffff;
+        --card-hover: #ffffff;
+        --secondary: #f4f4f5;
+        --muted: #3f3f46;
+        --muted-2: #52525b;
+        --border: #d4d4d8;
+        --border-strong: #a1a1aa;
+      }
+
+      body {
+        background: #fff;
+        color: #000;
+        font-size: 11pt;
+      }
+
+      .topbar,
+      .toc,
+      .mobile-index,
+      .hero-actions,
+      .copy-button,
+      .footer {
+        display: none !important;
+      }
+
+      .hero {
+        border-bottom: 1px solid #bbb;
+      }
+
+      .hero::before {
+        display: none;
+      }
+
+      .hero-inner {
+        padding: 42px 0 34px;
+      }
+
+      .hero h1 {
+        color: #000;
+        background: none;
+        font-size: 36pt;
+      }
+
+      .page-grid {
+        display: block;
+        width: 100%;
+        padding: 34px 0;
+      }
+
+      .content {
+        width: 100%;
+      }
+
+      .doc-section,
+      .card,
+      .phase,
+      .code-block,
+      .table-wrap,
+      .callout {
+        break-inside: avoid;
+      }
+
+      .doc-section + .doc-section {
+        padding-top: 36px;
+      }
+
+      .doc-section {
+        padding-bottom: 36px;
+      }
+
+      .code-block {
+        box-shadow: none;
+      }
+
+      pre {
+        white-space: pre-wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="Lightcode AI separation plan home">
+        <svg class="brand-mark" viewBox="0 0 24 22" fill="none" aria-hidden="true">
+          <path d="M12 1 23 21H1L12 1Z" fill="currentColor" />
+        </svg>
+        <span>Lightcode</span>
+        <span class="brand-separator" aria-hidden="true"></span>
+        <span class="brand-page">AI separation plan</span>
+      </a>
+      <nav class="topnav" aria-label="Primary navigation">
+        <a href="#architecture">Architecture</a>
+        <a href="#implementation">Implementation</a>
+        <a href="#testing">Verification</a>
+        <a class="status-nav" href="#rollout" aria-label="Plan status: decision complete"><span class="status-dot" aria-hidden="true"></span><span>Decision complete</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="top" aria-labelledby="page-title">
+      <div class="hero-inner">
+        <div class="eyebrow"><span class="status-dot" aria-hidden="true"></span>Approved implementation plan</div>
+        <h1 id="page-title">Separate the AI window into its own project.</h1>
+        <p class="hero-lede">
+          Move the AI experience into an independently runnable Electron workspace, give it ownership of its backend and lifecycle, and leave the editor with a temporary protocol-based launcher.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#implementation">Read implementation plan <span aria-hidden="true">↓</span></a>
+          <a class="button" href="#target-structure">View target structure</a>
+        </div>
+        <div class="hero-meta" aria-label="Plan metadata">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 5v14"/></svg>
+            New monorepo app
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 9h8M8 13h5"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+            Electron + managed server
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg>
+            Existing data retained
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-grid">
+      <article class="content">
+        <details class="mobile-index">
+          <summary>On this page</summary>
+          <nav aria-label="Mobile section navigation">
+            <a href="#overview">Summary</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#target-structure">Target structure</a>
+            <a href="#implementation">Implementation</a>
+            <a href="#interfaces">Interfaces</a>
+            <a href="#testing">Verification</a>
+            <a href="#rollout">Rollout</a>
+            <a href="#assumptions">Assumptions</a>
+          </nav>
+        </details>
+
+        <section class="doc-section" id="overview" aria-labelledby="overview-title">
+          <div class="section-kicker">01 · Summary</div>
+          <h2 id="overview-title">One application, one boundary</h2>
+          <p class="section-intro">
+            Create <code>apps/ai-window</code> as an independently runnable and packageable Electron workspace named <code>@lightcode/ai-window</code>, with the product name <strong>Lightcode AI</strong>.
+          </p>
+
+          <div class="cards">
+            <div class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18M8 8v12"/></svg>
+              </span>
+              <h3>Independent application</h3>
+              <p>Own Electron main, preload, React renderer, packaging configuration, icons, dependencies, and tests.</p>
+            </div>
+            <div class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 9 4 12l4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>
+              </span>
+              <h3>Owned backend</h3>
+              <p>Run the existing tRPC backend as a managed Electron utility child process with an authenticated ephemeral endpoint.</p>
+            </div>
+            <div class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 12h6M12 9v6"/><circle cx="12" cy="12" r="9"/></svg>
+              </span>
+              <h3>Launcher-only editor</h3>
+              <p>Stop embedding the AI renderer. Keep the editor button temporarily and launch or focus Lightcode AI through <code>lightcode-ai://open</code>.</p>
+            </div>
+            <div class="card">
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg>
+              </span>
+              <h3>Data continuity</h3>
+              <p>Continue using <code>~/.lightcode/state.db</code> so existing projects, threads, and messages remain available.</p>
+            </div>
+          </div>
+
+          <div class="facts" aria-label="Key decisions">
+            <div class="fact"><span class="fact-label">Workspace</span><span class="fact-value">apps/ai-window</span></div>
+            <div class="fact"><span class="fact-label">Product</span><span class="fact-value">Lightcode AI</span></div>
+            <div class="fact"><span class="fact-label">Transport</span><span class="fact-value">Authenticated loopback</span></div>
+            <div class="fact"><span class="fact-label">Bridge</span><span class="fact-value">Custom URL protocol</span></div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="architecture" aria-labelledby="architecture-title">
+          <div class="section-kicker">02 · Architecture</div>
+          <h2 id="architecture-title">A clean runtime boundary</h2>
+          <p class="section-intro">
+            The renderer talks only through a narrow preload surface. Electron owns the server lifecycle, while the server remains isolated in a utility process and exposes a short-lived loopback tRPC endpoint.
+          </p>
+
+          <div class="architecture" role="img" aria-label="React renderer communicates through preload to Electron main, which manages the backend utility process">
+            <div class="architecture-node">
+              <small>Renderer</small>
+              <strong>React AI application</strong>
+              <span>Queries, streaming, projects, and threads</span>
+            </div>
+            <div class="architecture-arrow" aria-hidden="true"></div>
+            <div class="architecture-node">
+              <small>Electron</small>
+              <strong>Main + preload</strong>
+              <span>Window, protocol, connection, and lifecycle</span>
+            </div>
+            <div class="architecture-arrow" aria-hidden="true"></div>
+            <div class="architecture-node">
+              <small>Utility process</small>
+              <strong>tRPC + Codex backend</strong>
+              <span>127.0.0.1, ephemeral port, session token</span>
+            </div>
+          </div>
+
+          <div class="callout">
+            <strong>The desktop editor is outside this runtime chain.</strong>
+            Its temporary button opens <code>lightcode-ai://open</code>. It does not load the AI renderer, import the router, own the database, or supervise the server.
+          </div>
+        </section>
+
+        <section class="doc-section" id="target-structure" aria-labelledby="structure-title">
+          <div class="section-kicker">03 · Repository shape</div>
+          <h2 id="structure-title">Target structure</h2>
+          <p class="section-intro">The application owns all of its runtime layers while continuing to consume the shared Codex protocol workspace.</p>
+
+          <div class="code-block tree">
+            <div class="code-header">
+              <span>repository</span>
+              <button class="copy-button" type="button" aria-label="Copy target directory structure">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+                <span aria-live="polite">Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="folder">apps/</span>
+├── <span class="folder">desktop/</span>
+│   └── <span class="comment">editor-only Electron application</span>
+└── <span class="folder">ai-window/</span>
+    ├── <span class="folder">assets/appIcon/</span>
+    ├── <span class="folder">src/</span>
+    │   ├── <span class="folder">main/</span>
+    │   │   ├── <span class="file">main.ts</span>
+    │   │   └── <span class="file">backendProcess.ts</span>
+    │   ├── <span class="folder">preload/</span>
+    │   │   └── <span class="file">preload.ts</span>
+    │   ├── <span class="folder">renderer/</span>
+    │   │   ├── <span class="folder">components/</span>
+    │   │   ├── <span class="folder">context/</span>
+    │   │   ├── <span class="folder">lib/</span>
+    │   │   ├── <span class="folder">utils/</span>
+    │   │   ├── <span class="file">index.html</span>
+    │   │   ├── <span class="file">index.css</span>
+    │   │   └── <span class="file">main.tsx</span>
+    │   ├── <span class="folder">server/</span>
+    │   │   ├── <span class="file">entry.ts</span>
+    │   │   ├── <span class="file">appRouter.ts</span>
+    │   │   ├── <span class="file">ThreadService.ts</span>
+    │   │   ├── <span class="file">lightDB.ts</span>
+    │   │   ├── <span class="file">lightQueries.ts</span>
+    │   │   └── <span class="file">lightThread.ts</span>
+    │   └── <span class="folder">shared/</span>
+    │       ├── <span class="file">aiModelConfig.ts</span>
+    │       ├── <span class="file">backendMessages.ts</span>
+    │       └── <span class="file">ipcChannels.ts</span>
+    ├── <span class="file">forge.config.ts</span>
+    ├── <span class="file">package.json</span>
+    ├── <span class="file">tsconfig.json</span>
+    └── <span class="file">vite.*.config.ts</span></code></pre>
+          </div>
+        </section>
+
+        <section class="doc-section" id="implementation" aria-labelledby="implementation-title">
+          <div class="section-kicker">04 · Implementation</div>
+          <h2 id="implementation-title">Nine implementation phases</h2>
+          <p class="section-intro">Each phase ends with a coherent boundary and leaves no unresolved implementation choice.</p>
+
+          <div class="phase-list">
+            <section class="phase" id="phase-1" aria-labelledby="phase-1-title">
+              <span class="phase-number" aria-hidden="true">01</span>
+              <h3 id="phase-1-title">Scaffold the independent workspace</h3>
+              <ul>
+                <li>Add <code>apps/ai-window</code> to the root npm workspaces and TypeScript project references.</li>
+                <li>Create package <code>@lightcode/ai-window</code> with product name <strong>Lightcode AI</strong>, bundle ID <code>com.m4nik1.lightcode-ai</code>, executable name <code>lightcode-ai</code>, and Windows package name <code>lightcode_ai</code>.</li>
+                <li>Give it independent <code>dev</code>, <code>typecheck</code>, <code>test</code>, <code>package</code>, and <code>make</code> scripts.</li>
+                <li>Add root aliases <code>npm run ai-window</code>, <code>npm run package:ai-window</code>, and <code>npm run make:ai-window</code>.</li>
+                <li>Copy the current Lightcode icon assets into the new workspace so builds do not depend on desktop-owned files.</li>
+                <li>Configure Forge to build four entries: Electron main, preload, React renderer, and a Node-targeted <code>server.js</code> bundle.</li>
+                <li>Use a normal native frame on Windows and Linux. Preserve the hidden macOS title bar and traffic-light spacing used by the current AI UI.</li>
+              </ul>
+            </section>
+
+            <section class="phase" id="phase-2" aria-labelledby="phase-2-title">
+              <span class="phase-number" aria-hidden="true">02</span>
+              <h3 id="phase-2-title">Move the AI renderer</h3>
+              <p>Move the following from desktop into <code>apps/ai-window/src/renderer</code>:</p>
+              <ul>
+                <li><code>AIWindow.tsx</code> and the complete <code>components/AIWindow</code> directory.</li>
+                <li><code>useAIChat.tsx</code>.</li>
+                <li><code>aiModelConfig.ts</code>, consolidated into <code>src/shared</code>.</li>
+                <li>The textarea, dropdown, shimmer, and class-name utilities used by the AI UI.</li>
+                <li>AI-specific Tailwind, fonts, animation, Markdown, and theme CSS.</li>
+                <li>The tRPC client bootstrap.</li>
+              </ul>
+              <p>Create a dedicated renderer entry containing only React strict mode, the AI API/query provider, <code>AiChatProvider</code>, and the AI window component. Do not carry over <code>EditorTabsProvider</code>, editor components, file-tree types, or editor styling.</p>
+              <p>Relocate <code>apps/desktop/ai-window-react.html</code> into an AI-app documentation folder and mark it as a legacy reference rather than runtime code.</p>
+            </section>
+
+            <section class="phase" id="phase-3" aria-labelledby="phase-3-title">
+              <span class="phase-number" aria-hidden="true">03</span>
+              <h3 id="phase-3-title">Move and embed the backend</h3>
+              <ul>
+                <li>Move the contents of <code>apps/server</code> into <code>apps/ai-window/src/server</code>.</li>
+                <li>Remove the standalone <code>@lightcode/server</code> workspace and root <code>server</code> script.</li>
+                <li>Keep the existing tRPC procedures and their request/response shapes: <code>queryAI</code>, <code>getThreadTitle</code>, <code>stopTurn</code>, <code>loadMessages</code>, <code>addProject</code>, <code>addThread</code>, <code>deleteThread</code>, <code>getThreads</code>, and <code>getProjects</code>.</li>
+                <li>Remove the unused <code>greeting</code> procedure.</li>
+                <li>Declare <code>@lightcode/codex-protocol</code> as an explicit workspace dependency of Lightcode AI.</li>
+                <li>Use one <code>src/shared/aiModelConfig.ts</code> definition for renderer and backend model IDs and reasoning effort.</li>
+                <li>Refactor server creation into a function that accepts configuration and returns a closable HTTP server.</li>
+              </ul>
+              <h4>Required compilation corrections</h4>
+              <ul>
+                <li>Remove the stray token following the <code>ThreadService</code> constructor.</li>
+                <li>Await Codex client initialization during backend startup.</li>
+                <li>Narrow completed thread items by their discriminant before reading agent-message fields.</li>
+                <li>Close the Codex app-server client during backend shutdown.</li>
+              </ul>
+            </section>
+
+            <section class="phase" id="phase-4" aria-labelledby="phase-4-title">
+              <span class="phase-number" aria-hidden="true">04</span>
+              <h3 id="phase-4-title">Manage the server as an Electron child process</h3>
+              <ul>
+                <li>After Electron becomes ready, launch the bundled <code>server.js</code> with <code>utilityProcess.fork</code>.</li>
+                <li>Bind the child only to <code>127.0.0.1</code> and request port <code>0</code>, allowing the OS to choose an unused port.</li>
+                <li>Open the existing database, then send a typed readiness message containing the selected port.</li>
+                <li>Generate a random per-launch bearer token in the parent, pass it through the child environment, and require it on every tRPC request.</li>
+                <li>Pass the actual Vite renderer origin during development and <code>null</code> for the packaged <code>file://</code> renderer. Permit the <code>authorization</code> header in CORS responses.</li>
+                <li>Wait up to 15 seconds for readiness before creating the BrowserWindow; show a Retry/Quit dialog on failure.</li>
+                <li>If the backend exits unexpectedly, attempt one automatic restart, reload the renderer after reconnecting, and show Retry/Quit if the restart also fails.</li>
+                <li>On shutdown, close the HTTP server, database, and Codex client before terminating the utility process.</li>
+              </ul>
+
+              <div class="code-block">
+                <div class="code-header">
+                  <span>backendMessages.ts</span>
+                  <button class="copy-button" type="button" aria-label="Copy backend message types">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+                    <span aria-live="polite">Copy</span>
+                  </button>
+                </div>
+                <pre><code><span class="syntax-keyword">type</span> <span class="syntax-type">BackendReadyMessage</span> = {
+  type: <span class="syntax-string">"backend-ready"</span>;
+  port: number;
+};
+
+<span class="syntax-keyword">type</span> <span class="syntax-type">BackendErrorMessage</span> = {
+  type: <span class="syntax-string">"backend-error"</span>;
+  message: string;
+};</code></pre>
+              </div>
+            </section>
+
+            <section class="phase" id="phase-5" aria-labelledby="phase-5-title">
+              <span class="phase-number" aria-hidden="true">05</span>
+              <h3 id="phase-5-title">Add a narrow preload boundary</h3>
+              <ul>
+                <li><code>getBackendConnection</code> returns the current child-process endpoint and session token.</li>
+                <li><code>selectProjectDirectory</code> returns one selected directory path or <code>null</code>, not Electron’s complete dialog result.</li>
+                <li>Do not expose general file reading, file writing, editor, or desktop-window-launch APIs.</li>
+                <li>Construct the tRPC client only after retrieving the backend connection.</li>
+                <li>Pass the bearer token through <code>httpBatchStreamLink</code> headers.</li>
+                <li>Provide the initialized query client and typed tRPC runtime through an AI-specific React context.</li>
+              </ul>
+
+              <div class="code-block">
+                <div class="code-header">
+                  <span>AI preload API</span>
+                  <button class="copy-button" type="button" aria-label="Copy AI preload interface">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+                    <span aria-live="polite">Copy</span>
+                  </button>
+                </div>
+                <pre><code><span class="syntax-keyword">type</span> <span class="syntax-type">BackendConnection</span> = {
+  baseUrl: string;
+  token: string;
+};
+
+<span class="syntax-keyword">type</span> <span class="syntax-type">LightcodeAIAPI</span> = {
+  getBackendConnection(): Promise&lt;BackendConnection&gt;;
+  selectProjectDirectory(): Promise&lt;string | null&gt;;
+};</code></pre>
+              </div>
+            </section>
+
+            <section class="phase" id="phase-6" aria-labelledby="phase-6-title">
+              <span class="phase-number" aria-hidden="true">06</span>
+              <h3 id="phase-6-title">Preserve the existing database</h3>
+              <ul>
+                <li>Continue using <code>~/.lightcode/state.db</code>.</li>
+                <li>Create <code>~/.lightcode</code> recursively before opening the database.</li>
+                <li>Preserve the existing tables and data without schema changes.</li>
+                <li>Make the database path injectable for tests while keeping the current location as the production default.</li>
+                <li>Do not copy, rename, or delete the user’s database.</li>
+                <li>Ensure only the Lightcode AI backend owns the database connection after separation.</li>
+              </ul>
+            </section>
+
+            <section class="phase" id="phase-7" aria-labelledby="phase-7-title">
+              <span class="phase-number" aria-hidden="true">07</span>
+              <h3 id="phase-7-title">Register and handle <code>lightcode-ai://</code></h3>
+              <ul>
+                <li>Register <code>lightcode-ai</code> in the packaged protocol metadata and call <code>app.setAsDefaultProtocolClient</code> with the correct development and packaged arguments.</li>
+                <li>Acquire <code>app.requestSingleInstanceLock</code> before starting the backend.</li>
+                <li>Handle macOS <code>open-url</code>, Windows/Linux protocol arguments, and Electron’s <code>second-instance</code> event.</li>
+                <li>Every <code>lightcode-ai://open</code> invocation restores and focuses the existing AI window.</li>
+                <li>Protocol invocations do not carry project, thread, or message payloads in this migration.</li>
+              </ul>
+            </section>
+
+            <section class="phase" id="phase-8" aria-labelledby="phase-8-title">
+              <span class="phase-number" aria-hidden="true">08</span>
+              <h3 id="phase-8-title">Convert desktop to a launcher-only bridge</h3>
+              <ul>
+                <li>Remove the query-parameter renderer switch, <code>createAIWindow</code>, <code>--ai-window</code>, and the second BrowserWindow path.</li>
+                <li>Remove the AI UI, chat context, model configuration, tRPC client, AI-only UI primitives, and AI-only providers from desktop.</li>
+                <li>Implement the main-process launch handler with <code>shell.openExternal("lightcode-ai://open")</code>.</li>
+                <li>Keep the current macOS and non-macOS “AI window” buttons, but make them call <code>launchAIApp</code>.</li>
+                <li>If launching fails, display an editor-owned dialog explaining that Lightcode AI must be installed or started.</li>
+                <li>Remove desktop dependencies that become AI-only, including tRPC, React Query, Markdown, motion, Radix, AI icons, shadcn helpers, and font packages where no editor usage remains.</li>
+                <li>Remove the Tailwind Vite plugin and Tailwind imports if the remaining editor uses only plain CSS.</li>
+                <li>Remove stale tracked renderer output; generated artifacts remain ignored.</li>
+              </ul>
+
+              <div class="code-block">
+                <div class="code-header">
+                  <span>Desktop launcher contract</span>
+                  <button class="copy-button" type="button" aria-label="Copy desktop launcher interface">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+                    <span aria-live="polite">Copy</span>
+                  </button>
+                </div>
+                <pre><code><span class="syntax-keyword">type</span> <span class="syntax-type">LaunchAIAppResult</span> =
+  | { ok: <span class="syntax-keyword">true</span> }
+  | { ok: <span class="syntax-keyword">false</span>; reason: <span class="syntax-string">"not-installed"</span> | <span class="syntax-string">"launch-failed"</span> };
+
+launchAIApp(): Promise&lt;LaunchAIAppResult&gt;;</code></pre>
+              </div>
+            </section>
+
+            <section class="phase" id="phase-9" aria-labelledby="phase-9-title">
+              <span class="phase-number" aria-hidden="true">09</span>
+              <h3 id="phase-9-title">Normalize TypeScript and workspace configuration</h3>
+              <ul>
+                <li>Configure the AI workspace for Vite-compatible ES modules and bundler resolution.</li>
+                <li>Add explicit Vite client and Node/Electron types where appropriate.</li>
+                <li>Update desktop TypeScript configuration so it no longer imports server source outside its root, rejects Vite CSS imports, or compiles Vite config files as CommonJS.</li>
+                <li>Guard the macOS dock API with <code>isMac &amp;&amp; app.dock</code>.</li>
+                <li>Regenerate <code>package-lock.json</code>.</li>
+                <li>Require the root typecheck to pass for desktop, AI window, and <code>codex-protocol</code>.</li>
+              </ul>
+            </section>
+          </div>
+        </section>
+
+        <section class="doc-section" id="interfaces" aria-labelledby="interfaces-title">
+          <div class="section-kicker">05 · Compatibility</div>
+          <h2 id="interfaces-title">Public interfaces and changes</h2>
+          <p class="section-intro">Product behavior stays familiar, but process ownership and integration surfaces become explicit.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th scope="col">Surface</th><th scope="col">Change</th><th scope="col">Result</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Application protocol</td><td><span class="tag tag-add">Add</span></td><td><code>lightcode-ai://open</code> launches or focuses Lightcode AI.</td></tr>
+                <tr><td>Workspace</td><td><span class="tag tag-add">Add</span></td><td>New independently packageable <code>@lightcode/ai-window</code>.</td></tr>
+                <tr><td>Server workspace</td><td><span class="tag tag-remove">Remove</span></td><td><code>@lightcode/server</code> moves under the AI application.</td></tr>
+                <tr><td>Desktop preload</td><td><span class="tag tag-change">Change</span></td><td>Replace <code>openAIWindow</code> with <code>launchAIApp</code>.</td></tr>
+                <tr><td>AI preload</td><td><span class="tag tag-add">Add</span></td><td>Expose <code>getBackendConnection</code> and <code>selectProjectDirectory</code>.</td></tr>
+                <tr><td>Backend transport</td><td><span class="tag tag-change">Change</span></td><td>Replace fixed <code>localhost:2024</code> with an authenticated ephemeral loopback endpoint.</td></tr>
+                <tr><td>tRPC procedures</td><td><span class="tag tag-keep">Keep</span></td><td>Preserve current procedure inputs and outputs; remove only unused <code>greeting</code>.</td></tr>
+                <tr><td>Database</td><td><span class="tag tag-keep">Keep</span></td><td>Retain the existing schema and <code>~/.lightcode/state.db</code> location.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Procedure compatibility</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th scope="col">Procedure</th><th scope="col">Type</th><th scope="col">Migration behavior</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>queryAI</code></td><td>Streaming query</td><td>Preserve model, reasoning effort, message, and notification stream shapes.</td></tr>
+                <tr><td><code>getThreadTitle</code></td><td>Mutation</td><td>Preserve generated-title response.</td></tr>
+                <tr><td><code>stopTurn</code></td><td>Query</td><td>Preserve thread interruption input.</td></tr>
+                <tr><td><code>loadMessages</code></td><td>Query</td><td>Preserve normalized user and assistant message output.</td></tr>
+                <tr><td><code>addProject</code> / <code>addThread</code></td><td>Mutation</td><td>Preserve IDs, names, paths, and creation behavior.</td></tr>
+                <tr><td><code>deleteThread</code></td><td>Mutation</td><td>Preserve deletion behavior.</td></tr>
+                <tr><td><code>getThreads</code> / <code>getProjects</code></td><td>Query</td><td>Preserve persisted records and ordering.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="testing" aria-labelledby="testing-title">
+          <div class="section-kicker">06 · Verification</div>
+          <h2 id="testing-title">Tests and acceptance scenarios</h2>
+          <p class="section-intro">Verification covers the workspace boundary, backend lifecycle, data compatibility, launcher behavior, and distributable artifacts.</p>
+
+          <div class="check-grid">
+            <div class="card">
+              <h3>Automated checks</h3>
+              <ul class="checklist">
+                <li><code>npm install</code> completes with the updated workspace graph.</li>
+                <li><code>npm run typecheck</code> passes across every workspace.</li>
+                <li>The Lightcode AI renderer production build succeeds.</li>
+                <li>The Lightcode AI Forge package succeeds.</li>
+                <li>The desktop Forge package succeeds after AI dependencies are removed.</li>
+                <li>Backend tests use a temporary database.</li>
+                <li>Existing schema initialization and project, thread, and message persistence pass.</li>
+                <li>Missing or incorrect bearer tokens are rejected.</li>
+                <li>Authenticated tRPC requests succeed.</li>
+                <li>Port <code>0</code> resolves to a reachable loopback endpoint.</li>
+                <li>Startup and graceful shutdown close all resources.</li>
+                <li>Lifecycle tests cover ready, error, timeout, exit, and retry messages.</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Manual integration</h3>
+              <ul class="checklist">
+                <li><code>npm run ai-window</code> starts the child backend and opens the AI UI.</li>
+                <li>Existing database projects, threads, and messages appear unchanged.</li>
+                <li>Folder selection, thread creation/deletion, streaming, titles, and interruption behave as before.</li>
+                <li>Closing Lightcode AI terminates its backend child.</li>
+                <li>Starting Lightcode AI twice focuses the existing instance.</li>
+                <li>The custom protocol restores a minimized or hidden window.</li>
+                <li>The desktop starts without Lightcode AI installed.</li>
+                <li>The desktop button launches or focuses Lightcode AI when installed.</li>
+                <li>A missing protocol handler produces a useful error.</li>
+                <li>Windows, macOS, and Linux packages contain the server bundle and icons.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span>Verification commands</span>
+              <button class="copy-button" type="button" aria-label="Copy verification commands">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+                <span aria-live="polite">Copy</span>
+              </button>
+            </div>
+            <pre><code>npm install
+npm run typecheck
+npm test -w @lightcode/ai-window
+npm run package -w @lightcode/ai-window
+npm run package -w @lightcode/desktop</code></pre>
+          </div>
+        </section>
+
+        <section class="doc-section" id="rollout" aria-labelledby="rollout-title">
+          <div class="section-kicker">07 · Rollout</div>
+          <h2 id="rollout-title">A staged bridge, not a shared renderer</h2>
+          <p class="section-intro">The temporary compatibility surface is deliberately small and can be removed without touching editor features.</p>
+
+          <div class="timeline">
+            <div class="timeline-item">
+              <h3>Migration lands</h3>
+              <p>The new app owns its renderer, backend, database connection, packaging, and single-instance lifecycle.</p>
+            </div>
+            <div class="timeline-item">
+              <h3>Temporary bridge remains</h3>
+              <p>The editor retains only its visible button, <code>launchAIApp</code> preload method, and protocol-launch module. The old embedded renderer is removed.</p>
+            </div>
+            <div class="timeline-item">
+              <h3>Independent adoption</h3>
+              <p>Lightcode AI is fully usable on its own and can be installed, started, focused, packaged, and tested without the editor.</p>
+            </div>
+            <div class="timeline-item">
+              <h3>Future cleanup</h3>
+              <p>Once users launch Lightcode AI directly, remove the desktop button, <code>launchAIApp</code> IPC channel, and protocol-launch module.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="assumptions" aria-labelledby="assumptions-title">
+          <div class="section-kicker">08 · Boundaries</div>
+          <h2 id="assumptions-title">Assumptions and defaults</h2>
+          <p class="section-intro">These decisions are fixed for this migration and should not be reopened during implementation.</p>
+
+          <div class="assumptions">
+            <div class="assumption"><span class="assumption-index">01</span><p>Both applications remain in the current monorepo and share the root lockfile.</p></div>
+            <div class="assumption"><span class="assumption-index">02</span><p>Lightcode AI is independently packaged and installed.</p></div>
+            <div class="assumption"><span class="assumption-index">03</span><p>The existing icon is reused initially; new branding is out of scope.</p></div>
+            <div class="assumption"><span class="assumption-index">04</span><p>The editor and AI application do not share renderer code after migration.</p></div>
+            <div class="assumption"><span class="assumption-index">05</span><p>Existing AI behavior and the database schema are preserved. Feature redesign and unrelated chat fixes are out of scope.</p></div>
+            <div class="assumption"><span class="assumption-index">06</span><p>The existing <code>apps/server</code> has no consumers other than the AI window and can be removed after its code moves.</p></div>
+            <div class="assumption"><span class="assumption-index">07</span><p>The custom protocol is a temporary editor integration; Lightcode AI remains fully usable without the editor.</p></div>
+          </div>
+        </section>
+      </article>
+
+      <aside class="toc" aria-label="Table of contents">
+        <div class="toc-title">On this page</div>
+        <ol>
+          <li><a href="#overview">Summary</a></li>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#target-structure">Target structure</a></li>
+          <li><a href="#implementation">Implementation phases</a></li>
+          <li><a href="#phase-1">01 · Workspace</a></li>
+          <li><a href="#phase-2">02 · Renderer</a></li>
+          <li><a href="#phase-3">03 · Backend</a></li>
+          <li><a href="#phase-4">04 · Child process</a></li>
+          <li><a href="#phase-5">05 · Preload</a></li>
+          <li><a href="#phase-6">06 · Database</a></li>
+          <li><a href="#phase-7">07 · Protocol</a></li>
+          <li><a href="#phase-8">08 · Desktop bridge</a></li>
+          <li><a href="#phase-9">09 · TypeScript</a></li>
+          <li><a href="#interfaces">Public interfaces</a></li>
+          <li><a href="#testing">Verification</a></li>
+          <li><a href="#rollout">Rollout</a></li>
+          <li><a href="#assumptions">Assumptions</a></li>
+        </ol>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span><strong>Lightcode AI</strong> · separation implementation plan</span>
+      <a href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var copyButtons = Array.prototype.slice.call(document.querySelectorAll(".copy-button"));
+
+      function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text);
+        }
+
+        return new Promise(function (resolve, reject) {
+          var textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+
+          try {
+            var copied = document.execCommand("copy");
+            document.body.removeChild(textarea);
+            copied ? resolve() : reject(new Error("Copy command failed"));
+          } catch (error) {
+            document.body.removeChild(textarea);
+            reject(error);
+          }
+        });
+      }
+
+      copyButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var block = button.closest(".code-block");
+          var code = block && block.querySelector("pre code");
+          var label = button.querySelector("span");
+          if (!code || !label) return;
+
+          var original = label.textContent;
+          copyText(code.textContent || "").then(function () {
+            label.textContent = "Copied";
+            window.setTimeout(function () { label.textContent = original; }, 1600);
+          }).catch(function () {
+            label.textContent = "Failed";
+            window.setTimeout(function () { label.textContent = original; }, 1600);
+          });
+        });
+      });
+
+      var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".toc a[href^='#']"));
+      var linkById = {};
+      tocLinks.forEach(function (link) {
+        linkById[link.getAttribute("href").slice(1)] = link;
+      });
+
+      var sections = Object.keys(linkById).map(function (id) {
+        return document.getElementById(id);
+      }).filter(Boolean);
+
+      function activate(id) {
+        tocLinks.forEach(function (link) {
+          var active = link.getAttribute("href") === "#" + id;
+          link.classList.toggle("active", active);
+          if (active) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      }
+
+      if ("IntersectionObserver" in window && sections.length) {
+        var visible = new Map();
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) visible.set(entry.target.id, entry.boundingClientRect.top);
+            else visible.delete(entry.target.id);
+          });
+
+          var current = Array.from(visible.entries()).sort(function (a, b) { return a[1] - b[1]; })[0];
+          if (current) activate(current[0]);
+        }, { rootMargin: "-80px 0px -72% 0px", threshold: [0, 0.05] });
+
+        sections.forEach(function (section) { observer.observe(section); });
+      } else if (tocLinks.length) {
+        activate(tocLinks[0].getAttribute("href").slice(1));
+      }
+    })();
+  </script>
+</body>
+</html>
