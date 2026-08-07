@@ -1,15 +1,15 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUpIcon, StopCircleIcon } from "lucide-react";
-import { Textarea } from "../ui/textarea";
-import ModelPicker from "./components/ModelPicker";
-import { cn } from "../../lib/utils";
-import { aiThemeClassNames } from "./theme";
-import { useAIChat } from "@/context/useAIChat";
+import { Textarea } from "./ui/textarea";
+import ModelPicker from "./ModelPicker";
+import { cn } from "../lib/utils";
+import { aiThemeClassNames } from "../theme";
+import { useAIChat } from "../context/useAIChat";
 
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
+  const { messageSend, isTurning, stopTurn } = useAIChat();
 
   const canSend = value.trim().length > 0;
   const actionButtonThemeClassName = isTurning
@@ -58,9 +58,9 @@ export default function AITextBox() {
               type="button"
               onClick={() => {
                 if (isTurning) {
-                  void messageSend(value);
-                } else {
                   stopTurn();
+                } else {
+                  void messageSend(value);
                 }
                 setValue("");
               }}

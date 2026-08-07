@@ -1,10 +1,10 @@
 import { Trash2 } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utils";
 import { ThreadIcon } from "./icons";
 import type { thread } from "./types";
-import { aiThemeClassNames } from "../theme";
-import { useAIChat } from "@/context/useAIChat";
-import { trpcClient } from "@/utils/trpc";
+import { aiThemeClassNames } from "../../theme";
+import { useAIChat } from "../../context/useAIChat";
+import { trpcClient } from "../../utils/trpc";
 
 type ThreadItemProps = {
   thread: thread;

@@ -1,4 +1,4 @@
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utils";
 
 export function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (

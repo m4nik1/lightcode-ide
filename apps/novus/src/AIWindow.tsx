@@ -1,9 +1,9 @@
 import { type CSSProperties } from "react";
-import AISidebar from "./AIWindow/sidebar/AISidebar";
-import AITextBox from "./AIWindow/AITextBox";
-import ChatMessages from "./AIWindow/ChatMessages";
-import { aiTheme } from "./AIWindow/theme";
-import { AiChatProvider } from "@/context/useAIChat";
+import AISidebar from "./components/sidebar/AISidebar";
+import AITextBox from "./components/AITextBox";
+import ChatMessages from "./components/ChatMessages";
+import { aiTheme } from "./theme";
+import { AiChatProvider } from "./context/useAIChat";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 

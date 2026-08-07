@@ -36,7 +36,7 @@ export class ThreadService {
     this.codexInstance = AIDriver;
 
     this.codexInstance.connect();
-  }0
+  }
 
   async stopTurn(threadID: string) {
     console.log("Interrupting turn")

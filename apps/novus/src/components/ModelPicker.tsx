@@ -5,11 +5,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { cn } from "../../lib/utils";
+} from "./ui/dropdown-menu";
+import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
-import { useAIChat } from "@/context/useAIChat";
-import type { AIModelId, AIReasoningEffort } from "@/lib/aiModelConfig";
+import { useAIChat } from "../context/useAIChat";
+import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 
 type PickerOption<TValue extends string> = {
   label: string;
