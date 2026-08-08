@@ -4,8 +4,8 @@ A private, typed Node.js client for the Codex app-server protocol. The package
 spawns the pinned Codex CLI over stdio, owns the JSONL wire format, and exposes
 generated TypeScript request, response, and notification types.
 
-The package intentionally uses the stable protocol surface from
-`@openai/codex@0.146.1`. It does not enable `experimentalApi`.
+The package intentionally uses the stable protocol surface from its exact
+`@openai/codex` dependency. It does not enable `experimentalApi`.
 
 ## Workspace dependency
 
@@ -162,8 +162,7 @@ to the matching, locally spawned CLI version.
 
 ## Regenerate after a Codex upgrade
 
-Update the exact `@openai/codex` version and the pinned version in
-`scripts/generate.mjs`, then run:
+Update the exact `@openai/codex` dependency, then run:
 
 ```bash
 npm run generate -w @lightcode/codex-protocol

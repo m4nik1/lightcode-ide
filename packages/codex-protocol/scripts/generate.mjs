@@ -12,7 +12,6 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PINNED_CODEX_VERSION = "0.146.1";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.dirname(scriptDirectory);
 const generatedDirectory = path.join(packageDirectory, "src", "generated");
@@ -77,17 +76,14 @@ async function resolveCodexCli() {
   const packageJsonPath = require.resolve("@openai/codex/package.json");
   const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
 
-  if (packageJson.version !== PINNED_CODEX_VERSION) {
-    throw new Error(
-      `Expected @openai/codex ${PINNED_CODEX_VERSION}, found ${packageJson.version}.`,
-    );
-  }
-
-  return path.join(path.dirname(packageJsonPath), packageJson.bin.codex);
+  return {
+    cliPath: path.join(path.dirname(packageJsonPath), packageJson.bin.codex),
+    version: packageJson.version,
+  };
 }
 
 async function generateInto(directory) {
-  const cliPath = await resolveCodexCli();
+  const { cliPath, version } = await resolveCodexCli();
   const result = spawnSync(
     process.execPath,
     [cliPath, "app-server", "generate-ts", "--out", directory],
@@ -104,6 +100,7 @@ async function generateInto(directory) {
   }
 
   await normalizeGeneratedImports(directory);
+  return version;
 }
 
 async function compareDirectories(expectedDirectory, actualDirectory) {
@@ -165,7 +162,7 @@ async function main() {
   const stagedDirectory = path.join(temporaryRoot, "generated");
 
   try {
-    await generateInto(stagedDirectory);
+    const codexVersion = await generateInto(stagedDirectory);
 
     if (checkOnly) {
       const differences = await compareDirectories(
@@ -174,7 +171,7 @@ async function main() {
       );
       const expectedVersionSource =
         `// This file is maintained by scripts/generate.mjs.\n` +
-        `export const CODEX_PROTOCOL_VERSION = "${PINNED_CODEX_VERSION}" as const;\n`;
+        `export const CODEX_PROTOCOL_VERSION = "${codexVersion}" as const;\n`;
       const actualVersionSource = await readFile(versionFile, "utf8").catch(
         () => "",
       );
@@ -201,10 +198,10 @@ async function main() {
     await writeFile(
       versionFile,
       `// This file is maintained by scripts/generate.mjs.\n` +
-        `export const CODEX_PROTOCOL_VERSION = "${PINNED_CODEX_VERSION}" as const;\n`,
+        `export const CODEX_PROTOCOL_VERSION = "${codexVersion}" as const;\n`,
     );
     process.stdout.write(
-      `Generated stable Codex protocol ${PINNED_CODEX_VERSION}.\n`,
+      `Generated stable Codex protocol ${codexVersion}.\n`,
     );
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
