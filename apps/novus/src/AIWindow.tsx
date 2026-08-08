@@ -41,7 +41,7 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     background: "transparent",
     color: aiTheme.textPrimary,
-    fontFamily: "system-ui, sans-serif",
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
     fontSize: 13,
     overflow: "hidden",
     isolation: "isolate",
