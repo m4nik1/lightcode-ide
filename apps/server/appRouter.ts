@@ -46,6 +46,7 @@ export const appRouter = router({
           model: z.enum(AI_MODEL_IDS),
           thinking: z.enum(REASONING_EFFORTS),
         }),
+        access: z.string()
       }),
     )
     .query(async function* ({ input }) {

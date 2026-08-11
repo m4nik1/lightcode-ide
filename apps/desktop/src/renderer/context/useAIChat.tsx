@@ -14,12 +14,16 @@ type AIContext = {
   setCurrentThread: (thread: thread) => void;
   isTurning: boolean;
   stopTurn: () => void;
+  setAccessMode: (mode: AccessMode) => void;
+  accessMode: AccessMode;
 };
 
 type AIModel = {
   model: AIModelId;
   thinking: AIReasoningEffort;
 };
+
+export type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 
 const aiContext = createContext<AIContext | undefined>(undefined);
 
@@ -29,6 +33,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   >({});
   const [currentThread, setThread] = useState<thread | null>(null);
   const [isTurning, setTurn] = useState<boolean>(false);
+  const [accessMode, setAccessMode] = useState<AccessMode>("workspace-write");
 
   const [model, setModel] = useState<AIModel>({
     model: "gpt-5.5",
@@ -184,6 +189,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         setCurrentThread,
         isTurning,
         stopTurn,
+        setAccessMode,
+        accessMode
       }}
     >
       {children}

@@ -24,6 +24,7 @@ type AIMessage = {
     model: AIModelId;
     thinking: AIReasoningEffort;
   };
+  access: "read-only" | "workspace-write" | "danger-full-access";
 };
 
 export class ThreadService {

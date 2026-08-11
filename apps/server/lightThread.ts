@@ -45,7 +45,7 @@ export default class lightThread {
     console.log("Turn interrupted: ", turnInterrupt)
   }
 
-  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string) {
+  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string, accessMode : string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
     }

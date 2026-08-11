@@ -18,6 +18,7 @@ const accessOptions: PickerOption<AccessMode>[] = [
 
 export default function AccessPicker() {
   const [accessMode, setAccessMode] = useState<AccessMode>("workspace-write");
+
   const isFullAccess = accessMode === "danger-full-access";
 
   return (
