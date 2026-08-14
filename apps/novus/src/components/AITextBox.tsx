@@ -58,7 +58,7 @@ export default function AITextBox() {
           rows={3}
           onKeyDown={(e) => handleKeyDown(e)}
           className={cn(
-            "min-h-28 w-75 resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-sm leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
+            "min-h-28  resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-sm leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
             aiThemeClassNames.textPrimary,
             aiThemeClassNames.placeholder,
           )}
