@@ -50,7 +50,7 @@ export class ThreadService {
     }
 
     await runningThread.stopTurn()
-  } 
+  }
 
   async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification> {
     let findThread = this.threads.get(input.threadID);
