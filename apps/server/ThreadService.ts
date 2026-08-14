@@ -25,6 +25,7 @@ type AIMessage = {
     thinking: AIReasoningEffort;
   };
   access: "read-only" | "workspace-write" | "danger-full-access";
+  mode: "build" | "plan";
 };
 
 export class ThreadService {
@@ -66,7 +67,8 @@ export class ThreadService {
       findThread = new lightThread(this.codexInstance)
       
       findThread = await findThread.createThread(
-        project.path
+        project.path,
+        input.mode,
       );
 
       this.threads.set(input.threadID, findThread);
@@ -88,7 +90,8 @@ export class ThreadService {
 
     for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.message)) {
       console.log("Event received: ", event);
-      if(event.method == 'item/completed' 
+      if(event.method == 'item/completed'
+        && event.params.item.type === 'agentMessage'
         && event.params.item.phase == 'final_answer') {
         storeMessage.get(
           crypto.randomUUID(),

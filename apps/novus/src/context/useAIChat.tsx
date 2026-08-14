@@ -7,7 +7,10 @@ import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 
 type AIContext = {
   messages: ChatMessage[];
-  messageSend: (value: string) => Promise<void>;
+  messageSend: (
+    value: string,
+    mode: "build" | "plan",
+  ) => Promise<void>;
   modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   createProject: () => void;
   currentThread: thread | null;
@@ -42,7 +45,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     ? (messagesByThread[currentThread.id] ?? [])
     : [];
 
-  async function messageSend(value: string) {
+  async function messageSend(value: string, mode: "build" | "plan") {
     const text = value.trim();
     if (!text || !currentThread) return;
 
@@ -73,10 +76,14 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       ],
     }));
 
+    const access = mode === "plan" ? "read-only" : "workspace-write";
+
     const streamChat = await trpcClient.queryAI.query({
       threadID,
       message: text,
       model: model,
+      mode,
+      access,
     });
 
     setTurn(true);

@@ -7,12 +7,16 @@ import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
 
+type CollaborationMode = "build" | "plan";
+
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const { messageSend, isTurning, stopTurn } = useAIChat();
+  const [mode, setMode] = useState<CollaborationMode>("build");
+  const { messages, messageSend, isTurning, stopTurn } = useAIChat();
 
   const canSend = value.trim().length > 0;
+  const canChangeMode = messages.length === 0;
   const actionButtonThemeClassName = isTurning
     ? aiThemeClassNames.stopAction
     : canSend
@@ -23,7 +27,7 @@ export default function AITextBox() {
     if (isTurning) {
       stopTurn();
     } else {
-      void messageSend(value);
+      void messageSend(value, mode);
     }
     setValue("");
   }
@@ -60,7 +64,34 @@ export default function AITextBox() {
           )}
         />
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 pb-3.5">
-          <AccessPicker />
+          <div className="flex items-center gap-1">
+            <AccessPicker />
+            <button
+              type="button"
+              aria-label={`Mode: ${mode}`}
+              aria-pressed={mode === "plan"}
+              disabled={!canChangeMode}
+              title={
+                canChangeMode
+                  ? "Toggle Plan mode"
+                  : "Mode cannot be changed after the first message"
+              }
+              onClick={() =>
+                setMode((current) =>
+                  current === "build" ? "plan" : "build",
+                )
+              }
+              className={cn(
+                "inline-flex h-7 items-center rounded-lg px-2 text-xs font-normal transition-[background-color,color,opacity] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                aiThemeClassNames.surfaceHover,
+                mode === "plan"
+                  ? aiThemeClassNames.textPrimary
+                  : aiThemeClassNames.textMuted,
+              )}
+            >
+              {mode === "plan" ? "Plan" : "Build"}
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             <ModelPicker />
