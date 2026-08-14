@@ -12,10 +12,10 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PINNED_CODEX_VERSION = "0.140.0";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.dirname(scriptDirectory);
 const generatedDirectory = path.join(packageDirectory, "src", "generated");
+const packageManifestFile = path.join(packageDirectory, "package.json");
 const versionFile = path.join(packageDirectory, "src", "version.ts");
 const require = createRequire(import.meta.url);
 
@@ -74,20 +74,35 @@ async function normalizeGeneratedImports(directory) {
 }
 
 async function resolveCodexCli() {
-  const packageJsonPath = require.resolve("@openai/codex/package.json");
-  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
+  const installedManifestFile = require.resolve("@openai/codex/package.json");
+  const [packageManifest, installedManifest] = await Promise.all([
+    readFile(packageManifestFile, "utf8").then(JSON.parse),
+    readFile(installedManifestFile, "utf8").then(JSON.parse),
+  ]);
+  const declaredVersion = packageManifest.dependencies?.["@openai/codex"];
 
-  if (packageJson.version !== PINNED_CODEX_VERSION) {
+  if (typeof declaredVersion !== "string") {
     throw new Error(
-      `Expected @openai/codex ${PINNED_CODEX_VERSION}, found ${packageJson.version}.`,
+      "@openai/codex must be declared in this package's dependencies.",
     );
   }
 
-  return path.join(path.dirname(packageJsonPath), packageJson.bin.codex);
+  if (installedManifest.version !== declaredVersion) {
+    throw new Error(
+      `Expected @openai/codex ${declaredVersion} from package.json, found ${installedManifest.version}. Run npm install before generating.`,
+    );
+  }
+
+  return {
+    path: path.join(
+      path.dirname(installedManifestFile),
+      installedManifest.bin.codex,
+    ),
+    version: installedManifest.version,
+  };
 }
 
-async function generateInto(directory) {
-  const cliPath = await resolveCodexCli();
+async function generateInto(directory, cliPath) {
   const result = spawnSync(
     process.execPath,
     [cliPath, "app-server", "generate-ts", "--out", directory],
@@ -159,13 +174,14 @@ async function replaceGeneratedDirectory(stagedDirectory) {
 
 async function main() {
   const checkOnly = process.argv.includes("--check");
+  const codexCli = await resolveCodexCli();
   const temporaryRoot = await mkdtemp(
     path.join(packageDirectory, ".protocol-generate-"),
   );
   const stagedDirectory = path.join(temporaryRoot, "generated");
 
   try {
-    await generateInto(stagedDirectory);
+    await generateInto(stagedDirectory, codexCli.path);
 
     if (checkOnly) {
       const differences = await compareDirectories(
@@ -174,7 +190,7 @@ async function main() {
       );
       const expectedVersionSource =
         `// This file is maintained by scripts/generate.mjs.\n` +
-        `export const CODEX_PROTOCOL_VERSION = "${PINNED_CODEX_VERSION}" as const;\n`;
+        `export const CODEX_PROTOCOL_VERSION = "${codexCli.version}" as const;\n`;
       const actualVersionSource = await readFile(versionFile, "utf8").catch(
         () => "",
       );
@@ -201,10 +217,10 @@ async function main() {
     await writeFile(
       versionFile,
       `// This file is maintained by scripts/generate.mjs.\n` +
-        `export const CODEX_PROTOCOL_VERSION = "${PINNED_CODEX_VERSION}" as const;\n`,
+        `export const CODEX_PROTOCOL_VERSION = "${codexCli.version}" as const;\n`,
     );
     process.stdout.write(
-      `Generated stable Codex protocol ${PINNED_CODEX_VERSION}.\n`,
+      `Generated stable Codex protocol ${codexCli.version}.\n`,
     );
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });

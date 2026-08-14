@@ -1319,6 +1319,7 @@
           <li><a href="#quick-start">Quick start</a></li>
           <li><a href="#lifecycle">Lifecycle</a></li>
           <li><a href="#thread-operations">Thread operations</a></li>
+          <li><a href="#plan-mode">Plan mode</a></li>
           <li><a href="#turn-operations">Turn operations</a></li>
           <li><a href="#typed-notifications">Typed notifications</a></li>
           <li><a href="#api-reference">Client API</a></li>
@@ -1345,7 +1346,7 @@
             <div class="card">
               <span class="card-label">Client</span>
               <h4>Small typed surface</h4>
-              <p>Connect, create or resume a thread, start or stream a turn, interrupt, subscribe, and close.</p>
+              <p>Connect, create, resume, or read a thread, start or stream a turn, interrupt, subscribe, and close.</p>
             </div>
             <div class="card">
               <span class="card-label">Schema</span>
@@ -1577,7 +1578,8 @@ console.log(resumed.thread.id); <span class="comment">// same resumable thread i
           <p>
             Call <code>readThread()</code> to retrieve the current thread record. Its nullable
             <code>thread.name</code> field is the user-facing title; use <code>thread.preview</code> when
-            no title has been assigned.
+            no title has been assigned. Pass <code>includeTurns: true</code> when the response also needs
+            rollout-history turns and their items.
           </p>
           <div class="code-block">
             <div class="code-header">
@@ -1586,7 +1588,10 @@ console.log(resumed.thread.id); <span class="comment">// same resumable thread i
                 <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
               </button>
             </div>
-            <pre><code><span class="keyword">const</span> { thread } = <span class="keyword">await</span> client.readThread({ threadId });
+            <pre><code><span class="keyword">const</span> { thread } = <span class="keyword">await</span> client.readThread({
+  threadId,
+  includeTurns: <span class="keyword">false</span>,
+});
 <span class="keyword">const</span> title = thread.name ?? thread.preview;
 
 console.log(title);</code></pre>
@@ -1686,6 +1691,53 @@ console.log(title);</code></pre>
             <code>approvalPolicy: "never"</code> is the predictable choice for this first client. If the server
             still initiates an approval or interactive request, the transport responds fail-closed. The package
             never displays a prompt or grants an approval.
+          </div>
+
+          <h3 id="plan-mode">Specify Plan mode</h3>
+          <p>
+            The stable generated <code>ThreadStartParams</code>, <code>ThreadResumeParams</code>, and
+            <code>TurnStartParams</code> do not expose a <code>collaborationMode</code> request field. To ask
+            Codex to remain in Plan mode, supply an explicit policy through the thread’s
+            <code>developerInstructions</code> when starting or resuming it.
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>plan-mode.ts</span>
+              <button class="copy-button" type="button" aria-label="Copy Plan mode example">
+                <span class="copy-icon" aria-hidden="true"></span><span>Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="keyword">const</span> planModeInstructions = <span class="string">`&lt;collaboration_mode&gt;
+# Collaboration Mode: Plan
+
+Develop a complete implementation plan with the user.
+Inspect the workspace using read-only operations only.
+Do not edit files or run mutating commands until the collaboration mode changes.
+&lt;/collaboration_mode&gt;`</span>;
+
+<span class="keyword">const</span> { thread } = <span class="keyword">await</span> client.startThread({
+  cwd: <span class="string">"/absolute/path/to/project"</span>,
+  approvalPolicy: <span class="string">"never"</span>,
+  sandbox: <span class="string">"read-only"</span>,
+  developerInstructions: planModeInstructions,
+});
+
+<span class="keyword">await</span> client.startTurn({
+  threadId: thread.id,
+  input: [{
+    type: <span class="string">"text"</span>,
+    text: <span class="string">"Plan the authentication migration."</span>,
+    text_elements: [],
+  }],
+});</code></pre>
+          </div>
+          <div class="callout">
+            <strong>Instruction policy, not a transport switch</strong>
+            The XML-style wrapper keeps the policy recognizable, but the behavior comes from the developer
+            instruction text. The generated <code>CollaborationMode</code> and <code>ThreadSettings</code> types
+            describe protocol state; this client does not expose a stable request that sets that state directly.
+            Pair the instructions with <code>sandbox: "read-only"</code> when Plan mode must also be enforced at
+            the tool boundary.
           </div>
         </section>
 
@@ -1944,7 +1996,7 @@ unsubscribe();</code></pre>
                 <tr>
                   <td><code>codexPathOverride</code><span class="type">string</span></td>
                   <td>No</td>
-                  <td>Launch a specific native Codex executable instead of resolving the CLI from the pinned <code>@openai/codex</code> package.</td>
+                  <td>Launch a specific native Codex executable instead of resolving the CLI from the pinned <code>@openai/codex</code> package. The caller must keep it compatible with <code>CODEX_PROTOCOL_VERSION</code>.</td>
                 </tr>
                 <tr>
                   <td><code>env</code><span class="type">Record&lt;string, string&gt;</span></td>
@@ -2001,7 +2053,7 @@ unsubscribe();</code></pre>
                 <tr>
                   <td><code>readThread(params)</code></td>
                   <td><code>Promise&lt;ThreadReadResponse&gt;</code></td>
-                  <td>Sends <code>thread/read</code>. Read the nullable user-facing title from <code>response.thread.name</code>.</td>
+                  <td>Sends <code>thread/read</code>. Read the nullable user-facing title from <code>response.thread.name</code>; set <code>includeTurns</code> to populate rollout history.</td>
                 </tr>
                 <tr>
                   <td><code>startTurn(params)</code></td>
@@ -2265,8 +2317,8 @@ stopLogs();</code></pre>
           </p>
           <div class="callout warning">
             <strong>Generated types do not add client methods</strong>
-            <code>CodexAppServerClient</code> intentionally exposes only connection/initialization, thread start and
-            resume, turn start and interrupt, streaming, subscriptions, and shutdown. Types such as
+            <code>CodexAppServerClient</code> intentionally exposes only connection/initialization, thread start,
+            resume and read, turn start and interrupt, streaming, subscriptions, and shutdown. Types such as
             <code>ThreadForkParams</code>, <code>ModelListParams</code>, or <code>TurnSteerParams</code> describe
             the wire protocol but are not callable through a public generic request method in this package.
           </div>
@@ -2281,9 +2333,10 @@ stopLogs();</code></pre>
           <div class="section-kicker">12 · Version control</div>
           <h2 id="generation-title">Protocol generation and version drift</h2>
           <p>
-            Protocol definitions are generated by the exact Codex CLI the package depends on. The manifest,
-            generation script, and exported <code>CODEX_PROTOCOL_VERSION</code> all pin
-            <code>0.140.0</code>.
+            Protocol definitions are generated by the exact Codex CLI the package depends on. The manifest is
+            the single source of truth for the exact <code>@openai/codex</code> version; the generator verifies
+            the installed package matches it and writes that resolved version to
+            <code>CODEX_PROTOCOL_VERSION</code>.
           </p>
           <div class="code-block">
             <div class="code-header">
@@ -2301,11 +2354,11 @@ npm run protocol:check -w @lightcode/codex-protocol</code></pre>
           <div class="steps" aria-label="Protocol upgrade workflow">
             <div class="step">
               <div class="step-number">1</div>
-              <div><h4>Update both pins</h4><p>Change the exact <code>@openai/codex</code> dependency and <code>PINNED_CODEX_VERSION</code> in <code>scripts/generate.mjs</code>.</p></div>
+              <div><h4>Update the dependency</h4><p>Change the exact <code>@openai/codex</code> dependency in <code>package.json</code> and run <code>npm install</code>. There is no duplicate version constant in the generator.</p></div>
             </div>
             <div class="step">
               <div class="step-number">2</div>
-              <div><h4>Generate stable definitions</h4><p>The script runs <code>codex app-server generate-ts</code> from the resolved package CLI.</p></div>
+              <div><h4>Generate stable definitions</h4><p>The script verifies the installed CLI version, then runs <code>codex app-server generate-ts</code> from that package.</p></div>
             </div>
             <div class="step">
               <div class="step-number">3</div>
