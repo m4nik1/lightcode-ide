@@ -31,7 +31,17 @@ export default function AITextBox() {
     setValue("");
   }
 
+  function toggleMode() {
+    setMode((current) => (current === "build" ? "plan" : "build"));
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Tab" && event.shiftKey) {
+      event.preventDefault();
+      toggleMode();
+      return;
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
@@ -69,11 +79,7 @@ export default function AITextBox() {
               type="button"
               aria-label={`Mode: ${mode}`}
               aria-pressed={mode === "plan"}
-              onClick={() =>
-                setMode((current) =>
-                  current === "build" ? "plan" : "build",
-                )
-              }
+              onClick={toggleMode}
               className={cn(
                 "inline-flex h-7 items-center rounded-lg px-2 text-xs font-normal transition-[background-color,color,opacity] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                 aiThemeClassNames.surfaceHover,
