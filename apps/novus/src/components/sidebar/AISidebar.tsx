@@ -3,7 +3,7 @@ import { SidebarHeader } from "./SidebarHeader";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../../theme";
 import { cn } from "../../lib/utils";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Settings } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
 import { trpcClient } from "../../utils/trpc";
 import { useQuery } from "@tanstack/react-query";
@@ -160,6 +160,25 @@ export default function AISidebar() {
             onDeleteThread={deleteThread}
           />
         ))}
+      </div>
+
+      <div className={cn("shrink-0 border-t p-3", aiThemeClassNames.border)}>
+        <button
+          type="button"
+          aria-label="Settings"
+          className={cn(
+            "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+            aiThemeClassNames.textPrimary,
+            aiThemeClassNames.surfaceHover,
+            aiThemeClassNames.focusVisibleSurfaceHover,
+            aiThemeClassNames.borderFocus,
+          )}
+        >
+          <Settings
+            className={cn("size-4 shrink-0", aiThemeClassNames.textMuted)}
+          />
+          Settings
+        </button>
       </div>
     </aside>
   );
