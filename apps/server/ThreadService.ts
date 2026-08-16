@@ -69,6 +69,7 @@ export class ThreadService {
       findThread = await findThread.createThread(
         project.path,
         input.mode,
+        input.access,
       );
 
       this.threads.set(input.threadID, findThread);

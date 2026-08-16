@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { CircleAlertIcon } from "lucide-react";
 import { PickerDropdown, type PickerOption } from "./ModelPicker";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
+import { useAIChat } from "../context/useAIChat";
 
 type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 
@@ -17,15 +17,15 @@ const accessOptions: PickerOption<AccessMode>[] = [
 ];
 
 export default function AccessPicker() {
-  const [accessMode, setAccessMode] = useState<AccessMode>("workspace-write");
+  const { access, accessSet } = useAIChat();
 
-  const isFullAccess = accessMode === "danger-full-access";
+  const isFullAccess = access === "danger-full-access";
 
   return (
     <PickerDropdown
       options={accessOptions}
-      value={accessMode}
-      onSelect={setAccessMode}
+      value={access}
+      onSelect={accessSet}
       menuWidth="min-w-64"
       triggerLeading={
         isFullAccess ? <CircleAlertIcon className="size-3.5" /> : null
