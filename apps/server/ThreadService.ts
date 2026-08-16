@@ -153,7 +153,7 @@ export class ThreadService {
       }
     }
 
-    if(title == '' || title === "Untitled chat") {
+    if(title !== '' && title !== "Untitled chat") {
       renameThread.get(title, threadID);
     }
         
