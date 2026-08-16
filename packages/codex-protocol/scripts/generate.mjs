@@ -94,7 +94,7 @@ async function resolveCodexCli() {
   }
 
   return {
-    path: path.join(
+    cliPath: path.join(
       path.dirname(installedManifestFile),
       installedManifest.bin.codex,
     ),
@@ -102,7 +102,8 @@ async function resolveCodexCli() {
   };
 }
 
-async function generateInto(directory, cliPath) {
+async function generateInto(directory) {
+  const { cliPath, version } = await resolveCodexCli();
   const result = spawnSync(
     process.execPath,
     [cliPath, "app-server", "generate-ts", "--out", directory],
@@ -119,6 +120,7 @@ async function generateInto(directory, cliPath) {
   }
 
   await normalizeGeneratedImports(directory);
+  return version;
 }
 
 async function compareDirectories(expectedDirectory, actualDirectory) {
@@ -181,7 +183,7 @@ async function main() {
   const stagedDirectory = path.join(temporaryRoot, "generated");
 
   try {
-    await generateInto(stagedDirectory, codexCli.path);
+    const codexVersion = await generateInto(stagedDirectory);
 
     if (checkOnly) {
       const differences = await compareDirectories(
@@ -190,7 +192,7 @@ async function main() {
       );
       const expectedVersionSource =
         `// This file is maintained by scripts/generate.mjs.\n` +
-        `export const CODEX_PROTOCOL_VERSION = "${codexCli.version}" as const;\n`;
+        `export const CODEX_PROTOCOL_VERSION = "${codexVersion}" as const;\n`;
       const actualVersionSource = await readFile(versionFile, "utf8").catch(
         () => "",
       );
@@ -217,10 +219,10 @@ async function main() {
     await writeFile(
       versionFile,
       `// This file is maintained by scripts/generate.mjs.\n` +
-        `export const CODEX_PROTOCOL_VERSION = "${codexCli.version}" as const;\n`,
+        `export const CODEX_PROTOCOL_VERSION = "${codexVersion}" as const;\n`,
     );
     process.stdout.write(
-      `Generated stable Codex protocol ${codexCli.version}.\n`,
+      `Generated stable Codex protocol ${codexVersion}.\n`,
     );
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });

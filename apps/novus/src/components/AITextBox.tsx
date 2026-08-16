@@ -7,10 +7,13 @@ import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
 
+type CollaborationMode = "build" | "plan";
+
 export default function AITextBox() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const { messageSend, isTurning, stopTurn } = useAIChat();
+  const [mode, setMode] = useState<CollaborationMode>("build");
+  const { messages, messageSend, isTurning, stopTurn } = useAIChat();
 
   const canSend = value.trim().length > 0;
   const actionButtonThemeClassName = isTurning
@@ -23,12 +26,22 @@ export default function AITextBox() {
     if (isTurning) {
       stopTurn();
     } else {
-      void messageSend(value);
+      void messageSend(value, mode);
     }
     setValue("");
   }
 
+  function toggleMode() {
+    setMode((current) => (current === "build" ? "plan" : "build"));
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Tab" && event.shiftKey) {
+      event.preventDefault();
+      toggleMode();
+      return;
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
@@ -54,13 +67,30 @@ export default function AITextBox() {
           rows={3}
           onKeyDown={(e) => handleKeyDown(e)}
           className={cn(
-            "min-h-28 w-75 resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-sm leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
+            "min-h-28  resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-sm leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
             aiThemeClassNames.textPrimary,
             aiThemeClassNames.placeholder,
           )}
         />
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 pb-3.5">
-          <AccessPicker />
+          <div className="flex items-center gap-1">
+            <AccessPicker />
+            <button
+              type="button"
+              aria-label={`Mode: ${mode}`}
+              aria-pressed={mode === "plan"}
+              onClick={toggleMode}
+              className={cn(
+                "inline-flex h-7 items-center rounded-lg px-2 text-xs font-normal transition-[background-color,color,opacity] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                aiThemeClassNames.surfaceHover,
+                mode === "plan"
+                  ? aiThemeClassNames.textPrimary
+                  : aiThemeClassNames.textMuted,
+              )}
+            >
+              {mode === "plan" ? "Plan" : "Build"}
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             <ModelPicker />

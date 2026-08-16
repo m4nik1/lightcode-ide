@@ -128,6 +128,7 @@ export default function ModelPicker() {
 
   function modelSelected(model: AIModelId) {
     setSelectedModel(model);
+    console.log("Model selected:", model, " and Thinking level:", thinkingLevel);
     modelSet(model, thinkingLevel);
   }
 

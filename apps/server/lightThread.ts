@@ -2,6 +2,14 @@ import { type ModelReasoningEffort } from "@openai/codex-sdk";
 import { CodexAppServerClient } from '@lightcode/codex-protocol'
 import type { ThreadStartResponse } from '@lightcode/codex-protocol'
 
+const PLAN_MODE_INSTRUCTIONS = `<collaboration_mode>
+# Collaboration Mode: Plan
+
+Develop a complete implementation plan with the user.
+Inspect the workspace using read-only operations only.
+Do not edit files or run mutating commands until the collaboration mode changes.
+</collaboration_mode>`;
+
 export default class lightThread {
   codexInstance: CodexAppServerClient;
   thread: null | ThreadStartResponse;
@@ -16,12 +24,15 @@ export default class lightThread {
     this.title = "Untitled Thread"
   }
 
-  async createThread(path : string) {
+  async createThread(path: string, mode: "build" | "plan") {
+    const isPlanMode = mode === "plan";
+
     // The approval policy is about the full access dropdown that is shown
     this.thread = await this.codexInstance.startThread({
       cwd: path,
-      sandbox: 'workspace-write',
+      sandbox: isPlanMode ? 'read-only' : 'workspace-write',
       approvalPolicy: 'never',
+      developerInstructions: isPlanMode ? PLAN_MODE_INSTRUCTIONS : null,
     }) 
 
     console.log("Started new thread: ", this.thread)
@@ -45,7 +56,7 @@ export default class lightThread {
     console.log("Turn interrupted: ", turnInterrupt)
   }
 
-  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string, accessMode : string) {
+  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
     }
