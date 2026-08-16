@@ -16,7 +16,6 @@ export default function AITextBox() {
   const { messages, messageSend, isTurning, stopTurn } = useAIChat();
 
   const canSend = value.trim().length > 0;
-  const canChangeMode = messages.length === 0;
   const actionButtonThemeClassName = isTurning
     ? aiThemeClassNames.stopAction
     : canSend
@@ -70,12 +69,6 @@ export default function AITextBox() {
               type="button"
               aria-label={`Mode: ${mode}`}
               aria-pressed={mode === "plan"}
-              disabled={!canChangeMode}
-              title={
-                canChangeMode
-                  ? "Toggle Plan mode"
-                  : "Mode cannot be changed after the first message"
-              }
               onClick={() =>
                 setMode((current) =>
                   current === "build" ? "plan" : "build",
