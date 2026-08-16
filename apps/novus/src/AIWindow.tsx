@@ -4,21 +4,25 @@ import AITextBox from "./components/AITextBox";
 import ChatMessages from "./components/ChatMessages";
 import { aiTheme } from "./theme";
 import { AiChatProvider } from "./context/useAIChat";
+import SettingsPage from "./components/SettingsPage";
+import { useState } from "react";
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 export function AIWindow() {
+  const [view, setView] = useState<"chat" | "settings">("chat");
+
   return (
     <main style={styles.root}>
       <div aria-hidden="true" style={styles.blurBackdrop} />
       <AiChatProvider>
         <div style={styles.sidebarLayer}>
-          <AISidebar />
+          <AISidebar changeView={(view : "chat" | "settings") => setView(view)} />
         </div>
         <div style={styles.mainColumn}>
           {isMac ? <header style={styles.topBar} /> : null}
           <section style={styles.content}>
-            <ChatMessages />
+            {view == 'chat'} ? <ChatMessages /> : <SettingsPage />
             <div style={styles.composerArea}>
               <div style={styles.promptWrap}>
                 <AITextBox />

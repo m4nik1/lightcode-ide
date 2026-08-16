@@ -16,7 +16,7 @@ export interface Project {
   threads: thread[];
 }
 
-export default function AISidebar() {
+export default function AISidebar({ changeView }: { changeView: (view: "chat" | "settings") => void }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -166,6 +166,7 @@ export default function AISidebar() {
         <button
           type="button"
           aria-label="Settings"
+          onClick={() => changeView("settings")}
           className={cn(
             "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.textPrimary,
