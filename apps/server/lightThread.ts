@@ -65,7 +65,6 @@ export default class lightThread {
       threadId: this.id,
       model: model,
       effort: thinking,
-      mode: mode,
       input: [
         {
           type: "text",
