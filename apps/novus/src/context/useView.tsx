@@ -1,12 +1,22 @@
 import { createContext, useContext, useState } from "react";
 
-const viewContext = createContext<"chat" | "settings" | undefined>(undefined);
+type ViewContextType = {
+  view: "chat" | "settings";
+  setView: (view: "chat" | "settings") => void;
+};
 
-export function viewProvider({ children }: { children: React.ReactNode }) {
+
+const viewContext = createContext<ViewContextType | undefined>(undefined);
+
+export function ViewProvider({ children }: { children: React.ReactNode }) {
   const [view, setView] = useState<"chat" | "settings">("chat");
 
   return (
-    <viewContext.Provider value={{view, setView}}>
+    <viewContext.Provider value={{
+        view,
+        setView
+      }}
+    >
       {children}
     </viewContext.Provider>
   );   

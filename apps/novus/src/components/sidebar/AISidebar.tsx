@@ -8,6 +8,7 @@ import { ProjectDropdown } from "./ProjectDropdown";
 import { trpcClient } from "../../utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import { useAIChat } from "../../context/useAIChat";
+import { useView } from "@/context/useView";
 
 export interface Project {
   id: string;
@@ -16,13 +17,15 @@ export interface Project {
   threads: thread[];
 }
 
-export default function AISidebar({ changeView }: { changeView: (view: "chat" | "settings") => void }) {
+export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: () => trpcClient.getProjects.query(),
   });
   const { createProject, currentThread, setCurrentThread } = useAIChat();
+
+  const { setView } = useView();
 
   const currentTitle = currentThread
     ? `${currentThread.id}:${currentThread.title}`
@@ -166,7 +169,7 @@ export default function AISidebar({ changeView }: { changeView: (view: "chat" | 
         <button
           type="button"
           aria-label="Settings"
-          onClick={() => changeView("settings")}
+          onClick={() => setView("settings")}
           className={cn(
             "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.textPrimary,
