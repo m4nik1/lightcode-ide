@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { SidebarHeader } from "./SidebarHeader";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../../theme";
 import { cn } from "../../lib/utils";
@@ -74,7 +73,7 @@ export default function AISidebar() {
   function deleteThread(threadID: string) {
     if (!currentThread) return;
 
-    setProjects((current) => 
+    setProjects((current) =>
       current.map((project) => ({
         ...project,
         threads: project.threads.filter((thread) => thread.id !== threadID),
@@ -131,7 +130,7 @@ export default function AISidebar() {
         aiThemeClassNames.textPrimary,
       )}
     >
-      <SidebarHeader onNewChat={() => handleNewChat()} />
+      <h1 className="shrink-0 px-4 pb-4 pt-10 text-2xl font-semibold">Novus</h1>
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         <div className="flex">

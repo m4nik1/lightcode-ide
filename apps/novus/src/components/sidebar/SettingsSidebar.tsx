@@ -17,7 +17,7 @@ export default function SettingsSidebar() {
       )}
     >
       <header className="shrink-0 px-5 pb-5 pt-10">
-        <h1 className="m-0 text-[15px] font-semibold tracking-[-0.01em]">
+        <h1 className="m-0 text-2xl font-semibold tracking-[-0.01em]">
           Settings
         </h1>
       </header>
