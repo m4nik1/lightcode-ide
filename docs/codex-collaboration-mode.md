@@ -2,54 +2,41 @@
 
 ## Overview
 
-The current upstream Codex app-server v2 protocol supports selecting a
-collaboration mode per `turn/start` request. This includes Plan mode and the
-default Build mode.
+Lightcode uses the stable Codex app-server v2 protocol. Its generated
+`TurnStartParams` does not expose the experimental `collaborationMode` request
+field, so Lightcode provides Plan and Build behavior with per-turn prompt text.
 
-The field is named `collaborationMode` in the JSON wire format. The upstream
-Codex TUI passes this field when it starts a turn, and the upstream test suite
-verifies Plan mode using the same request shape.
+## Stable Plan/Build requests
 
-## Plan-mode request
+Plan policy is attached only to the text input of a Plan turn:
 
-The JSON-RPC request is conceptually:
+```text
+<collaboration_mode>
+# Collaboration Mode: Plan
 
-```json
-{
-  "method": "turn/start",
-  "id": 1,
-  "params": {
-    "threadId": "thread-id",
-    "input": [
-      {
-        "type": "text",
-        "text": "Plan this task",
-        "text_elements": []
-      }
-    ],
-    "collaborationMode": {
-      "mode": "plan",
-      "settings": {
-        "model": "gpt-5.4",
-        "reasoning_effort": "medium",
-        "developer_instructions": null
-      }
-    }
-  }
-}
+Develop a complete implementation plan with the user.
+Inspect the workspace using read-only operations only.
+Do not edit files or run mutating commands until the collaboration mode changes.
+</collaboration_mode>
+
+Plan this task
 ```
 
-`mode: "plan"` selects the Plan collaboration mode. Setting
-`developer_instructions` to `null` tells Codex to use the built-in instructions
-for the selected mode. A concrete developer-instruction string can be used to
-override those instructions when needed.
+Build turns do not include that Plan block. They begin with a short reset—
+`Previous Plan-mode instructions no longer apply. Continue in Build mode.`—and
+then include the original user query. This explicitly deactivates Plan behavior
+that remains in the conversation history.
 
 ## TypeScript usage
 
-Once the local protocol types include the current upstream field, the package
-can pass the mode through `streamTurn()`:
+The application constructs the text input before passing the stable request to
+`streamTurn()`:
 
 ```ts
+const modeInstructions = mode === "plan"
+  ? PLAN_MODE_INSTRUCTIONS
+  : "Previous Plan-mode instructions no longer apply. Continue in Build mode.";
+
 for await (const event of client.streamTurn({
   threadId,
   model,
@@ -57,49 +44,24 @@ for await (const event of client.streamTurn({
   input: [
     {
       type: "text",
-      text: query,
+      text: `${modeInstructions}\n\n${query}`,
       text_elements: [],
     },
   ],
-  collaborationMode: {
-    mode: "plan",
-    settings: {
-      model,
-      reasoning_effort: "medium",
-      developer_instructions: null,
-    },
-  },
 })) {
   yield event;
 }
 ```
 
-The mode is attached to the turn request, so it can be changed for a later
-turn on the same thread.
+Neither `mode` nor `collaborationMode` is sent on the wire.
 
 ## State of this repository
 
-The generated type currently used by
-`packages/codex-protocol/src/client.ts` is
-`packages/codex-protocol/src/generated/v2/TurnStartParams.ts`. At present it
-does not contain a `collaborationMode` field, even though the upstream Codex
-app-server protocol supports it.
-
-The protocol types should be regenerated from a newer compatible Codex
-protocol/schema version rather than manually editing the generated file. After
-regeneration, `TurnStartParams` should expose a field equivalent to:
-
-```ts
-collaborationMode?: CollaborationMode | null;
-```
-
-The pinned Codex app-server executable must also support the newer protocol
-field. Updating only the TypeScript type would make the code compile but would
-not guarantee that the launched server accepts the request.
-
-Until the protocol types and pinned executable are updated, the repository's
-existing `developerInstructions` approach remains the compatibility fallback:
-configure Plan-mode instructions when starting or resuming the thread.
+`packages/codex-protocol` keeps `experimentalApi: false`, its existing generated
+types, and its pinned Codex version. Lightcode does not place Plan policy in
+thread-level `developerInstructions`, because those instructions would remain
+active when the same thread switches to Build mode. This is intentionally an
+application-level approximation rather than Codex's built-in Plan mode.
 
 ## Upstream references
 
