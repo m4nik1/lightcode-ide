@@ -1696,9 +1696,10 @@ console.log(title);</code></pre>
           <h3 id="plan-mode">Specify Plan mode</h3>
           <p>
             The stable generated <code>ThreadStartParams</code>, <code>ThreadResumeParams</code>, and
-            <code>TurnStartParams</code> do not expose a <code>collaborationMode</code> request field. To ask
-            Codex to remain in Plan mode, supply an explicit policy through the thread’s
-            <code>developerInstructions</code> when starting or resuming it.
+            <code>TurnStartParams</code> do not expose the experimental <code>collaborationMode</code> request
+            field. Lightcode approximates Plan mode by attaching an explicit policy only to each Plan turn's
+            text input. It does not use thread-level <code>developerInstructions</code>, which would remain
+            active after switching the same thread to Build mode.
           </p>
           <div class="code-block">
             <div class="code-header">
@@ -1719,25 +1720,24 @@ Do not edit files or run mutating commands until the collaboration mode changes.
   cwd: <span class="string">"/absolute/path/to/project"</span>,
   approvalPolicy: <span class="string">"never"</span>,
   sandbox: <span class="string">"read-only"</span>,
-  developerInstructions: planModeInstructions,
 });
 
 <span class="keyword">await</span> client.startTurn({
   threadId: thread.id,
   input: [{
     type: <span class="string">"text"</span>,
-    text: <span class="string">"Plan the authentication migration."</span>,
+    text: <span class="string">`${planModeInstructions}\n\nPlan the authentication migration.`</span>,
     text_elements: [],
   }],
 });</code></pre>
           </div>
           <div class="callout">
             <strong>Instruction policy, not a transport switch</strong>
-            The XML-style wrapper keeps the policy recognizable, but the behavior comes from the developer
-            instruction text. The generated <code>CollaborationMode</code> and <code>ThreadSettings</code> types
-            describe protocol state; this client does not expose a stable request that sets that state directly.
-            Pair the instructions with <code>sandbox: "read-only"</code> when Plan mode must also be enforced at
-            the tool boundary.
+            The XML-style wrapper keeps the policy recognizable, but the behavior comes from the instruction
+            text included in the Plan turn. Build turns omit the Plan block and begin with a short
+            reset stating that previous Plan-mode instructions no longer apply. Neither <code>mode</code> nor
+            <code>collaborationMode</code> is sent in the stable <code>turn/start</code> request. Existing sandbox
+            and access behavior is unchanged.
           </div>
         </section>
 

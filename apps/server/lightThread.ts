@@ -24,15 +24,12 @@ export default class lightThread {
     this.title = "Untitled Thread"
   }
 
-  async createThread(path: string, mode: "build" | "plan", access: "read-only" | "workspace-write" | "danger-full-access") {
-    const isPlanMode = mode === "plan";
-
+  async createThread(path: string, access: "read-only" | "workspace-write" | "danger-full-access") {
     // The approval policy is about the full access dropdown that is shown
     this.thread = await this.codexInstance.startThread({
       cwd: path,
       sandbox: access,
       approvalPolicy: 'never',
-      developerInstructions: isPlanMode ? PLAN_MODE_INSTRUCTIONS : null,
     }) 
 
     console.log("Started new thread: ", this.thread)
@@ -61,6 +58,10 @@ export default class lightThread {
       throw new Error("Thread has not been created")
     }
 
+    const modeInstructions = mode === "plan"
+      ? PLAN_MODE_INSTRUCTIONS
+      : "Previous Plan-mode instructions no longer apply. Continue in Build mode.";
+
     for await (const event of this.codexInstance.streamTurn({
       threadId: this.id,
       model: model,
@@ -68,7 +69,7 @@ export default class lightThread {
       input: [
         {
           type: "text",
-          text: query,
+          text: `${modeInstructions}\n\n${query}`,
           text_elements: [],
         },
       ],

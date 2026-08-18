@@ -68,7 +68,6 @@ export class ThreadService {
       
       findThread = await findThread.createThread(
         project.path,
-        input.mode,
         input.access,
       );
 
@@ -89,7 +88,7 @@ export class ThreadService {
 
     console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
-    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.message)) {
+    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.mode, input.message)) {
       console.log("Event received: ", event);
       if(event.method == 'item/completed'
         && event.params.item.type === 'agentMessage'
