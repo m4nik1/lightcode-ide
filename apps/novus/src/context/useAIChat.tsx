@@ -35,7 +35,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const [isTurning, setTurn] = useState<boolean>(false);
 
   const [model, setModel] = useState<AIModel>({
-    model: "gpt-5.5",
+    model: "gpt-5.6-terra",
     thinking: "low",
   });
   const [access, setAccess] = useState<AccessMode>("workspace-write");

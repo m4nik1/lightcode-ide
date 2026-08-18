@@ -19,16 +19,16 @@ export type PickerOption<TValue extends string> = {
 };
 
 const modelOptions: PickerOption<AIModelId>[] = [
+    {
+      label: "GPT-5.6-Terra",
+      value: "gpt-5.6-terra",
+      description: "Small but mighty",
+   },
   { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
   {
     label: "GPT-5.6-Sol",
     value: "gpt-5.6-sol",
     description: "Latest and greatest",
-  },
-  {
-    label: "GPT-5.6-Terra",
-    value: "gpt-5.6-terra",
-    description: "Small but mighty",
   },
 ];
 
