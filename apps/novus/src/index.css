@@ -36,21 +36,13 @@ select {
 
 @keyframes shimmer-slide {
   from {
-    transform: translateX(0);
+    -webkit-mask-position: calc(0% - var(--shimmer-width)) 0;
+    mask-position: calc(0% - var(--shimmer-width)) 0;
   }
 
   to {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes shimmer-counter {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-100%);
+    -webkit-mask-position: calc(100% + var(--shimmer-width)) 0;
+    mask-position: calc(100% + var(--shimmer-width)) 0;
   }
 }
 
@@ -69,10 +61,7 @@ select {
   --shimmer-width: 4.5rem;
 
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(-1 * var(--shimmer-width));
-  width: calc(100% + var(--shimmer-width) * 2);
+  inset: 0;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(
     to right,
@@ -96,24 +85,21 @@ select {
     transparent var(--shimmer-width),
     transparent 100%
   );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: var(--shimmer-width) 100%;
+  mask-size: var(--shimmer-width) 100%;
   animation: shimmer-slide 2.2s linear infinite;
 }
 
 .shimmer-overlay > .shimmer-text {
   display: block;
-  width: calc(100% - var(--shimmer-width) * 2);
-  margin-left: var(--shimmer-width);
   color: var(--color-background, #fcfcfc);
-  animation: shimmer-counter 2.2s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shimmer-overlay,
-  .shimmer-overlay > .shimmer-text {
-    animation: none;
-  }
-
   .shimmer-overlay {
+    animation: none;
     opacity: 0;
   }
 }
