@@ -78,8 +78,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       ],
     }));
 
-    const access = mode === "plan" ? "read-only" : "workspace-write";
-
     const streamChat = await trpcClient.queryAI.query({
       threadID,
       message: text,
