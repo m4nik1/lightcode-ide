@@ -37,6 +37,12 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
             ),
       )}
     >
+      {isSelected && (
+        <span
+          aria-hidden
+          className="absolute top-1/2 left-0 h-4 w-0.5 -translate-y-1/2 rounded-full bg-[#FCFCFC]"
+        />
+      )}
       <button
         type="button"
         aria-pressed={isSelected}
