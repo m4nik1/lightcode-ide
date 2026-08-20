@@ -11,6 +11,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
+    "build": "electron-forge package && electron-forge make && electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "typecheck": "tsc --project tsconfig.json --noEmit --pretty false"
   },
