@@ -33,3 +33,87 @@ textarea,
 select {
   font: inherit;
 }
+
+@keyframes shimmer-slide {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shimmer-counter {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.shimmer-text-container {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  overflow: hidden;
+}
+
+.shimmer-text-muted {
+  color: var(--color-muted-foreground, #6f6f6f);
+}
+
+.shimmer-overlay {
+  --shimmer-width: 4.5rem;
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--shimmer-width));
+  width: calc(100% + var(--shimmer-width) * 2);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    rgb(0 0 0 / 12%) 0.675rem,
+    rgb(0 0 0 / 55%) 1.575rem,
+    black 2.25rem,
+    rgb(0 0 0 / 55%) 2.925rem,
+    rgb(0 0 0 / 12%) 3.825rem,
+    transparent var(--shimmer-width),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    rgb(0 0 0 / 12%) 0.675rem,
+    rgb(0 0 0 / 55%) 1.575rem,
+    black 2.25rem,
+    rgb(0 0 0 / 55%) 2.925rem,
+    rgb(0 0 0 / 12%) 3.825rem,
+    transparent var(--shimmer-width),
+    transparent 100%
+  );
+  animation: shimmer-slide 2.2s linear infinite;
+}
+
+.shimmer-overlay > .shimmer-text {
+  display: block;
+  width: calc(100% - var(--shimmer-width) * 2);
+  margin-left: var(--shimmer-width);
+  color: var(--color-background, #fcfcfc);
+  animation: shimmer-counter 2.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-overlay,
+  .shimmer-overlay > .shimmer-text {
+    animation: none;
+  }
+
+  .shimmer-overlay {
+    opacity: 0;
+  }
+}
