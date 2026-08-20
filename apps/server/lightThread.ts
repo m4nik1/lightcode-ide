@@ -2,6 +2,14 @@ import { type ModelReasoningEffort } from "@openai/codex-sdk";
 import { CodexAppServerClient } from '@lightcode/codex-protocol'
 import type { ThreadStartResponse } from '@lightcode/codex-protocol'
 
+const PLAN_MODE_INSTRUCTIONS = `<collaboration_mode>
+# Collaboration Mode: Plan
+
+Develop a complete implementation plan with the user.
+Inspect the workspace using read-only operations only.
+Do not edit files or run mutating commands until the collaboration mode changes.
+</collaboration_mode>`;
+
 export default class lightThread {
   codexInstance: CodexAppServerClient;
   thread: null | ThreadStartResponse;
@@ -16,11 +24,11 @@ export default class lightThread {
     this.title = "Untitled Thread"
   }
 
-  async createThread(path : string) {
+  async createThread(path: string, access: "read-only" | "workspace-write" | "danger-full-access") {
     // The approval policy is about the full access dropdown that is shown
     this.thread = await this.codexInstance.startThread({
       cwd: path,
-      sandbox: 'workspace-write',
+      sandbox: access,
       approvalPolicy: 'never',
     }) 
 
@@ -45,10 +53,14 @@ export default class lightThread {
     console.log("Turn interrupted: ", turnInterrupt)
   }
 
-  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, query: string) {
+  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, mode: "plan" | "build", query: string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
     }
+
+    const modeInstructions = mode === "plan"
+      ? PLAN_MODE_INSTRUCTIONS
+      : "Previous Plan-mode instructions no longer apply. Continue in Build mode.";
 
     for await (const event of this.codexInstance.streamTurn({
       threadId: this.id,
@@ -57,7 +69,7 @@ export default class lightThread {
       input: [
         {
           type: "text",
-          text: query,
+          text: `${modeInstructions}\n\n${query}`,
           text_elements: [],
         },
       ],

@@ -5,10 +5,14 @@ import type { ChatMessage } from "../components/ChatMessages";
 import type { thread } from "../components/sidebar/types";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 
+type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
+
 type AIContext = {
   messages: ChatMessage[];
-  messageSend: (value: string) => Promise<void>;
+  messageSend: (value: string, mode: "build" | "plan") => Promise<void>;
   modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
+  access: AccessMode;
+  accessSet: (access: AccessMode) => void;
   createProject: () => void;
   currentThread: thread | null;
   setCurrentThread: (thread: thread) => void;
@@ -31,9 +35,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const [isTurning, setTurn] = useState<boolean>(false);
 
   const [model, setModel] = useState<AIModel>({
-    model: "gpt-5.5",
+    model: "gpt-5.6-luna",
     thinking: "low",
   });
+  const [access, setAccess] = useState<AccessMode>("workspace-write");
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: () => trpcClient.getProjects.query(),
@@ -42,7 +47,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     ? (messagesByThread[currentThread.id] ?? [])
     : [];
 
-  async function messageSend(value: string) {
+  async function messageSend(value: string, mode: "build" | "plan") {
     const text = value.trim();
     if (!text || !currentThread) return;
 
@@ -53,7 +58,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const assistantMessageID = crypto.randomUUID();
 
     console.log(
-      `Sending message to ${model.model} with ${model.thinking} thinking`,
+      `Sending message to ${model.model} with ${model.thinking} thinking in the ${mode} mode `,
     );
 
     setMessagesByThread((current) => ({
@@ -77,6 +82,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       threadID,
       message: text,
       model: model,
+      mode,
+      access,
     });
 
     setTurn(true);
@@ -160,6 +167,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     setModel({ model, thinking });
   }
 
+  function accessSet(access: AccessMode) {
+    setAccess(access);
+  }
+
   async function loadThreadMessages(threadID: string) {
     const messages = await trpcClient.loadMessages.query({ threadID });
 
@@ -184,6 +195,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         messages,
         messageSend,
         modelSet,
+        access,
+        accessSet,
         createProject,
         currentThread,
         setCurrentThread,

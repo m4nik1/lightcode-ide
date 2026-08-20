@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.dirname(scriptDirectory);
 const generatedDirectory = path.join(packageDirectory, "src", "generated");
+const packageManifestFile = path.join(packageDirectory, "package.json");
 const versionFile = path.join(packageDirectory, "src", "version.ts");
 const require = createRequire(import.meta.url);
 
@@ -73,12 +74,31 @@ async function normalizeGeneratedImports(directory) {
 }
 
 async function resolveCodexCli() {
-  const packageJsonPath = require.resolve("@openai/codex/package.json");
-  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
+  const installedManifestFile = require.resolve("@openai/codex/package.json");
+  const [packageManifest, installedManifest] = await Promise.all([
+    readFile(packageManifestFile, "utf8").then(JSON.parse),
+    readFile(installedManifestFile, "utf8").then(JSON.parse),
+  ]);
+  const declaredVersion = packageManifest.dependencies?.["@openai/codex"];
+
+  if (typeof declaredVersion !== "string") {
+    throw new Error(
+      "@openai/codex must be declared in this package's dependencies.",
+    );
+  }
+
+  if (installedManifest.version !== declaredVersion) {
+    throw new Error(
+      `Expected @openai/codex ${declaredVersion} from package.json, found ${installedManifest.version}. Run npm install before generating.`,
+    );
+  }
 
   return {
-    cliPath: path.join(path.dirname(packageJsonPath), packageJson.bin.codex),
-    version: packageJson.version,
+    cliPath: path.join(
+      path.dirname(installedManifestFile),
+      installedManifest.bin.codex,
+    ),
+    version: installedManifest.version,
   };
 }
 
@@ -156,6 +176,7 @@ async function replaceGeneratedDirectory(stagedDirectory) {
 
 async function main() {
   const checkOnly = process.argv.includes("--check");
+  const codexCli = await resolveCodexCli();
   const temporaryRoot = await mkdtemp(
     path.join(packageDirectory, ".protocol-generate-"),
   );
