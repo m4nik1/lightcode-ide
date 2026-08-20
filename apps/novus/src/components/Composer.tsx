@@ -9,7 +9,7 @@ import { useAIChat } from "../context/useAIChat";
 
 type CollaborationMode = "build" | "plan";
 
-export default function AITextBox() {
+export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [mode, setMode] = useState<CollaborationMode>("build");
