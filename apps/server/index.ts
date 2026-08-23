@@ -33,7 +33,7 @@ function applyCorsHeaders(req: Parameters<typeof trpcHandler>[0], res: Parameter
   }
 }
 
-createServer((req, res) => {
+export const server = createServer((req, res) => {
   applyCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') {
@@ -44,3 +44,11 @@ createServer((req, res) => {
 
   trpcHandler(req, res);
 }).listen(PORT);
+
+export const startServer = () => {
+  server.listen(PORT)
+}
+
+export const stopServer = () => {
+  server.close()
+}

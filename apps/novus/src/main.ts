@@ -9,9 +9,18 @@ if (started) {
   app.quit();
 }
 
+let mainWindow;
+const serverStatus = 'Stopped'
+
+function updateServerStatus(status : String) {
+  serverStatus = status;
+
+  mainWindow.webContents.send('server:status', serverStatus);
+}
+
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1500,
     height: 1000,
     autoHideMenuBar: true,
@@ -39,6 +48,18 @@ ipcMain.handle('dialog.openFolder', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
+
+ipcMain.handle('server:getStatus', () => serverStatus)
+
+app.whenReady().then(async () => {
+  try {
+    await startServer()
+    updateServerStatus('Ready')
+  } catch(err) {
+    console.error('Unable to start server: ', err);
+    updateServerStatus('Stopped (error)')
+  }
+})
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
