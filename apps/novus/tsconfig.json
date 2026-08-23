@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "baseUrl": ".",
+    "rootDir": "../..",
     "outDir": "dist",
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
