@@ -47,6 +47,8 @@ type Router = {
       threadID: string;
       message: string;
       model: { model: AIModelId; thinking: AIReasoningEffort };
+      mode: "build" | "plan";
+      access: "read-only" | "workspace-write" | "danger-full-access";
     }) => Promise<AsyncGenerator<AIEvent>>;
   };
   getThreadTitle: {

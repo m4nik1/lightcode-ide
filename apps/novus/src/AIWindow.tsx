@@ -1,6 +1,6 @@
 import { type CSSProperties } from "react";
 import AISidebar from "./components/sidebar/AISidebar";
-import AITextBox from "./components/AITextBox";
+import Composer from "./components/Composer";
 import ChatMessages from "./components/ChatMessages";
 import { aiTheme } from "./theme";
 import { AiChatProvider } from "./context/useAIChat";
@@ -22,15 +22,18 @@ export function AIWindow() {
         </div>
         <div style={styles.mainColumn}>
           {isMac ? <header style={styles.topBar} /> : null}
-            { view == 'chat' ? 
+          {view == "chat" ? (
             <section style={styles.content}>
               <ChatMessages />
               <div style={styles.composerArea}>
                 <div style={styles.promptWrap}>
-                  <AITextBox />
+                  <Composer />
                 </div>
               </div>
-            </section> : <SettingsPage /> }
+            </section>
+          ) : (
+            <SettingsPage />
+          )}
         </div>
       </AiChatProvider>
     </main>

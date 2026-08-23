@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -8,17 +8,18 @@ import {
 } from "./ui/dropdown-menu";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
+import { CodexIcon } from "./sidebar/icons";
 import { useAIChat } from "../context/useAIChat";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 
-type PickerOption<TValue extends string> = {
+export type PickerOption<TValue extends string> = {
   label: string;
   value: TValue;
   description?: string;
 };
 
 const modelOptions: PickerOption<AIModelId>[] = [
-  { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
+  {label: "GPT-5.6-Luna", value: 'gpt-5.6-luna', description: 'Tiny but big'},  
   {
     label: "GPT-5.6-Sol",
     value: "gpt-5.6-sol",
@@ -29,6 +30,7 @@ const modelOptions: PickerOption<AIModelId>[] = [
     value: "gpt-5.6-terra",
     description: "Small but mighty",
   },
+  { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
 ];
 
 const thinkingOptions: PickerOption<AIReasoningEffort>[] = [
@@ -42,13 +44,19 @@ type PickerDropdownProps<TValue extends string> = {
   value: TValue;
   onSelect: (value: TValue) => void;
   menuWidth: string;
+  align?: "start" | "end";
+  triggerLeading?: ReactNode;
+  triggerClassName?: string;
 };
 
-function PickerDropdown<TValue extends string>({
+export function PickerDropdown<TValue extends string>({
   options,
   value,
   onSelect,
   menuWidth,
+  align = "start",
+  triggerLeading,
+  triggerClassName,
 }: PickerDropdownProps<TValue>) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? options[0].label;
@@ -61,17 +69,18 @@ function PickerDropdown<TValue extends string>({
           className={cn(
             "group/trigger inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-normal transition-[background-color,color,transform] focus-visible:outline-none active:translate-y-px",
             aiThemeClassNames.surfaceHover,
-            aiThemeClassNames.textMuted,
-            aiThemeClassNames.hoverTextPrimary,
             aiThemeClassNames.dataOpenSurfaceHover,
+            triggerClassName ??
+              cn(aiThemeClassNames.textMuted, aiThemeClassNames.hoverTextPrimary),
           )}
         >
+          {triggerLeading}
           {selectedLabel}
           <ChevronDownIcon className="size-3 opacity-50 transition-transform group-data-[state=open]/trigger:rotate-180" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="start"
+        align={align}
         sideOffset={8}
         className={cn(
           "rounded-xl border p-1 ring-0",
@@ -130,22 +139,22 @@ export default function ModelPicker() {
   }
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-center gap-0.5">
       <PickerDropdown
         options={modelOptions}
         value={selectedModel}
         onSelect={modelSelected}
         menuWidth="min-w-56"
-      />
-      <span
-        aria-hidden="true"
-        className={cn("mx-1.5 h-4 w-px shrink-0", aiThemeClassNames.divider)}
+        align="end"
+        triggerLeading={<CodexIcon className="size-4" />}
+        triggerClassName={cn(aiThemeClassNames.textPrimary, "font-medium")}
       />
       <PickerDropdown
         options={thinkingOptions}
         value={thinkingLevel}
         onSelect={thinkingSelected}
         menuWidth="min-w-32"
+        align="end"
       />
     </div>
   );

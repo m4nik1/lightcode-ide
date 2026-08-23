@@ -20,6 +20,7 @@
   "scripts": {
     "desktop": "npm run dev -w @lightcode/desktop",
     "novus": "npm run dev -w @novus/app",
+    "novus:build": "npm run build -w @novus/app",
     "server": "npm run dev -w @lightcode/server",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

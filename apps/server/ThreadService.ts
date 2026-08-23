@@ -24,6 +24,8 @@ type AIMessage = {
     model: AIModelId;
     thinking: AIReasoningEffort;
   };
+  access: "read-only" | "workspace-write" | "danger-full-access";
+  mode: "build" | "plan";
 };
 
 export class ThreadService {
@@ -65,7 +67,8 @@ export class ThreadService {
       findThread = new lightThread(this.codexInstance)
       
       findThread = await findThread.createThread(
-        project.path
+        project.path,
+        input.access,
       );
 
       this.threads.set(input.threadID, findThread);
@@ -85,7 +88,7 @@ export class ThreadService {
 
     console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
-    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.message)) {
+    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.mode, input.message)) {
       console.log("Event received: ", event);
       if(event.method == 'item/completed'
         && event.params.item.type === 'agentMessage'
@@ -150,7 +153,7 @@ export class ThreadService {
       }
     }
 
-    if(title == '' || title === "Untitled chat") {
+    if(title !== '' && title !== "Untitled chat") {
       renameThread.get(title, threadID);
     }
         

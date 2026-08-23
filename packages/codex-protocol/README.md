@@ -68,9 +68,27 @@ await client.resumeThread({
 });
 ```
 
+Read an existing thread with `readThread()`. The returned `thread.name` is the
+optional user-facing title; `thread.preview` is a useful fallback when no title
+has been assigned. Set `includeTurns` when the rollout history is needed.
+
+```ts
+const { thread } = await client.readThread({
+  threadId,
+  includeTurns: false,
+});
+
+const title = thread.name ?? thread.preview;
+console.log(title);
+```
+
 This first package version does not provide interactive approval handlers.
 Known approval requests are declined, and unsupported server requests receive a
 protocol error instead of being left pending.
+
+The client must be connected before starting, resuming, reading, or interrupting
+a thread or turn. Its `state` is one of `disconnected`, `connecting`,
+`connected`, or `closed`; after `close()`, the client cannot be reused.
 
 ## Stream a turn
 
@@ -130,6 +148,23 @@ const stopLogs = client.onStderr((text) => {
 });
 ```
 
+## Client options
+
+`clientInfo` is required. The remaining options are optional:
+
+| Option | Description |
+| --- | --- |
+| `codexPathOverride` | Launch a specific Codex executable instead of the pinned package binary; it must implement the same protocol version. |
+| `env` | Environment variables merged over the current process environment. |
+| `requestTimeoutMs` | Timeout for an individual app-server request; defaults to 30 seconds. |
+| `notificationBufferSize` | Maximum number of queued turn notifications; defaults to 1,024. |
+| `optOutNotificationMethods` | Notification methods to exclude during initialization. |
+
+The notification buffer is bounded so a slow `streamTurn()` consumer cannot
+grow memory without limit. Exceeding it raises `NotificationBufferOverflowError`.
+`codexPathOverride` bypasses package-version resolution, so the caller is
+responsible for keeping that executable compatible with `CODEX_PROTOCOL_VERSION`.
+
 Always close the child process:
 
 ```ts
@@ -169,8 +204,10 @@ npm run generate -w @lightcode/codex-protocol
 npm run protocol:check -w @lightcode/codex-protocol
 ```
 
-Generation uses the stable surface and normalizes generated relative imports
-for Node ESM. Do not edit `src/generated` manually.
+The generator reads the protocol version from the installed dependency and
+verifies that it exactly matches `package.json`. It uses the stable surface,
+updates `CODEX_PROTOCOL_VERSION`, and normalizes generated relative imports for
+Node ESM. Do not edit `src/generated` manually.
 
 ## Verification
 

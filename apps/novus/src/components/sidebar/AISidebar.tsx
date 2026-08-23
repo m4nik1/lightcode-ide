@@ -123,7 +123,7 @@ export default function AISidebar() {
   return (
     <aside
       className={cn(
-        "relative box-border flex h-full w-65 shrink-0 flex-col border-r text-[13px]",
+        "relative box-border flex h-full w-80 shrink-0 flex-col border-r text-[13px]",
         aiThemeClassNames.sidebar,
         aiThemeClassNames.border,
         aiThemeClassNames.sidebarDepth,
