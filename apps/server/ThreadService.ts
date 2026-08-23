@@ -1,7 +1,3 @@
-import {
-  Codex,
-  type ModelReasoningEffort,
-} from "@openai/codex-sdk";
 import lightThread from "./lightThread.ts";
 import {
   getProjectByThreadID,
@@ -36,8 +32,14 @@ export class ThreadService {
     this.recentThreads = [];
     this.threads = new Map();
     this.codexInstance = AIDriver;
+  }
 
-    this.codexInstance.connect();
+  async start() {
+    await this.codexInstance.connect();
+  }
+
+  async close() {
+    await this.codexInstance.close();
   }
 
   async stopTurn(threadID: string) {
@@ -88,7 +90,7 @@ export class ThreadService {
 
     console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
-    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking as ModelReasoningEffort, input.mode, input.message)) {
+    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking, input.mode, input.message)) {
       console.log("Event received: ", event);
       if(event.method == 'item/completed'
         && event.params.item.type === 'agentMessage'

@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { startServer } from '../../server/index.ts';
+import './server-env';
+import { startServer, stopServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
@@ -10,13 +11,13 @@ if (started) {
   app.quit();
 }
 
-let mainWindow;
-const serverStatus = 'Stopped'
+let mainWindow: BrowserWindow | null = null;
+let serverStatus = 'Stopped';
+let serverStopped = false;
 
-function updateServerStatus(status : String) {
+function updateServerStatus(status: string) {
   serverStatus = status;
-
-  mainWindow.webContents.send('server:status', serverStatus);
+  mainWindow?.webContents.send('server:status', serverStatus);
 }
 
 const createWindow = () => {
@@ -45,22 +46,33 @@ ipcMain.handle('dialog.openFolder', () => {
   return dialog.showOpenDialog({ properties: ['openDirectory'] });
 });
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
-
-ipcMain.handle('server:getStatus', () => serverStatus)
+ipcMain.handle('server:getStatus', () => serverStatus);
 
 app.whenReady().then(async () => {
+  createWindow();
+
   try {
-    await startServer()
-    updateServerStatus('Ready')
-  } catch(err) {
+    await startServer();
+    updateServerStatus('Ready');
+  } catch (err) {
     console.error('Unable to start server: ', err);
-    updateServerStatus('Stopped (error)')
+    updateServerStatus('Stopped (error)');
   }
-})
+});
+
+app.on('before-quit', (event) => {
+  if (serverStopped) return;
+
+  event.preventDefault();
+  void stopServer()
+    .catch((error: unknown) => {
+      console.error('Unable to stop server cleanly: ', error);
+    })
+    .finally(() => {
+      serverStopped = true;
+      app.quit();
+    });
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
