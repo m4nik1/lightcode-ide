@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import SettingsPage from "./components/SettingsPage";
+import SettingsPage from "./components/settings/SettingsPage";
 import SettingsSidebar from "./components/sidebar/SettingsSidebar";
 import { ViewProvider } from "./context/useView";
 import { aiTheme } from "./theme";

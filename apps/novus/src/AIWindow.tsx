@@ -4,7 +4,7 @@ import Composer from "./components/Composer";
 import ChatMessages from "./components/ChatMessages";
 import { aiTheme } from "./theme";
 import { AiChatProvider } from "./context/useAIChat";
-import SettingsPage from "./components/SettingsPage";
+import SettingsPage from "./components/settings/SettingsPage";
 import { useView } from "./context/useView";
 import SettingsSidebar from "./components/sidebar/SettingsSidebar";
 

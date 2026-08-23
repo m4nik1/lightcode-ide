@@ -1,30 +1,13 @@
 import { useState } from "react";
-import { Check, ChevronDown, RotateCcw } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { cn } from "../lib/utils";
-import { aiThemeClassNames } from "../theme";
-
-type AppearanceTheme = "light" | "dark";
-
-const appearanceOptions: Array<{
-  label: string;
-  value: AppearanceTheme;
-}> = [
-  { label: "Light", value: "light" },
-  { label: "Dark", value: "dark" },
-];
+import { RotateCcw } from "lucide-react";
+import { cn } from "../../lib/utils";
+import { aiThemeClassNames } from "../../theme";
+import SettingsDropdown, {
+  type AppearanceTheme,
+} from "./SettingsDropdown";
 
 export default function SettingsPage() {
   const [appearance, setAppearance] = useState<AppearanceTheme>("dark");
-
-  const selectedLabel =
-    appearanceOptions.find((option) => option.value === appearance)?.label ??
-    "Dark";
 
   return (
     <section
@@ -88,62 +71,10 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={`Appearance: ${selectedLabel}`}
-                  className={cn(
-                    "group/appearance flex h-9 w-full shrink-0 items-center justify-between gap-3 rounded-lg border px-3 text-[13px] transition-[background-color,border-color,color] focus-visible:outline-1 focus-visible:outline-offset-2 sm:w-40",
-                    aiThemeClassNames.surface,
-                    aiThemeClassNames.border,
-                    aiThemeClassNames.textPrimary,
-                    aiThemeClassNames.surfaceHover,
-                    aiThemeClassNames.borderFocus,
-                    aiThemeClassNames.dataOpenSurfaceHover,
-                  )}
-                >
-                  {selectedLabel}
-                  <ChevronDown
-                    className={cn(
-                      "size-3.5 transition-transform group-data-[state=open]/appearance:rotate-180",
-                      aiThemeClassNames.textMuted,
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                sideOffset={6}
-                className={cn(
-                  "min-w-40 rounded-xl border p-1 ring-0",
-                  aiThemeClassNames.border,
-                  aiThemeClassNames.menuSurface,
-                )}
-              >
-                {appearanceOptions.map((option) => {
-                  const isSelected = option.value === appearance;
-
-                  return (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onSelect={() => setAppearance(option.value)}
-                      className={cn(
-                        "cursor-pointer rounded-lg",
-                        aiThemeClassNames.menuItemFocus,
-                        aiThemeClassNames.textPrimary,
-                      )}
-                    >
-                      <span>{option.label}</span>
-                      {isSelected ? (
-                        <Check className="ml-auto size-3.5" aria-hidden="true" />
-                      ) : null}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SettingsDropdown
+              value={appearance}
+              onValueChange={setAppearance}
+            />
           </div>
         </div>
       </div>
