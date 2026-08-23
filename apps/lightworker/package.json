@@ -1,0 +1,11 @@
+{
+  "name": "@lightcode/lightworker",
+  "version": "1.0.0",
+  "description": "Lightcode background worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types index.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit --pretty false"
+  }
+}

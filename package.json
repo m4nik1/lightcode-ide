@@ -8,6 +8,7 @@
   "workspaces": [
     "apps/desktop",
     "apps/server",
+    "apps/lightworker",
     "apps/novus",
     "packages/*"
   ],
@@ -19,6 +20,7 @@
   "author": "Manik Soomro",
   "scripts": {
     "desktop": "npm run dev -w @lightcode/desktop",
+    "lightworker": "npm run dev -w @lightcode/lightworker",
     "novus": "npm run dev -w @novus/app",
     "server": "npm run dev -w @lightcode/server",
     "typecheck": "npm run typecheck --workspaces --if-present"

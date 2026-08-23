@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Lightcode Worker Plan</title>
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --card: #ffffff;
+      --muted: #f4f4f5;
+      --muted-foreground: #71717a;
+      --border: #e4e4e7;
+      --primary: #18181b;
+      --primary-foreground: #fafafa;
+      --accent: #f4f4f5;
+      --success: #15803d;
+      --success-bg: #f0fdf4;
+      --warning: #a16207;
+      --warning-bg: #fefce8;
+      --radius: 0.75rem;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #09090b;
+        --foreground: #fafafa;
+        --card: #09090b;
+        --muted: #18181b;
+        --muted-foreground: #a1a1aa;
+        --border: #27272a;
+        --primary: #fafafa;
+        --primary-foreground: #18181b;
+        --accent: #18181b;
+        --success: #4ade80;
+        --success-bg: #052e16;
+        --warning: #facc15;
+        --warning-bg: #422006;
+        --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .shell { min-height: 100vh; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--background) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    .topbar-inner {
+      max-width: 1200px;
+      height: 56px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: -0.02em; }
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: var(--primary-foreground);
+      background: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--background);
+      color: var(--muted-foreground);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 56px;
+    }
+    .sidebar { position: sticky; top: 88px; align-self: start; }
+    .sidebar-label {
+      margin: 0 0 8px 12px;
+      color: var(--muted-foreground);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .sidebar a {
+      display: block;
+      padding: 7px 12px;
+      border-radius: 7px;
+      color: var(--muted-foreground);
+      font-size: 14px;
+    }
+    .sidebar a:hover { color: var(--foreground); background: var(--accent); }
+    main { min-width: 0; }
+    .hero { padding: 14px 0 48px; border-bottom: 1px solid var(--border); }
+    .eyebrow { margin-bottom: 14px; color: var(--muted-foreground); font-size: 13px; font-weight: 600; }
+    h1, h2, h3 { line-height: 1.2; letter-spacing: -0.035em; }
+    h1 { margin: 0; max-width: 680px; font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 720; }
+    h2 { margin: 0 0 18px; font-size: 1.7rem; }
+    h3 { margin: 0 0 8px; font-size: 1rem; letter-spacing: -0.015em; }
+    .lead { max-width: 700px; margin: 20px 0 0; color: var(--muted-foreground); font-size: 18px; }
+    section { padding: 48px 0; border-bottom: 1px solid var(--border); scroll-margin-top: 72px; }
+    section:last-child { border-bottom: 0; }
+    .section-intro { max-width: 680px; margin: -8px 0 24px; color: var(--muted-foreground); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+    .card p { margin: 0; color: var(--muted-foreground); }
+    .icon {
+      width: 34px;
+      height: 34px;
+      margin-bottom: 18px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .architecture {
+      padding: 28px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted);
+    }
+    .arch-row { min-width: 650px; display: flex; align-items: stretch; gap: 12px; }
+    .arch-node {
+      flex: 1;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--background);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .arch-node strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .arch-node span { color: var(--muted-foreground); font-size: 12px; }
+    .arrow { display: grid; place-items: center; color: var(--muted-foreground); font-size: 20px; }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .split > div { padding: 24px; }
+    .split > div + div { border-left: 1px solid var(--border); }
+    .list { margin: 16px 0 0; padding: 0; list-style: none; }
+    .list li { position: relative; padding: 7px 0 7px 22px; color: var(--muted-foreground); }
+    .list li::before { content: ""; position: absolute; left: 3px; top: 16px; width: 6px; height: 6px; border-radius: 50%; background: var(--foreground); }
+    .code-block {
+      margin: 18px 0 0;
+      padding: 18px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--muted);
+      color: var(--foreground);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .code-block code { color: var(--code-foreground, #334155); }
+    [data-token="keyword"] { color: #7c3aed; font-weight: 600; }
+    [data-token="string"] { color: #0f766e; }
+    [data-token="comment"] { color: #94a3b8; font-style: italic; }
+    [data-token="number"] { color: #c2410c; }
+    [data-token="property"] { color: #0369a1; }
+    [data-token="function"] { color: #b45309; }
+    [data-token="constant"] { color: #be185d; }
+    @media (prefers-color-scheme: dark) {
+      .code-block code { --code-foreground: #d4d4d8; }
+      [data-token="keyword"] { color: #c4b5fd; }
+      [data-token="string"] { color: #5eead4; }
+      [data-token="comment"] { color: #71717a; }
+      [data-token="number"] { color: #fdba74; }
+      [data-token="property"] { color: #7dd3fc; }
+      [data-token="function"] { color: #fcd34d; }
+      [data-token="constant"] { color: #f9a8d4; }
+    }
+    .flow { display: grid; gap: 0; }
+    .flow-step { position: relative; min-height: 68px; padding: 0 0 24px 52px; }
+    .flow-step:not(:last-child)::after { content: ""; position: absolute; left: 17px; top: 36px; bottom: 0; width: 1px; background: var(--border); }
+    .flow-step::before {
+      content: ">";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .flow-step p { margin: 4px 0 0; color: var(--muted-foreground); }
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .status { padding: 5px 10px; border-radius: 999px; background: var(--muted); font-family: ui-monospace, monospace; font-size: 12px; }
+    .callout { padding: 18px 20px; border: 1px solid var(--border); border-left: 3px solid var(--foreground); border-radius: 8px; background: var(--muted); }
+    .callout strong { display: block; margin-bottom: 4px; }
+    .callout p { margin: 0; color: var(--muted-foreground); }
+    .phase { display: grid; grid-template-columns: 78px 1fr; gap: 18px; padding: 22px 0; border-top: 1px solid var(--border); }
+    .phase:first-child { border-top: 0; }
+    .phase-number { color: var(--muted-foreground); font-family: ui-monospace, monospace; font-size: 12px; font-weight: 600; }
+    .phase p { margin: 5px 0 0; color: var(--muted-foreground); }
+    .sequence {
+      padding: 24px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted);
+    }
+    .sequence-grid {
+      min-width: 690px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0 20px;
+    }
+    .sequence-head {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--background);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .sequence-lane {
+      height: 20px;
+      border-left: 1px dashed var(--border);
+      justify-self: center;
+    }
+    .sequence-message {
+      grid-column: var(--from) / var(--to);
+      position: relative;
+      height: 42px;
+      padding-top: 5px;
+      border-top: 1px solid var(--muted-foreground);
+      color: var(--muted-foreground);
+      text-align: center;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+    }
+    .sequence-message::after {
+      content: "";
+      position: absolute;
+      top: -4px;
+      right: 0;
+      width: 7px;
+      height: 7px;
+      border-top: 1px solid var(--muted-foreground);
+      border-right: 1px solid var(--muted-foreground);
+      transform: rotate(45deg);
+    }
+    .sequence-message.reverse::after { right: auto; left: 0; transform: rotate(-135deg); }
+    .state-diagram { display: flex; align-items: center; gap: 8px; min-width: 680px; }
+    .state-node {
+      flex: 1;
+      padding: 15px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--background);
+      text-align: center;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .state-node.ready { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 13px 16px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--muted); font-size: 12px; font-weight: 650; }
+    td { color: var(--muted-foreground); }
+    tr:last-child td { border-bottom: 0; }
+    .footer { padding-top: 30px; color: var(--muted-foreground); font-size: 13px; }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; gap: 0; padding-top: 24px; }
+      .sidebar { display: none; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .topbar-inner, .layout { padding-left: 18px; padding-right: 18px; }
+      .grid-2, .split { grid-template-columns: 1fr; }
+      .split > div + div { border-top: 1px solid var(--border); border-left: 0; }
+      .hero { padding-top: 6px; }
+      section { padding: 38px 0; }
+      .phase { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#top"><span class="brand-mark">LC</span> Lightcode</a>
+        <span class="badge">Architecture plan</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Page navigation">
+        <p class="sidebar-label">On this page</p>
+        <a href="#overview">Overview</a>
+        <a href="#ownership">Responsibilities</a>
+        <a href="#runtime">Inside Daytona</a>
+        <a href="#connection">Connection</a>
+        <a href="#protocol">Protocol</a>
+        <a href="#structure">Worker structure</a>
+        <a href="#provisioning">Project creation</a>
+        <a href="#prompt-flow">Prompt flow</a>
+        <a href="#persistence">Persistence</a>
+        <a href="#recovery">Recovery</a>
+        <a href="#management">Worker management</a>
+        <a href="#operations">Operations</a>
+        <a href="#phases">Implementation</a>
+      </aside>
+
+      <main id="top">
+        <div class="hero">
+          <div class="eyebrow">Daytona integration / Worker architecture</div>
+          <h1>One focused worker per project sandbox.</h1>
+          <p class="lead">A small, secure bridge that runs beside the project, owns Codex, and streams work back to the main Lightcode server.</p>
+        </div>
+
+        <section id="overview">
+          <h2>The simple model</h2>
+          <p class="section-intro">The parent server remains the control plane. Each Daytona sandbox gets a lightweight worker with direct access to that project's files.</p>
+          <div class="architecture">
+            <div class="arch-row">
+              <div class="arch-node"><strong>Desktop</strong><span>Lightcode UI</span></div>
+              <div class="arrow">&#8596;</div>
+              <div class="arch-node"><strong>Parent server</strong><span>State and routing</span></div>
+              <div class="arrow">&#8596;</div>
+              <div class="arch-node"><strong>Daytona worker</strong><span>Project runtime</span></div>
+              <div class="arrow">&#8596;</div>
+              <div class="arch-node"><strong>Codex</strong><span>app-server + files</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="ownership">
+          <h2>Clear ownership</h2>
+          <div class="split">
+            <div>
+              <div class="icon">P</div>
+              <h3>Parent server</h3>
+              <ul class="list">
+                <li>Users and authentication</li>
+                <li>Projects, threads, and message history</li>
+                <li>Daytona sandbox lifecycle</li>
+                <li>Repository configuration</li>
+                <li>Worker discovery and request routing</li>
+              </ul>
+            </div>
+            <div>
+              <div class="icon">W</div>
+              <h3>Sandbox worker</h3>
+              <ul class="list">
+                <li>Starts and owns Codex app-server</li>
+                <li>Accesses <code>/workspace/project</code></li>
+                <li>Starts, resumes, and interrupts turns</li>
+                <li>Streams Codex notifications upstream</li>
+                <li>Reports health and runtime errors</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout" style="margin-top: 16px">
+            <strong>Keep the worker disposable.</strong>
+            <p>It should not own a database, user state, or Daytona orchestration. Durable state stays with the parent.</p>
+          </div>
+        </section>
+
+        <section id="runtime">
+          <h2>Where the worker runs</h2>
+          <p class="section-intro">The worker runs as a long-lived Node.js process <strong>inside the Daytona sandbox</strong>. Daytona may implement that sandbox with containers, microVMs, or another isolated runtime. Lightcode should use the sandbox abstraction rather than depend on the underlying technology.</p>
+
+          <div class="architecture">
+            <div class="arch-row">
+              <div class="arch-node"><strong>Parent container</strong><span>Public API + database</span></div>
+              <div class="arrow">TLS &#8596;</div>
+              <div class="arch-node" style="flex: 2"><strong>Daytona sandbox</strong><span>worker process + Codex process + /workspace/project</span></div>
+              <div class="arrow">&#8596;</div>
+              <div class="arch-node"><strong>Repository</strong><span>Files and commands</span></div>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top: 16px">
+            <div class="card"><div class="icon">FS</div><h3>Shared filesystem</h3><p>The worker and Codex see the same sandbox filesystem, so <code>/workspace/project</code> is a real local path to both processes.</p></div>
+            <div class="card"><div class="icon">IO</div><h3>Local stdio</h3><p>The worker launches <code>codex app-server --stdio</code>. Codex protocol traffic never needs to leave the sandbox.</p></div>
+            <div class="card"><div class="icon">WS</div><h3>Outbound network</h3><p>The worker makes one outbound <code>wss://</code> connection to the parent. No sandbox port needs to be public.</p></div>
+          </div>
+
+          <h3 style="margin-top: 30px">Sandbox contents</h3>
+          <pre class="code-block"><code>Daytona sandbox
+|-- /workspace/project/                 # cloned user repository
+|-- /opt/lightcode-worker/dist/         # compiled worker bundle
+|-- node                                 # worker runtime
+`-- codex                                # spawned by CodexAppServerClient
+
+process tree
+`-- node /opt/lightcode-worker/dist/index.js
+    `-- codex app-server --stdio</code></pre>
+
+          <h3 style="margin-top: 30px">How it starts</h3>
+          <div class="flow">
+            <div class="flow-step"><h3>Build a reusable sandbox image</h3><p>Include Node.js, Git, the worker bundle, and the pinned Codex package. This avoids reinstalling the agent for every project.</p></div>
+            <div class="flow-step"><h3>Create one sandbox per project</h3><p>The parent asks Daytona to create a sandbox from that image and saves the returned sandbox ID.</p></div>
+            <div class="flow-step"><h3>Clone into the workspace</h3><p>Clone the project into <code>/workspace/project</code>, using a short-lived Git credential for private repositories.</p></div>
+            <div class="flow-step"><h3>Inject runtime secrets</h3><p>Pass the parent URL, worker identity, short-lived worker token, and OpenAI credentials at process start. Do not bake secrets into the image.</p></div>
+            <div class="flow-step"><h3>Launch and supervise</h3><p>Start the worker as the sandbox service or entrypoint so it restarts when the sandbox wakes or the process exits unexpectedly.</p></div>
+          </div>
+
+          <div class="callout">
+            <strong>Why not put the worker beside the parent?</strong>
+            <p>Codex executes commands and edits files relative to its own machine. Running the worker inside Daytona ensures every Codex action is isolated with the correct project and toolchain.</p>
+          </div>
+        </section>
+
+        <section id="connection">
+          <h2>Worker connection</h2>
+          <p class="section-intro">Let the worker open one outbound WebSocket to the deployed parent. This avoids exposing a public endpoint for every sandbox.</p>
+          <pre class="code-block"><code>Worker  -- outbound TLS -->  wss://api.lightcode.dev/workers/connect</code></pre>
+          <div class="grid-3" style="margin-top: 16px">
+            <div class="card"><div class="icon">ID</div><h3>Parent creates identity</h3><p>Generate a worker ID and short-lived token for the new sandbox.</p></div>
+            <div class="card"><div class="icon">WS</div><h3>Worker connects</h3><p>Authenticate once, then keep the socket alive for commands and events.</p></div>
+            <div class="card"><div class="icon">RPC</div><h3>Parent routes work</h3><p>Map the connected worker to its project and forward prompts.</p></div>
+          </div>
+          <pre class="code-block"><code>LIGHTCODE_SERVER_URL=wss://api.lightcode.dev/workers/connect
+LIGHTCODE_WORKER_ID=worker_...
+LIGHTCODE_WORKER_TOKEN=short-lived-secret
+LIGHTCODE_PROJECT_PATH=/workspace/project
+OPENAI_API_KEY=...</code></pre>
+
+          <h3 style="margin-top: 30px">Parent: accept the worker connection</h3>
+          <p class="section-intro" style="margin-top: 6px">This example uses the Node <code>ws</code> package in the parent server. Authenticate during the HTTP upgrade, then register the live socket by project.</p>
+          <pre class="code-block"><code>import { WebSocketServer } from "ws";
+
+const workerSockets = new WebSocketServer({ noServer: true });
+
+httpServer.on("upgrade", async (request, socket, head) =&gt; {
+  const url = new URL(request.url ?? "/", "https://api.lightcode.dev");
+  if (url.pathname !== "/workers/connect") return socket.destroy();
+
+  const token = request.headers.authorization?.replace("Bearer ", "");
+  const identity = await workerTokens.verify(token);
+  if (!identity) return socket.destroy();
+
+  workerSockets.handleUpgrade(request, socket, head, (webSocket) =&gt; {
+    workerManager.register({
+      workerId: identity.workerId,
+      projectId: identity.projectId,
+      socket: webSocket,
+      connectedAt: Date.now(),
+      lastSeenAt: Date.now()
+    });
+
+    webSocket.on("message", (data) =&gt; {
+      workerManager.handleMessage(identity.workerId, data.toString());
+    });
+
+    webSocket.on("close", () =&gt; {
+      workerManager.disconnect(identity.workerId, webSocket);
+    });
+  });
+});</code></pre>
+
+          <h3 style="margin-top: 30px">Worker: connect from the Daytona sandbox</h3>
+          <p class="section-intro" style="margin-top: 6px">The worker initiates the connection, announces readiness, and receives commands over the same socket.</p>
+          <pre class="code-block"><code>import WebSocket from "ws";
+import { CodexAppServerClient } from "@lightcode/codex-protocol";
+
+const codex = new CodexAppServerClient({
+  clientInfo: {
+    name: "lightcode-worker",
+    title: "Lightcode Worker",
+    version: "0.1.0"
+  }
+});
+
+await codex.connect(); // Starts Codex inside this Daytona sandbox.
+
+const socket = new WebSocket(process.env.LIGHTCODE_SERVER_URL!, {
+  headers: {
+    authorization: `Bearer ${process.env.LIGHTCODE_WORKER_TOKEN}`
+  }
+});
+
+socket.on("open", () =&gt; {
+  socket.send(JSON.stringify({
+    method: "worker.ready",
+    params: {
+      workerId: process.env.LIGHTCODE_WORKER_ID,
+      projectPath: process.env.LIGHTCODE_PROJECT_PATH,
+      version: "0.1.0"
+    }
+  }));
+});
+
+socket.on("message", async (raw) =&gt; {
+  const request = WorkerRequestSchema.parse(JSON.parse(raw.toString()));
+
+  if (request.method === "thread.start") {
+    const result = await codex.startThread({
+      cwd: process.env.LIGHTCODE_PROJECT_PATH!,
+      sandbox: request.params.access,
+      approvalPolicy: "never"
+    });
+
+    socket.send(JSON.stringify({
+      id: request.id,
+      result: { codexThreadId: result.thread.id }
+    }));
+  }
+});</code></pre>
+
+          <h3 style="margin-top: 30px">Parent: send a command</h3>
+          <pre class="code-block"><code>const result = await workerManager.request(workerId, "thread.start", {
+  access: "workspace-write"
+});
+
+await threads.saveCodexThreadId(
+  lightcodeThreadId,
+  result.codexThreadId
+);</code></pre>
+
+          <div class="callout" style="margin-top: 16px">
+            <strong>The parent never addresses <code>localhost</code> inside Daytona.</strong>
+            <p>The parent writes commands to the socket that the worker already opened. The worker talks to local Codex over stdio and sends results back over that same socket.</p>
+          </div>
+        </section>
+
+        <section id="protocol">
+          <h2>A deliberately small protocol</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Parent to worker</h3>
+              <ul class="list">
+                <li><code>thread.start</code></li>
+                <li><code>thread.resume</code></li>
+                <li><code>turn.start</code></li>
+                <li><code>turn.interrupt</code></li>
+                <li><code>thread.delete</code></li>
+                <li><code>ping</code></li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Worker to parent</h3>
+              <ul class="list">
+                <li><code>worker.ready</code></li>
+                <li><code>thread.started</code></li>
+                <li><code>turn.event</code></li>
+                <li><code>turn.completed</code></li>
+                <li><code>request.failed</code></li>
+                <li><code>pong</code></li>
+              </ul>
+            </div>
+          </div>
+          <pre class="code-block"><code>{
+  "id": "request-123",
+  "method": "turn.start",
+  "params": {
+    "threadId": "codex-thread-456",
+    "message": "Fix the failing tests",
+    "model": "gpt-5.4",
+    "thinking": "medium",
+    "mode": "build"
+  }
+}</code></pre>
+          <p class="section-intro" style="margin: 14px 0 0">Every command gets a unique request ID. Stream existing Codex <code>ServerNotification</code> objects inside <code>turn.event</code> rather than creating another event model.</p>
+        </section>
+
+        <section id="structure">
+          <h2>Worker package</h2>
+          <p class="section-intro">Create a dedicated workspace with four focused modules. Move Codex execution out of the parent without copying the full server.</p>
+          <pre class="code-block"><code>apps/worker/
+  index.ts             # startup and graceful shutdown
+  WorkerConnection.ts  # WebSocket, authentication, reconnect
+  CodexRuntime.ts      # CodexAppServerClient and active threads
+  protocol.ts          # shared, validated message schemas
+  package.json
+  tsconfig.json</code></pre>
+          <div class="callout" style="margin-top: 16px">
+            <strong>Reuse the existing protocol client.</strong>
+            <p><code>CodexRuntime</code> should absorb the Codex-facing behavior currently in <code>ThreadService.ts</code> and <code>lightThread.ts</code>.</p>
+          </div>
+        </section>
+
+        <section id="provisioning">
+          <h2>Project creation</h2>
+          <div class="flow">
+            <div class="flow-step"><h3>Create the project</h3><p>The desktop sends repository details to the parent server.</p></div>
+            <div class="flow-step"><h3>Provision Daytona</h3><p>The parent creates a sandbox and records its Daytona sandbox ID.</p></div>
+            <div class="flow-step"><h3>Clone the repository</h3><p>Place the project at the predictable path <code>/workspace/project</code>.</p></div>
+            <div class="flow-step"><h3>Start the worker</h3><p>Inject connection credentials and launch the worker process.</p></div>
+            <div class="flow-step"><h3>Initialize Codex</h3><p>The worker connects upstream, starts Codex app-server, and announces readiness.</p></div>
+            <div class="flow-step"><h3>Accept prompts</h3><p>The parent marks the project ready and notifies the desktop.</p></div>
+          </div>
+          <div class="status-row" aria-label="Project states">
+            <span class="status">creating</span><span class="status">cloning</span><span class="status">starting_worker</span><span class="status">ready</span><span class="status">stopped</span><span class="status">failed</span>
+          </div>
+        </section>
+
+        <section id="prompt-flow">
+          <h2>Prompt lifecycle</h2>
+          <div class="flow">
+            <div class="flow-step"><h3>Route by project</h3><p>The parent receives a prompt and finds the project's connected worker.</p></div>
+            <div class="flow-step"><h3>Start or resume the thread</h3><p>The worker creates a Codex thread with the sandbox project path.</p></div>
+            <div class="flow-step"><h3>Persist the mapping</h3><p>The parent stores the returned Codex thread ID against the Lightcode thread.</p></div>
+            <div class="flow-step"><h3>Stream the turn</h3><p>The worker forwards Codex notifications while the parent relays them to the desktop.</p></div>
+            <div class="flow-step"><h3>Save the result</h3><p>The parent persists user and final assistant messages as it does today.</p></div>
+          </div>
+          <pre class="code-block"><code>client.startThread({
+  cwd: "/workspace/project",
+  sandbox: "workspace-write",
+  approvalPolicy: "never"
+});</code></pre>
+        </section>
+
+        <section id="persistence">
+          <h2>Data to persist</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Project</h3>
+              <pre class="code-block"><code>repository_url
+daytona_sandbox_id
+remote_workspace_path
+worker_id
+sandbox_status</code></pre>
+            </div>
+            <div class="card">
+              <h3>Thread</h3>
+              <pre class="code-block"><code>codex_thread_id</code></pre>
+              <p style="margin-top: 12px">This ID lets a restarted worker resume the same Codex conversation.</p>
+            </div>
+          </div>
+          <div class="callout" style="margin-top: 16px">
+            <strong>Do not store raw worker tokens.</strong>
+            <p>Use hashed or short-lived credentials and rotate them whenever a sandbox worker starts.</p>
+          </div>
+        </section>
+
+        <section id="recovery">
+          <h2>Recovery rules</h2>
+          <div class="grid-2">
+            <div class="card"><div class="icon">R</div><h3>Reconnect</h3><p>The worker reconnects with exponential backoff after a dropped WebSocket or parent restart.</p></div>
+            <div class="card"><div class="icon">S</div><h3>Resume</h3><p>After a worker restart, resume Codex using the persisted remote thread ID.</p></div>
+            <div class="card"><div class="icon">LOCK</div><h3>Serialize</h3><p>Allow only one active turn per Codex thread to avoid conflicting writes and events.</p></div>
+            <div class="card"><div class="icon">!</div><h3>Fail clearly</h3><p>If resume fails, report the failure instead of silently creating an unrelated thread.</p></div>
+          </div>
+        </section>
+
+        <section id="management">
+          <h2>Managing workers</h2>
+          <p class="section-intro">Treat a worker as a live connection to a durable sandbox, not as the durable record itself. The database says what should exist; the registry says what is connected right now.</p>
+
+          <div class="grid-3">
+            <div class="card"><div class="icon">DB</div><h3>Database</h3><p>Stores project, sandbox ID, desired state, workspace path, and remote Codex thread IDs.</p></div>
+            <div class="card"><div class="icon">WM</div><h3>WorkerManager</h3><p>Owns live sockets, pending requests, heartbeats, routing, and connection replacement.</p></div>
+            <div class="card"><div class="icon">DT</div><h3>DaytonaManager</h3><p>Creates, starts, stops, and removes sandboxes without knowing the worker protocol.</p></div>
+          </div>
+
+          <h3 style="margin-top: 30px">Lifecycle state machine</h3>
+          <p class="section-intro" style="margin-top: 6px">Persist the sandbox status so the UI and retry logic have one shared view of progress.</p>
+          <div class="architecture">
+            <div class="state-diagram">
+              <div class="state-node">creating</div><div class="arrow">&#8594;</div>
+              <div class="state-node">cloning</div><div class="arrow">&#8594;</div>
+              <div class="state-node">starting</div><div class="arrow">&#8594;</div>
+              <div class="state-node ready">ready</div><div class="arrow">&#8594;</div>
+              <div class="state-node">stopped</div>
+            </div>
+          </div>
+          <div class="callout" style="margin-top: 16px">
+            <strong>Failure is reachable from every state.</strong>
+            <p>Record a short error code and safe message. A retry resumes from known durable metadata rather than guessing from an old socket.</p>
+          </div>
+
+          <h3 style="margin-top: 30px">Connection registry example</h3>
+          <p class="section-intro" style="margin-top: 6px">The parent keeps one active connection per worker. A newer authenticated connection replaces an older one, which makes reconnects deterministic.</p>
+          <pre class="code-block"><code>type ConnectedWorker = {
+  workerId: string;
+  projectId: string;
+  socket: WebSocket;
+  connectedAt: number;
+  lastSeenAt: number;
+};
+
+class WorkerManager {
+  private workers = new Map&lt;string, ConnectedWorker&gt;();
+  private pending = new Map&lt;string, {
+    resolve(value: unknown): void;
+    reject(error: Error): void;
+    timer: NodeJS.Timeout;
+  }&gt;();
+
+  register(worker: ConnectedWorker) {
+    this.workers.get(worker.workerId)?.socket.close(4001, "Replaced");
+    this.workers.set(worker.workerId, worker);
+  }
+
+  disconnect(workerId: string, socket: WebSocket) {
+    if (this.workers.get(workerId)?.socket === socket) {
+      this.workers.delete(workerId);
+    }
+  }
+
+  getForProject(projectId: string) {
+    const worker = [...this.workers.values()]
+      .find((candidate) =&gt; candidate.projectId === projectId);
+
+    if (!worker) throw new Error("Project worker is offline");
+    return worker;
+  }
+}</code></pre>
+
+          <h3 style="margin-top: 30px">Correlated requests</h3>
+          <p class="section-intro" style="margin-top: 6px">Each parent command returns a promise. The worker replies with the same ID, while turn notifications are emitted as separate events with that request ID.</p>
+          <pre class="code-block"><code>request(workerId: string, method: string, params: unknown) {
+  const id = crypto.randomUUID();
+  const worker = this.workers.get(workerId);
+  if (!worker) throw new Error("Worker is offline");
+
+  return new Promise((resolve, reject) =&gt; {
+    const timer = setTimeout(() =&gt; {
+      this.pending.delete(id);
+      reject(new Error(`${method} timed out`));
+    }, 30_000);
+
+    this.pending.set(id, { resolve, reject, timer });
+    worker.socket.send(JSON.stringify({ id, method, params }));
+  });
+}</code></pre>
+
+          <h3 style="margin-top: 30px">Heartbeat policy</h3>
+          <div class="grid-3">
+            <div class="card"><h3>Every 15 seconds</h3><p>Parent sends <code>ping</code>, or uses WebSocket protocol ping frames.</p></div>
+            <div class="card"><h3>After 45 seconds</h3><p>No response means the connection is stale. Close it and mark the worker offline.</p></div>
+            <div class="card"><h3>On reconnect</h3><p>Worker reports its version, project ID, active turns, and Codex readiness.</p></div>
+          </div>
+        </section>
+
+        <section id="operations">
+          <h2>Operational examples</h2>
+          <p class="section-intro">These flows show which component acts at each point and where failures should be handled.</p>
+
+          <h3>Starting a project worker</h3>
+          <div class="sequence" style="margin-top: 14px">
+            <div class="sequence-grid">
+              <div class="sequence-head">Desktop</div><div class="sequence-head">Parent</div><div class="sequence-head">Daytona</div><div class="sequence-head">Worker</div>
+              <div class="sequence-lane"></div><div class="sequence-lane"></div><div class="sequence-lane"></div><div class="sequence-lane"></div>
+              <div class="sequence-message" style="--from: 1; --to: 2">create project</div>
+              <div class="sequence-message" style="--from: 2; --to: 3">create sandbox</div>
+              <div class="sequence-message" style="--from: 2; --to: 3">clone + start worker</div>
+              <div class="sequence-message reverse" style="--from: 2; --to: 4">worker.ready</div>
+              <div class="sequence-message reverse" style="--from: 1; --to: 2">project ready</div>
+            </div>
+          </div>
+
+          <h3 style="margin-top: 30px">Sending a prompt</h3>
+          <div class="sequence" style="margin-top: 14px">
+            <div class="sequence-grid">
+              <div class="sequence-head">Desktop</div><div class="sequence-head">Parent</div><div class="sequence-head">Worker</div><div class="sequence-head">Codex</div>
+              <div class="sequence-lane"></div><div class="sequence-lane"></div><div class="sequence-lane"></div><div class="sequence-lane"></div>
+              <div class="sequence-message" style="--from: 1; --to: 2">queryAI</div>
+              <div class="sequence-message" style="--from: 2; --to: 3">turn.start</div>
+              <div class="sequence-message" style="--from: 3; --to: 4">turn/start over stdio</div>
+              <div class="sequence-message reverse" style="--from: 3; --to: 5">Codex notification</div>
+              <div class="sequence-message reverse" style="--from: 2; --to: 4">turn.event</div>
+              <div class="sequence-message reverse" style="--from: 1; --to: 3">tRPC stream event</div>
+            </div>
+          </div>
+
+          <h3 style="margin-top: 30px">Provisioning service example</h3>
+          <pre class="code-block"><code>async function ensureProjectWorker(projectId: string) {
+  const project = await projects.get(projectId);
+  const connected = workerManager.findForProject(projectId);
+  if (connected) return connected;
+
+  await projects.setStatus(projectId, "starting");
+
+  const sandbox = project.daytonaSandboxId
+    ? await daytona.start(project.daytonaSandboxId)
+    : await daytona.create({ projectId });
+
+  if (!project.daytonaSandboxId) {
+    await sandbox.git.clone(project.repositoryUrl, "/workspace/project");
+    await projects.attachSandbox(projectId, sandbox.id);
+  }
+
+  const token = await workerTokens.issue({ projectId, expiresIn: "10m" });
+  await sandbox.process.executeCommand(
+    "node /opt/lightcode-worker/dist/index.js",
+    {
+      LIGHTCODE_WORKER_TOKEN: token,
+      LIGHTCODE_PROJECT_PATH: "/workspace/project"
+    }
+  );
+
+  const worker = await workerManager.waitForProject(projectId, 30_000);
+  await projects.setStatus(projectId, "ready");
+  return worker;
+}</code></pre>
+          <div class="callout" style="margin-top: 16px">
+            <strong>Adapt the process calls to the installed Daytona SDK version.</strong>
+            <p>The key contract is create or wake, clone only when needed, start with a short-lived token, then wait for an authenticated <code>worker.ready</code>.</p>
+          </div>
+
+          <h3 style="margin-top: 30px">Worker command handling example</h3>
+          <pre class="code-block"><code>socket.on("message", async (raw) =&gt; {
+  const request = WorkerRequestSchema.parse(JSON.parse(raw.toString()));
+
+  try {
+    if (request.method === "thread.start") {
+      const result = await codex.startThread({
+        cwd: process.env.LIGHTCODE_PROJECT_PATH!,
+        sandbox: request.params.access,
+        approvalPolicy: "never"
+      });
+      reply(request.id, result);
+    }
+
+    if (request.method === "turn.start") {
+      for await (const event of codex.streamTurn(request.params)) {
+        emit("turn.event", { requestId: request.id, event });
+      }
+      reply(request.id, { completed: true });
+    }
+  } catch (error) {
+    fail(request.id, normalizeError(error));
+  }
+});</code></pre>
+
+          <h3 style="margin-top: 30px">Start, stop, and cleanup policy</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Situation</th><th>Parent action</th><th>Worker behavior</th></tr></thead>
+              <tbody>
+                <tr><td>First prompt</td><td>Create or wake sandbox, then wait for readiness.</td><td>Connect, initialize Codex, report ready.</td></tr>
+                <tr><td>Idle for 30 minutes</td><td>Stop the sandbox after confirming no active turn.</td><td>Finish or interrupt work, close Codex cleanly.</td></tr>
+                <tr><td>New prompt while stopped</td><td>Wake sandbox and wait for worker reconnect.</td><td>Resume known Codex threads on demand.</td></tr>
+                <tr><td>Heartbeat missed</td><td>Remove socket; check Daytona status before restart.</td><td>Reconnect with exponential backoff if still alive.</td></tr>
+                <tr><td>Project deleted</td><td>Reject new turns, remove sandbox, then delete records.</td><td>Interrupt turns and shut down.</td></tr>
+                <tr><td>Parent deploy</td><td>Restore registry as workers reconnect.</td><td>Reconnect and send runtime inventory.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="margin-top: 30px">What to monitor</h3>
+          <div class="grid-3">
+            <div class="card"><h3>Availability</h3><p>Connected workers, ready sandboxes, reconnect count, and heartbeat age.</p></div>
+            <div class="card"><h3>Performance</h3><p>Provisioning time, worker-ready time, prompt latency, and turn duration.</p></div>
+            <div class="card"><h3>Failures</h3><p>Request timeouts, Codex exits, resume failures, and sandbox API errors.</p></div>
+          </div>
+        </section>
+
+        <section id="phases">
+          <h2>Implementation path</h2>
+          <div>
+            <div class="phase"><div class="phase-number">PROTOTYPE</div><div><h3>Local worker prototype</h3><p>Run parent and worker as separate local processes. Prove authenticated commands, event streaming, and interruption over WebSocket.</p></div></div>
+            <div class="phase"><div class="phase-number">EXTRACT</div><div><h3>Extract Codex execution</h3><p>Move Codex ownership from the parent <code>ThreadService</code> into the worker's <code>CodexRuntime</code>.</p></div></div>
+            <div class="phase"><div class="phase-number">ROUTE</div><div><h3>Add worker routing</h3><p>Map projects to connected workers while keeping tRPC, persistence, and UI streaming in the parent.</p></div></div>
+            <div class="phase"><div class="phase-number">DAYTONA</div><div><h3>Integrate Daytona</h3><p>Create a sandbox, clone the repository, start the worker, and wait for <code>worker.ready</code>.</p></div></div>
+            <div class="phase"><div class="phase-number">HARDEN</div><div><h3>Harden recovery</h3><p>Add token rotation, timeouts, reconnects, sandbox wake-up, thread resume, and cleanup.</p></div></div>
+          </div>
+          <div class="callout" style="margin-top: 18px">
+            <strong>MVP boundary</strong>
+            <p>One parent, one worker per sandbox, one Codex process per worker, and one outbound WebSocket per worker. Add queues and service discovery only when scale demands them.</p>
+          </div>
+          <div class="footer">Lightcode worker architecture plan</div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const escapeHtml = (text) =>
+        text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const rules = [
+        { token: "comment", re: /(?<=^|[^\w:])\/\/[^\n]*|(?<=^|\s)#[^\n]*/ },
+        { token: "string", re: /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\\n]|\\.)*`/ },
+        { token: "keyword", re: /\b(?:async|await|catch|class|const|else|export|extends|for|from|function|if|import|in|interface|new|of|private|public|return|throw|try|type|typeof|while)\b/ },
+        { token: "constant", re: /\b(?:true|false|null|undefined)\b/ },
+        { token: "number", re: /\b\d[\d_]*(?:\.\d+)?\b/ },
+        { token: "property", re: /[A-Za-z_$][\w$]*(?=\s*:)/ },
+        { token: "function", re: /[A-Za-z_$][\w$]*(?=\()/ }
+      ];
+
+      const master = new RegExp(
+        rules.map((rule) => `(${rule.re.source})`).join("|"),
+        "g"
+      );
+
+      for (const code of document.querySelectorAll(".code-block code")) {
+        const source = code.textContent || "";
+        let html = "";
+        let cursor = 0;
+
+        source.replace(master, (...args) => {
+          const match = args[0];
+          const offset = args[args.length - 2];
+          const groupIndex = args
+            .slice(1, 1 + rules.length)
+            .findIndex((group) => group !== undefined);
+          const token = rules[groupIndex].token;
+
+          html += escapeHtml(source.slice(cursor, offset));
+          html += `<span data-token="${token}">${escapeHtml(match)}</span>`;
+          cursor = offset + match.length;
+          return match;
+        });
+
+        html += escapeHtml(source.slice(cursor));
+        code.innerHTML = html;
+      }
+    })();
+  </script>
+</body>
+</html>

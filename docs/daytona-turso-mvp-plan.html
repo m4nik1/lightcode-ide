@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Implementation plan for running Lightcode agent work in Daytona sandboxes with Turso-backed state." />
+  <title>Lightcode Daytona + Turso MVP Plan</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --background: light-dark(#ffffff, #09090b);
+      --foreground: light-dark(#09090b, #fafafa);
+      --card: light-dark(#ffffff, #09090b);
+      --card-foreground: light-dark(#09090b, #fafafa);
+      --popover: light-dark(#ffffff, #18181b);
+      --muted: light-dark(#f4f4f5, #18181b);
+      --muted-foreground: light-dark(#71717a, #a1a1aa);
+      --border: light-dark(#e4e4e7, #27272a);
+      --input: light-dark(#e4e4e7, #27272a);
+      --primary: light-dark(#18181b, #fafafa);
+      --primary-foreground: light-dark(#fafafa, #18181b);
+      --accent: light-dark(#f4f4f5, #27272a);
+      --ring: light-dark(#a1a1aa, #d4d4d8);
+      --blue: light-dark(#2563eb, #60a5fa);
+      --green: light-dark(#15803d, #4ade80);
+      --amber: light-dark(#a16207, #fbbf24);
+      --violet: light-dark(#7c3aed, #a78bfa);
+      --red: light-dark(#b91c1c, #f87171);
+      --radius: 0.625rem;
+      --page-width: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--background);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--foreground);
+      background:
+        radial-gradient(circle at 55% -20rem, color-mix(in srgb, var(--blue) 9%, transparent), transparent 33rem),
+        var(--background);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    code, pre, .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    code {
+      border: 1px solid var(--border);
+      border-radius: 0.35rem;
+      background: var(--muted);
+      padding: 0.1rem 0.34rem;
+      font-size: 0.88em;
+      overflow-wrap: anywhere;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      z-index: 100;
+      transform: translateY(-180%);
+      border-radius: 0.375rem;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+      background: color-mix(in srgb, var(--background) 84%, transparent);
+      backdrop-filter: blur(16px) saturate(150%);
+    }
+
+    .topbar-inner {
+      width: min(var(--page-width), calc(100% - 2rem));
+      min-height: 58px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.9rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-mark {
+      width: 1.7rem;
+      height: 1.7rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.45rem;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 800;
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 0.15rem;
+      color: var(--muted-foreground);
+      font-size: 0.82rem;
+    }
+
+    .topnav a {
+      padding: 0.4rem 0.55rem;
+      border-radius: 0.375rem;
+    }
+
+    .topnav a:hover { background: var(--accent); color: var(--foreground); }
+
+    .page {
+      width: min(var(--page-width), calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 5rem 0 6rem;
+    }
+
+    .hero {
+      max-width: 850px;
+      padding-bottom: 3.5rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--muted-foreground);
+      font-size: 0.78rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 15%, transparent);
+    }
+
+    h1, h2, h3 { margin-top: 0; letter-spacing: -0.035em; }
+
+    h1 {
+      margin: 1.25rem 0 1rem;
+      max-width: 800px;
+      font-size: clamp(2.5rem, 7vw, 4.75rem);
+      line-height: 0.98;
+      font-weight: 760;
+    }
+
+    h2 { margin-bottom: 0.65rem; font-size: 1.75rem; line-height: 1.2; }
+    h3 { margin-bottom: 0.45rem; font-size: 1rem; letter-spacing: -0.015em; }
+
+    .hero-copy {
+      max-width: 700px;
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 1.08rem;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.65rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--background);
+      padding: 0.15rem 0.6rem;
+      color: var(--muted-foreground);
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+
+    .badge.recommended {
+      border-color: color-mix(in srgb, var(--green) 32%, var(--border));
+      color: var(--green);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5rem;
+      display: grid;
+      gap: 0.2rem;
+      font-size: 0.82rem;
+    }
+
+    .sidebar-label {
+      margin-bottom: 0.45rem;
+      color: var(--foreground);
+      font-size: 0.76rem;
+      font-weight: 650;
+    }
+
+    .sidebar a {
+      border-left: 1px solid var(--border);
+      padding: 0.32rem 0 0.32rem 0.8rem;
+      color: var(--muted-foreground);
+    }
+
+    .sidebar a:hover { border-color: var(--foreground); color: var(--foreground); }
+
+    main { min-width: 0; }
+
+    section {
+      scroll-margin-top: 5rem;
+      padding: 0 0 4.5rem;
+    }
+
+    .section-lead {
+      max-width: 720px;
+      margin: 0 0 1.5rem;
+      color: var(--muted-foreground);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--card) 95%, transparent);
+      padding: 1.2rem;
+      box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
+    }
+
+    .card p { margin: 0; color: var(--muted-foreground); font-size: 0.9rem; }
+
+    .icon {
+      width: 2rem;
+      height: 2rem;
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .callout {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.8rem;
+      margin-top: 1rem;
+      border: 1px solid color-mix(in srgb, var(--blue) 35%, var(--border));
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--blue) 7%, var(--card));
+      padding: 1rem;
+    }
+
+    .callout strong { display: block; margin-bottom: 0.15rem; font-size: 0.9rem; }
+    .callout p { margin: 0; color: var(--muted-foreground); font-size: 0.86rem; }
+    .callout-symbol { color: var(--blue); font-weight: 800; }
+
+    .architecture {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px),
+        color-mix(in srgb, var(--muted) 36%, var(--background));
+      background-size: 28px 28px;
+      padding: 1.6rem;
+    }
+
+    .architecture-grid {
+      min-width: 700px;
+      display: grid;
+      grid-template-columns: 1fr 3rem 1fr 3rem 1.35fr;
+      grid-template-areas:
+        "desktop a1 server a2 daytona"
+        ". . turso a3 daytona"
+        ". . secrets a4 daytona";
+      gap: 1rem 0.4rem;
+      align-items: center;
+    }
+
+    .node {
+      border: 1px solid var(--border);
+      border-radius: 0.65rem;
+      background: var(--card);
+      padding: 1rem;
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 5%, transparent);
+    }
+
+    .node-title { font-size: 0.9rem; font-weight: 700; }
+    .node-sub { margin-top: 0.25rem; color: var(--muted-foreground); font-size: 0.75rem; }
+    .desktop { grid-area: desktop; }
+    .server { grid-area: server; border-color: color-mix(in srgb, var(--blue) 45%, var(--border)); }
+    .turso { grid-area: turso; border-color: color-mix(in srgb, var(--violet) 45%, var(--border)); }
+    .secrets { grid-area: secrets; border-color: color-mix(in srgb, var(--amber) 45%, var(--border)); }
+
+    .daytona {
+      grid-area: daytona;
+      border: 1px dashed color-mix(in srgb, var(--green) 55%, var(--border));
+      border-radius: 0.85rem;
+      background: color-mix(in srgb, var(--green) 5%, var(--card));
+      padding: 1rem;
+    }
+
+    .daytona-label {
+      margin-bottom: 0.7rem;
+      color: var(--green);
+      font-size: 0.73rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .daytona-stack { display: grid; gap: 0.55rem; }
+    .daytona .node { box-shadow: none; }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--muted-foreground);
+      font-size: 1.2rem;
+    }
+
+    .a1 { grid-area: a1; }
+    .a2 { grid-area: a2; }
+    .a3 { grid-area: a3; }
+    .a4 { grid-area: a4; }
+
+    .flow {
+      counter-reset: step;
+      display: grid;
+      gap: 0;
+      margin-top: 1.25rem;
+    }
+
+    .flow-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      gap: 0.9rem;
+      padding-bottom: 1.3rem;
+    }
+
+    .flow-step:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      top: 2rem;
+      bottom: 0;
+      left: 1rem;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .flow-number {
+      position: relative;
+      z-index: 1;
+      width: 2rem;
+      height: 2rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--background);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .flow-step h3 { margin: 0.12rem 0 0.2rem; }
+    .flow-step p { margin: 0; color: var(--muted-foreground); font-size: 0.88rem; }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td { padding: 0.75rem 0.9rem; text-align: left; vertical-align: top; }
+    th { background: var(--muted); color: var(--muted-foreground); font-size: 0.75rem; font-weight: 650; }
+    tr + tr td { border-top: 1px solid var(--border); }
+    td:first-child { font-weight: 600; white-space: nowrap; }
+
+    ul { margin: 0.55rem 0 0; padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; color: var(--muted-foreground); }
+    li::marker { color: var(--muted-foreground); }
+
+    .decision {
+      border-left: 3px solid var(--green);
+      padding-left: 1rem;
+    }
+
+    .decision strong { display: block; margin-bottom: 0.25rem; }
+    .decision p { margin: 0; color: var(--muted-foreground); }
+
+    .code-block {
+      overflow-x: auto;
+      margin: 1rem 0 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted);
+      padding: 1rem;
+      color: var(--foreground);
+      font-size: 0.8rem;
+      line-height: 1.7;
+    }
+
+    .checklist { display: grid; gap: 0.55rem; }
+
+    .check {
+      display: grid;
+      grid-template-columns: 1.15rem minmax(0, 1fr);
+      gap: 0.65rem;
+      color: var(--muted-foreground);
+      font-size: 0.88rem;
+    }
+
+    .check::before {
+      content: "";
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.25rem;
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      background: var(--background);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      color: var(--muted-foreground);
+      font-size: 0.8rem;
+    }
+
+    footer a { text-decoration: underline; text-underline-offset: 3px; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; gap: 0; }
+      .sidebar { display: none; }
+      .grid.three { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .page { padding-top: 3.5rem; }
+      .topnav { display: none; }
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2.7rem; }
+      section { padding-bottom: 3.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="Lightcode architecture plan">
+        <span class="brand-mark">L</span>
+        <span>Lightcode</span>
+        <span style="color: var(--muted-foreground); font-weight: 450;">/ Architecture</span>
+      </a>
+      <nav class="topnav" aria-label="Document navigation">
+        <a href="#architecture">Architecture</a>
+        <a href="#lifecycle">Lifecycle</a>
+        <a href="#data">Turso</a>
+        <a href="#delivery">Delivery</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page" id="top">
+    <header class="hero">
+      <div class="eyebrow">MVP implementation plan</div>
+      <h1>Daytona agent work with Turso state</h1>
+      <p class="hero-copy">
+        Run Codex and all generated shell or file work inside one durable Daytona sandbox per project. Keep projects, threads, messages, and remote runtime identifiers in Turso. Provision containers on demand—no scheduler is required for the MVP.
+      </p>
+      <div class="badges" aria-label="Plan decisions">
+        <span class="badge recommended">One sandbox per project</span>
+        <span class="badge">Git-backed projects</span>
+        <span class="badge">Turso source of truth</span>
+        <span class="badge">No automatic push</span>
+        <span class="badge">No scheduler</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="On this page">
+        <div class="sidebar-label">On this page</div>
+        <a href="#summary">Summary</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#lifecycle">Request lifecycle</a>
+        <a href="#data">Turso data model</a>
+        <a href="#server">Server implementation</a>
+        <a href="#security">Security</a>
+        <a href="#scheduler">Scheduler decision</a>
+        <a href="#interfaces">Interfaces</a>
+        <a href="#delivery">Delivery phases</a>
+        <a href="#tests">Test plan</a>
+        <a href="#assumptions">Assumptions</a>
+      </aside>
+
+      <main id="content">
+        <section id="summary">
+          <h2>Summary</h2>
+          <p class="section-lead">
+            The Lightcode server remains the orchestration layer. It loads application state from Turso, ensures the project’s Daytona sandbox is available, launches a remote Codex turn, streams normalized events to the desktop, and persists the result.
+          </p>
+          <div class="grid three">
+            <article class="card">
+              <div class="icon" aria-hidden="true">DB</div>
+              <h3>Turso owns state</h3>
+              <p>Projects, threads, messages, sandbox mappings, and remote Codex thread IDs survive server restarts.</p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">DX</div>
+              <h3>Daytona owns execution</h3>
+              <p>Codex, terminal commands, dependency installs, tests, and file changes run inside the remote sandbox.</p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">API</div>
+              <h3>Server owns orchestration</h3>
+              <p>The existing tRPC stream stays stable while the execution driver changes from host-local to remote.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="architecture">
+          <h2>Architecture</h2>
+          <p class="section-lead">The runtime boundary is explicit: Lightcode coordinates; Daytona executes; Turso persists.</p>
+          <div class="architecture" role="img" aria-label="Lightcode Daytona and Turso architecture">
+            <div class="architecture-grid">
+              <div class="node desktop">
+                <div class="node-title">Lightcode desktop</div>
+                <div class="node-sub">Messages, model options, stop action</div>
+              </div>
+              <div class="arrow a1" aria-hidden="true">→</div>
+              <div class="node server">
+                <div class="node-title">tRPC server</div>
+                <div class="node-sub">ThreadService + Daytona driver</div>
+              </div>
+              <div class="arrow a2" aria-hidden="true">⇄</div>
+              <div class="daytona">
+                <div class="daytona-label">Daytona · one sandbox per project</div>
+                <div class="daytona-stack">
+                  <div class="node">
+                    <div class="node-title">PTY turn session</div>
+                    <div class="node-sub">Streaming output + cancellation</div>
+                  </div>
+                  <div class="node">
+                    <div class="node-title">Remote Codex agent</div>
+                    <div class="node-sub">Start or resume each chat thread</div>
+                  </div>
+                  <div class="node">
+                    <div class="node-title">Cloned Git repository</div>
+                    <div class="node-sub">All shell and file work stays here</div>
+                  </div>
+                </div>
+              </div>
+              <div class="node turso">
+                <div class="node-title">Turso</div>
+                <div class="node-sub">Projects, threads, messages, runtime IDs</div>
+              </div>
+              <div class="arrow a3" aria-hidden="true">→</div>
+              <div class="node secrets">
+                <div class="node-title">Secret stores</div>
+                <div class="node-sub">Daytona OpenAI secret + server clone token</div>
+              </div>
+              <div class="arrow a4" aria-hidden="true">→</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="callout-symbol">i</div>
+            <div>
+              <strong>Execution boundary</strong>
+              <p>The host server never runs the coding agent against the local project directory. Every agent tool action occurs in the Daytona sandbox.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="lifecycle">
+          <h2>Request lifecycle</h2>
+          <p class="section-lead">Provisioning is lazy and idempotent. Normal messages reuse the existing project sandbox.</p>
+          <div class="flow">
+            <div class="flow-step">
+              <div class="flow-number">1</div>
+              <div><h3>Load application state</h3><p>Resolve the app thread, project, previous messages, Daytona sandbox ID, and external Codex thread ID from Turso.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">2</div>
+              <div><h3>Ensure the sandbox</h3><p>Reuse or start the saved sandbox. If none exists, inspect the existing local Git project, create a TypeScript sandbox, clone its remote, and persist the mapping.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">3</div>
+              <div><h3>Start a remote turn</h3><p>Create a unique Daytona PTY, run the uploaded agent package in the cloned repository, and start or resume the remote Codex thread.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">4</div>
+              <div><h3>Stream events</h3><p>Parse newline-delimited agent events and translate them to the existing Lightcode notification shape for the desktop client.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">5</div>
+              <div><h3>Persist completion</h3><p>Save assistant text, the remote Codex thread ID, timestamps, and turn outcome to Turso; then close the PTY and release the thread lock.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="data">
+          <h2>Turso data model</h2>
+          <p class="section-lead">Use libSQL/Turso as the durable source of truth. Runtime objects remain short-lived server concerns.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Entity</th><th>Required fields</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>projects</td><td><code>id</code>, <code>name</code>, <code>local_path</code>, <code>repository_url</code>, <code>repository_branch</code>, <code>daytona_sandbox_id</code>, <code>remote_workspace_path</code></td><td>Maps one Lightcode project to one persistent Daytona workspace.</td></tr>
+                <tr><td>threads</td><td><code>id</code>, <code>project_id</code>, <code>external_thread_id</code>, <code>name</code>, timestamps</td><td>Maps each app chat to its independent remote Codex conversation.</td></tr>
+                <tr><td>messages</td><td><code>id</code>, <code>thread_id</code>, <code>role</code>, <code>text</code>, model, effort, sequence</td><td>Stores the UI-visible transcript independently from Codex session files.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <div class="callout-symbol">↻</div>
+            <div>
+              <strong>Recovery behavior</strong>
+              <p>If Turso has a sandbox ID that Daytona no longer recognizes, clear the stale runtime mapping and reprovision. Preserve the project, chat, and message records.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="server">
+          <h2>Server implementation</h2>
+          <div class="grid">
+            <article class="card">
+              <h3>Daytona workspace manager</h3>
+              <ul>
+                <li>Initialize one <code>Daytona</code> client from server configuration.</li>
+                <li>Create, resolve, start, and recover project sandboxes.</li>
+                <li>Clone the project and bootstrap the remote agent exactly once.</li>
+                <li>Use auto-stop so idle containers do not remain billable.</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Remote agent package</h3>
+              <ul>
+                <li>Use the pinned <code>@openai/codex-sdk</code>.</li>
+                <li>Accept one validated JSON request per process.</li>
+                <li>Emit NDJSON records for deltas, final text, thread IDs, completion, and errors.</li>
+                <li>Apply model, reasoning, collaboration mode, and access settings.</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Thread service</h3>
+              <ul>
+                <li>Load thread/project data from Turso.</li>
+                <li>Reject overlapping turns for the same app thread.</li>
+                <li>Persist user messages before remote execution.</li>
+                <li>Persist final assistant text and clear locks in <code>finally</code>.</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Turn cancellation</h3>
+              <ul>
+                <li>Keep the active Daytona PTY handle by app thread ID.</li>
+                <li>Map <code>stopTurn</code> to termination of that PTY only.</li>
+                <li>Mark interruption distinctly from remote failure.</li>
+                <li>Never stop the shared project sandbox to cancel one chat.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="security">
+          <h2>Credentials and security</h2>
+          <p class="section-lead">Keep execution isolated without placing durable credentials where agent-generated code can read them.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Credential</th><th>Location</th><th>Policy</th></tr></thead>
+              <tbody>
+                <tr><td>Daytona API key</td><td>Lightcode server environment</td><td>Used only by the server-side Daytona SDK.</td></tr>
+                <tr><td>OpenAI API key</td><td>Daytona Secret</td><td>Expose an opaque placeholder as <code>OPENAI_API_KEY</code>; scope substitution to OpenAI HTTPS requests.</td></tr>
+                <tr><td>GitHub clone token</td><td>Lightcode server secret environment</td><td>Pass transiently to the initial private clone API call; do not store in the sandbox or Turso.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <div class="callout-symbol">!</div>
+            <div>
+              <strong>No persistent Git authentication in v1</strong>
+              <p>The sandbox may inspect and modify its clone, but it cannot fetch or push private repositories after provisioning. This matches the MVP decision to keep changes uncommitted and unpushed.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="scheduler">
+          <h2>Scheduler decision</h2>
+          <div class="decision">
+            <strong>No scheduler for the MVP.</strong>
+            <p>Provision or wake the sandbox synchronously when a message arrives. Configure Daytona auto-stop after 30–60 minutes of inactivity and let the next request restart it.</p>
+          </div>
+          <div class="grid" style="margin-top: 1.25rem;">
+            <article class="card">
+              <h3>MVP lifecycle</h3>
+              <p><code>message → Turso lookup → get/start sandbox → run turn → persist result</code></p>
+            </article>
+            <article class="card">
+              <h3>Add a scheduler later when needed</h3>
+              <p>Use one only for proactive warm-up, cost enforcement, deletion of abandoned sandboxes, reconciliation, or scheduled background jobs.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="interfaces">
+          <h2>Public interfaces</h2>
+          <p class="section-lead">Preserve the existing frontend contract so the MVP can land as a server/runtime migration.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Procedure</th><th>MVP behavior</th></tr></thead>
+              <tbody>
+                <tr><td><code>queryAI</code></td><td>Keep the current input and streamed event shapes; execution moves to Daytona.</td></tr>
+                <tr><td><code>stopTurn</code></td><td>Terminate the active remote PTY for the selected thread.</td></tr>
+                <tr><td><code>loadMessages</code></td><td>Read the ordered transcript from Turso.</td></tr>
+                <tr><td><code>addProject</code></td><td>Remain path-based; discover Git origin and branch lazily on first remote use.</td></tr>
+                <tr><td><code>getProjects</code></td><td>May include non-sensitive runtime status and sandbox identity for future UI treatment.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="delivery">
+          <h2>Delivery phases</h2>
+          <p class="section-lead">Implement vertical slices so each phase produces a testable boundary.</p>
+          <div class="flow">
+            <div class="flow-step">
+              <div class="flow-number">1</div>
+              <div><h3>Turso persistence</h3><p>Replace direct local SQLite access with a repository layer backed by libSQL, add additive migrations, and cover project/thread/message queries.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">2</div>
+              <div><h3>Sandbox provisioning</h3><p>Add the Daytona client, project mapping, Git discovery, authenticated initial clone, bootstrap, reuse, and stale-sandbox recovery.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">3</div>
+              <div><h3>Remote Codex bridge</h3><p>Upload the agent package, define its NDJSON protocol, run it over PTY, translate events, and persist external Codex thread IDs.</p></div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-number">4</div>
+              <div><h3>Lifecycle hardening</h3><p>Add cancellation, per-thread locks, error classification, retry boundaries, configuration checks, and structured logs without secrets.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tests">
+          <h2>Test plan</h2>
+          <div class="checklist">
+            <div class="check">Turso integration tests cover project/thread/message CRUD, ordering, remote ID persistence, and migrations.</div>
+            <div class="check">Provisioning tests cover first creation, existing sandbox reuse, stopped sandbox restart, stale ID recovery, and failed bootstrap.</div>
+            <div class="check">Git tests cover origin discovery, branch discovery, public clone, private clone, token redaction, and non-Git project errors.</div>
+            <div class="check">Driver tests cover partial NDJSON chunks, multiple events per chunk, malformed records, stderr, non-zero exits, and stream completion.</div>
+            <div class="check">Thread tests cover remote thread start/resume, message persistence, overlapping send rejection, interruption, and lock cleanup.</div>
+            <div class="check">Acceptance test sends two turns to one chat, confirms the same sandbox and Codex thread are reused, and verifies file changes remain remote.</div>
+            <div class="check">Workspace typechecks pass with the new Daytona and libSQL dependencies.</div>
+          </div>
+        </section>
+
+        <section id="assumptions">
+          <h2>Assumptions and defaults</h2>
+          <div class="grid">
+            <article class="card">
+              <ul>
+                <li>One durable Daytona sandbox per Lightcode project.</li>
+                <li>Separate external Codex thread ID per app chat.</li>
+                <li>Existing projects are Git repositories with an HTTPS origin.</li>
+                <li>Daytona TypeScript base image with first-use bootstrap.</li>
+              </ul>
+            </article>
+            <article class="card">
+              <ul>
+                <li>Auto-stop after 30–60 idle minutes; no MVP scheduler.</li>
+                <li>No automatic commit, push, or local file synchronization.</li>
+                <li>No host-local fallback when Daytona fails.</li>
+                <li>Frontend tRPC streaming remains backward compatible.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <footer>
+          References:
+          <a href="https://www.daytona.io/docs/en/typescript-sdk/">Daytona TypeScript SDK</a>,
+          <a href="https://www.daytona.io/docs/en/guides/openai/codex-sdk-interactive-terminal-sandbox/">Codex in Daytona</a>, and
+          <a href="https://docs.turso.tech/sdk/ts/quickstart">Turso TypeScript quickstart</a>.
+        </footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
