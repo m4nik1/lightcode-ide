@@ -1,6 +1,6 @@
-import { type ModelReasoningEffort } from "@openai/codex-sdk";
 import { CodexAppServerClient } from '@lightcode/codex-protocol'
 import type { ThreadStartResponse } from '@lightcode/codex-protocol'
+import type { AIReasoningEffort } from './aiModelConfig.ts'
 
 const PLAN_MODE_INSTRUCTIONS = `<collaboration_mode>
 # Collaboration Mode: Plan
@@ -53,7 +53,7 @@ export default class lightThread {
     console.log("Turn interrupted: ", turnInterrupt)
   }
 
-  async *sendQueryStream(model: string, thinking: ModelReasoningEffort, mode: "plan" | "build", query: string) {
+  async *sendQueryStream(model: string, thinking: AIReasoningEffort, mode: "plan" | "build", query: string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
     }

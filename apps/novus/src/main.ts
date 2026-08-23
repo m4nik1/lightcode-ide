@@ -1,6 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import './server-env';
+import { startServer, stopServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
@@ -9,9 +11,18 @@ if (started) {
   app.quit();
 }
 
+let mainWindow: BrowserWindow | null = null;
+let serverStatus = 'Stopped';
+let serverStopped = false;
+
+function updateServerStatus(status: string) {
+  serverStatus = status;
+  mainWindow?.webContents.send('server:status', serverStatus);
+}
+
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1500,
     height: 1000,
     autoHideMenuBar: true,
@@ -35,10 +46,33 @@ ipcMain.handle('dialog.openFolder', () => {
   return dialog.showOpenDialog({ properties: ['openDirectory'] });
 });
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+ipcMain.handle('server:getStatus', () => serverStatus);
+
+app.whenReady().then(async () => {
+  createWindow();
+
+  try {
+    await startServer();
+    updateServerStatus('Ready');
+  } catch (err) {
+    console.error('Unable to start server: ', err);
+    updateServerStatus('Stopped (error)');
+  }
+});
+
+app.on('before-quit', (event) => {
+  if (serverStopped) return;
+
+  event.preventDefault();
+  void stopServer()
+    .catch((error: unknown) => {
+      console.error('Unable to stop server cleanly: ', error);
+    })
+    .finally(() => {
+      serverStopped = true;
+      app.quit();
+    });
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
