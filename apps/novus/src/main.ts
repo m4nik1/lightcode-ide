@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { startServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
