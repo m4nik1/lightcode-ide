@@ -5,11 +5,16 @@ const initialSettings = {
 }
 
 interface settingsState {
-  colorMode: () => void;
+  colorMode: string;
+  setColorMode: () => void;
 }
 
 const useSettings = create<settingsState>((set) => ({
-  colorMode: () => set((state) => setColorMode(state.colorMode)),
+  colorMode: 'dark',
+  setColorMode: (mode) => {
+    set({ mode })
+    setColorMode(mode)
+  }
 }));
 
 function setColorMode(colorMode : string) {

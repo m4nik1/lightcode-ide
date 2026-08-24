@@ -2,12 +2,23 @@ import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+
+function hasBinary(binary: string): boolean {
+  try {
+    execFileSync(process.platform === 'win32' ? 'where' : 'which', [binary], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const canMakeDeb = process.platform === 'linux' && hasBinary('dpkg') && hasBinary('fakeroot');
 
 // The Codex CLI is a native binary that cannot be executed from inside
 // app.asar, so it is copied into the app's Resources directory instead.
@@ -49,9 +60,8 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
-    new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerZIP({}, ['darwin', 'linux']),
+    ...(canMakeDeb ? [new MakerDeb({})] : []),
   ],
   plugins: [
     new VitePlugin({

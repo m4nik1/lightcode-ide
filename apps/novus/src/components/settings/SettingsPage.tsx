@@ -5,9 +5,11 @@ import { aiThemeClassNames } from "../../theme";
 import SettingsDropdown, {
   type AppearanceTheme,
 } from "./SettingsDropdown";
+import useSettings from '../store/settingsStore.ts'
 
 export default function SettingsPage() {
-  const [appearance, setAppearance] = useState<AppearanceTheme>("dark");
+  const colorMode = useSettings((state) => state.colorMode);
+  const setColorMode = useSettings((state) => state.setColorMode);
 
   return (
     <section
@@ -29,7 +31,7 @@ export default function SettingsPage() {
 
         <button
           type="button"
-          onClick={() => setAppearance("dark")}
+          onClick={() => setColorMode("Dark")}
           className={cn(
             "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-1 focus-visible:outline-offset-2",
             aiThemeClassNames.textMuted,
@@ -72,8 +74,8 @@ export default function SettingsPage() {
             </div>
 
             <SettingsDropdown
-              value={appearance}
-              onValueChange={setAppearance}
+              value={colorMode}
+              onValueChange={setColorMode}
             />
           </div>
         </div>
