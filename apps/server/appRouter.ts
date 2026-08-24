@@ -1,6 +1,5 @@
 import { publicProcedure, router } from "./trpc.ts";
 import { z } from "zod";
-import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import { ThreadService } from "./ThreadService.ts";
 import { AI_MODEL_IDS, REASONING_EFFORTS } from "./aiModelConfig.ts";
 import {
@@ -13,17 +12,7 @@ import {
   loadMessagesFromThread,
 } from "./lightQueries.ts";
 
-const threadService = new ThreadService(
-  new CodexAppServerClient({
-    clientInfo: {
-      name: "lightcode-ide",
-      title: 'Lightcode',
-      version: '0.0.1',
-    }
-  }),
-);
-
-export const appRouter = router({
+export const createAppRouter = (threadService: ThreadService) => router({
   greeting: publicProcedure
     .input(
       z
@@ -143,4 +132,4 @@ export const appRouter = router({
     })
 });
 
-export type AppRouter = typeof appRouter;
+export type AppRouter = ReturnType<typeof createAppRouter>;
