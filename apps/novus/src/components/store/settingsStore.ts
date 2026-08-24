@@ -1,27 +1,25 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-const initialSettings = {
-  colorMode: 'dark'
-}
+type ColorMode = 'light' | 'dark'
 
 interface settingsState {
-  colorMode: string;
-  setColorMode: () => void;
+  colorMode: ColorMode;
+  setColorMode: (mode: ColorMode) => void;
 }
 
 const useSettings = create<settingsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       colorMode: 'dark',
       setColorMode: (mode) => {
-        set({ mode })
+        set({ colorMode: mode })
         setColorMode(mode)
       }
     }),
     {
       name: 'settings-storage',
-      storage: createJSONStorage(() => sessionStorage)
+      storage: createJSONStorage(() => localStorage)
     }
   )
 )

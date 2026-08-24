@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
         <button
           type="button"
-          onClick={() => setColorMode("Dark")}
+          onClick={() => setColorMode("dark")}
           className={cn(
             "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-1 focus-visible:outline-offset-2",
             aiThemeClassNames.textMuted,
