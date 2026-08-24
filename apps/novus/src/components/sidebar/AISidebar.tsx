@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { SidebarHeader } from "./SidebarHeader";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../../theme";
 import { cn } from "../../lib/utils";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Settings } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
 import { trpcClient } from "../../utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import { useAIChat } from "../../context/useAIChat";
+import { useView } from "@/context/useView";
 
 export interface Project {
   id: string;
@@ -23,6 +23,8 @@ export default function AISidebar() {
     queryFn: () => trpcClient.getProjects.query(),
   });
   const { createProject, currentThread, setCurrentThread } = useAIChat();
+
+  const { setView } = useView();
 
   const currentTitle = currentThread
     ? `${currentThread.id}:${currentThread.title}`
@@ -128,7 +130,7 @@ export default function AISidebar() {
         aiThemeClassNames.textPrimary,
       )}
     >
-      <SidebarHeader onNewChat={() => handleNewChat()} />
+      <h1 className="shrink-0 px-4 pb-4 pt-10 text-2xl font-semibold">Novus</h1>
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         <div className="flex">
@@ -160,6 +162,26 @@ export default function AISidebar() {
             onDeleteThread={deleteThread}
           />
         ))}
+      </div>
+
+      <div className={cn("shrink-0 border-t p-3", aiThemeClassNames.border)}>
+        <button
+          type="button"
+          aria-label="Settings"
+          onClick={() => setView("settings")}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+            aiThemeClassNames.textPrimary,
+            aiThemeClassNames.surfaceHover,
+            aiThemeClassNames.focusVisibleSurfaceHover,
+            aiThemeClassNames.borderFocus,
+          )}
+        >
+          <Settings
+            className={cn("size-4 shrink-0", aiThemeClassNames.textMuted)}
+          />
+          Settings
+        </button>
       </div>
     </aside>
   );
