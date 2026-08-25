@@ -3,9 +3,28 @@ import AISidebar from "./components/sidebar/AISidebar";
 import Composer from "./components/Composer";
 import ChatMessages from "./components/ChatMessages";
 import { aiTheme } from "./theme";
-import { AiChatProvider } from "./context/useAIChat";
+import { AiChatProvider, useAIChat } from "./context/useAIChat";
+import { Folder } from "lucide-react";
 
-const isMac = navigator.platform.toUpperCase().includes("MAC");
+function ChatTopBar() {
+  const { currentThread } = useAIChat();
+  const projectName = currentThread
+    ? currentThread.projectPath.split(/[\\/]/).filter(Boolean).at(-1)
+    : null;
+
+  return (
+    <header style={styles.topBar}>
+      {currentThread ? (
+        <div style={styles.breadcrumb}>
+          <Folder aria-hidden="true" style={styles.folderIcon} />
+          <span style={styles.projectName}>{projectName}</span>
+          <span style={styles.separator}>/</span>
+          <span style={styles.threadName}>{currentThread.title}</span>
+        </div>
+      ) : null}
+    </header>
+  );
+}
 
 export function AIWindow() {
   return (
@@ -16,7 +35,7 @@ export function AIWindow() {
           <AISidebar />
         </div>
         <div style={styles.mainColumn}>
-          {isMac ? <header style={styles.topBar} /> : null}
+          <ChatTopBar />
           <section style={styles.content}>
             <ChatMessages />
             <div style={styles.composerArea}>
@@ -74,10 +93,44 @@ const styles: Record<string, CSSProperties> = {
   topBar: {
     height: 38,
     flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    padding: "0 16px",
     background: aiTheme.background,
     borderBottom: `1px solid ${aiTheme.border}`,
     // @ts-expect-error -- Electron-specific CSS for draggable title bar
     WebkitAppRegion: "drag",
+  },
+  breadcrumb: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    minWidth: 0,
+    width: "100%",
+  },
+  folderIcon: {
+    width: 14,
+    height: 14,
+    flexShrink: 0,
+    color: aiTheme.textMuted,
+  },
+  projectName: {
+    maxWidth: "40%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    color: aiTheme.textMuted,
+  },
+  separator: {
+    flexShrink: 0,
+    color: aiTheme.textDisabled,
+  },
+  threadName: {
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    color: aiTheme.textPrimary,
   },
   content: {
     flex: 1,
