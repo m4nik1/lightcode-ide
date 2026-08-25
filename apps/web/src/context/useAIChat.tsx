@@ -142,8 +142,9 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   }
 
   async function createProject() {
-    const projectFolder = await window.electronAPI.openFolder();
-    const projectFolderPath = projectFolder.filePaths[0];
+    const projectFolderPath = window.novusDesktop
+      ? await window.novusDesktop.openFolder()
+      : window.prompt("Enter the absolute project path");
 
     if (!projectFolderPath) {
       return;

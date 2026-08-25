@@ -64,5 +64,10 @@ export const queryClient = new QueryClient({
 });
 
 export const trpcClient = createTRPCClient({
-  links: [httpBatchStreamLink({ url: 'http://localhost:2024' })],
+  links: [
+    httpBatchStreamLink({
+      url:
+        import.meta.env.VITE_NOVUS_SERVER_URL ?? 'http://127.0.0.1:2024',
+    }),
+  ],
 }) as unknown as Router;

@@ -10,12 +10,8 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "lib": ["ESNext", "DOM"]
   },
-  "include": ["src", "forge.env.d.ts"],
+  "include": ["src", "forge.env.d.ts", "forge.config.ts", "vite.*.ts", "vite.*.mts"],
   "exclude": ["node_modules", "dist", ".vite", "out"]
 }

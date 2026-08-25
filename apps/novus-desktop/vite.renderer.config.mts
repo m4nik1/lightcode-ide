@@ -5,14 +5,14 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const webRoot = path.resolve(__dirname, '../web');
 
-// https://vitejs.dev/config
 export default defineConfig({
-  root: path.resolve(__dirname, 'src'),
+  root: webRoot,
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(webRoot, 'src'),
     },
   },
   server: {

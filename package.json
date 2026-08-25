@@ -8,7 +8,8 @@
   "workspaces": [
     "apps/desktop",
     "apps/server",
-    "apps/novus",
+    "apps/web",
+    "apps/novus-desktop",
     "packages/*"
   ],
   "repository": {
@@ -19,8 +20,12 @@
   "author": "Manik Soomro",
   "scripts": {
     "desktop": "npm run dev -w @lightcode/desktop",
-    "novus": "npm run dev -w @novus/app",
-    "novus:build": "npm run build -w @novus/app",
+    "web": "npm run dev -w @novus/web",
+    "web:build": "npm run build -w @novus/web",
+    "novus": "npm run dev -w @novus/desktop",
+    "novus:package": "npm run package -w @novus/desktop",
+    "novus:make": "npm run make -w @novus/desktop",
+    "novus:build": "npm run build -w @novus/desktop",
     "server": "npm run dev -w @lightcode/server",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

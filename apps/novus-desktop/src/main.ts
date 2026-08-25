@@ -42,8 +42,9 @@ const createWindow = () => {
   }
 };
 
-ipcMain.handle('dialog.openFolder', () => {
-  return dialog.showOpenDialog({ properties: ['openDirectory'] });
+ipcMain.handle('dialog.openFolder', async () => {
+  const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+  return result.filePaths[0] ?? null;
 });
 
 ipcMain.handle('server:getStatus', () => serverStatus);

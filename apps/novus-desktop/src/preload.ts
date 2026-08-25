@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld("electronAPI", {
+contextBridge.exposeInMainWorld("novusDesktop", {
   openFolder: () => ipcRenderer.invoke("dialog.openFolder"),
 });
