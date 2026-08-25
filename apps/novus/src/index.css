@@ -34,6 +34,31 @@ select {
   font: inherit;
 }
 
+.chat-messages-scrollbar {
+  scrollbar-color: #555555 transparent;
+  scrollbar-width: thin;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb {
+  background: #555555;
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6f6f6f;
+  background-clip: content-box;
+}
+
 @keyframes shimmer-slide {
   from {
     -webkit-mask-position: calc(0% - var(--shimmer-width)) 0;

@@ -37,7 +37,7 @@ export default function ChatMessages() {
   return (
     <div
       ref={scrollContainerRef}
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto py-6"
+      className="chat-messages-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-6"
     >
       <div className="flex w-full max-w-[1080px] flex-col gap-3 self-center sm:w-[75%]">
         {messages.map((message) => {
