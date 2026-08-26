@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron-forge start",
     "dev": "electron-forge start",
+    "run": "electron-forge start -- --no-server",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

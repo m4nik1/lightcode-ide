@@ -55,6 +55,9 @@ type Router = {
     mutate: (input: { threadID: string }) => Promise<string>;
   };
   stopTurn: { query: (input: { threadID: string }) => Promise<unknown> };
+  fileSearch: {
+    query: (input: { projectPath: string; searchQuery: string }) => Promise<void>;
+  };
 };
 
 export const queryClient = new QueryClient({

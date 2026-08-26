@@ -6,6 +6,7 @@ import AccessPicker from "./AccessPicker";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
+import { trpcClient } from "@/utils/trpc";
 
 type CollaborationMode = "build" | "plan";
 
@@ -13,7 +14,9 @@ export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [mode, setMode] = useState<CollaborationMode>("build");
-  const { messages, messageSend, isTurning, stopTurn } = useAIChat();
+  const [search, setSearch ] = useState<boolean>(false)
+  let query = ""
+  const { messages, messageSend, isTurning, stopTurn, currentThread } = useAIChat();
 
   const canSend = value.trim().length > 0;
   const actionButtonThemeClassName = isTurning
@@ -35,7 +38,17 @@ export default function Composer() {
     setMode((current) => (current === "build" ? "plan" : "build"));
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+  async function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if(search) {
+      query = query + event.key;
+      console.log('query for search: ', query)
+      if (currentThread) {
+        await trpcClient.fileSearch.query({
+          projectPath: currentThread.projectPath,
+          searchQuery: query,
+        });
+      }
+    }
     if (event.key === "Tab" && event.shiftKey) {
       event.preventDefault();
       toggleMode();
@@ -45,6 +58,11 @@ export default function Composer() {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
+    }
+
+    if(event.key == '@' && !search) {
+      console.log("Triggered fff file search")
+      setSearch(true)
     }
   }
 
