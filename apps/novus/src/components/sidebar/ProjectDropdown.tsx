@@ -1,4 +1,5 @@
-import { SquarePen } from "lucide-react";
+import { useState } from "react";
+import { Folder, SquarePen } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ChevronIcon } from "./icons";
 import type { thread } from "./types";
@@ -17,7 +18,8 @@ export function ProjectDropdown({
   onCreateThread,
   onDeleteThread,
 }: ProjectDropdownProps) {
-  const expanded = true;
+  const [expanded, setExpanded] = useState(true);
+
   return (
     <div className="py-0.5">
       <div
@@ -30,14 +32,25 @@ export function ProjectDropdown({
       >
         <button
           type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((current) => !current)}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-[7px] pr-1 pl-3 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.borderFocus,
           )}
         >
           <ChevronIcon expanded={expanded} />
-          <span className="flex size-3.5 shrink-0 items-center justify-center"></span>
+          <Folder className="size-3.5 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{project.name}</span>
+          <span
+            className={cn(
+              "mr-1 inline-flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] tabular-nums",
+              aiThemeClassNames.surfaceActive,
+              aiThemeClassNames.textMuted,
+            )}
+          >
+            {project.threads.length}
+          </span>
         </button>
         <button
           type="button"
@@ -57,9 +70,21 @@ export function ProjectDropdown({
         </button>
       </div>
 
-      {project.threads.map((t: thread) => (
-        <ThreadItem key={t.id} thread={t} onDeleteThread={onDeleteThread} />
-      ))}
+      {expanded &&
+        (project.threads.length === 0 ? (
+          <p
+            className={cn(
+              "py-1.5 pl-[30px] text-[12px]",
+              aiThemeClassNames.textDisabled,
+            )}
+          >
+            No chats yet
+          </p>
+        ) : (
+          project.threads.map((t: thread) => (
+            <ThreadItem key={t.id} thread={t} onDeleteThread={onDeleteThread} />
+          ))
+        ))}
     </div>
   );
 }

@@ -118,6 +118,18 @@ export default function AISidebar() {
     };
   }, [projectsQuery.data, currentTitle]);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        void handleNewChat();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
   return (
     <aside
       className={cn(
@@ -131,8 +143,13 @@ export default function AISidebar() {
       <SidebarHeader onNewChat={() => handleNewChat()} />
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
-        <div className="flex">
-          <span className={cn("pl-2", aiThemeClassNames.textMuted)}>
+        <div className="flex items-center pb-1.5">
+          <span
+            className={cn(
+              "pl-2 text-[11px] font-medium tracking-[0.08em] uppercase",
+              aiThemeClassNames.textMuted,
+            )}
+          >
             Projects
           </span>
           <button
@@ -152,14 +169,49 @@ export default function AISidebar() {
             <FolderPlus className="size-3.25" />
           </button>
         </div>
-        {projects.map((project) => (
-          <ProjectDropdown
-            key={project.id}
-            project={project}
-            onCreateThread={() => handleNewChat(project.id)}
-            onDeleteThread={deleteThread}
-          />
-        ))}
+        {projectsQuery.isLoading ? (
+          <div className="space-y-1.5 px-1 pt-1" aria-hidden>
+            {[0, 1, 2].map((row) => (
+              <div
+                key={row}
+                className={cn(
+                  "h-7 animate-pulse rounded-xl",
+                  aiThemeClassNames.surface,
+                )}
+                style={{ width: `${88 - row * 14}%` }}
+              />
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => createProject()}
+            className={cn(
+              "mt-1 flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed px-3 py-6 text-center transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+              aiThemeClassNames.border,
+              aiThemeClassNames.textMuted,
+              aiThemeClassNames.surfaceHover,
+              aiThemeClassNames.hoverTextPrimary,
+              aiThemeClassNames.focusVisibleSurfaceHover,
+              aiThemeClassNames.borderFocus,
+            )}
+          >
+            <FolderPlus className="size-4" />
+            <span>No projects yet</span>
+            <span className={cn("text-[12px]", aiThemeClassNames.textDisabled)}>
+              Add a project to start chatting
+            </span>
+          </button>
+        ) : (
+          projects.map((project) => (
+            <ProjectDropdown
+              key={project.id}
+              project={project}
+              onCreateThread={() => handleNewChat(project.id)}
+              onDeleteThread={deleteThread}
+            />
+          ))
+        )}
       </div>
     </aside>
   );

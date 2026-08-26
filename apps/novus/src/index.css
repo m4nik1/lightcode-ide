@@ -33,3 +33,98 @@ textarea,
 select {
   font: inherit;
 }
+
+.chat-messages-scrollbar {
+  scrollbar-color: #555555 transparent;
+  scrollbar-width: thin;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb {
+  background: #555555;
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6f6f6f;
+  background-clip: content-box;
+}
+
+@keyframes shimmer-slide {
+  from {
+    -webkit-mask-position: calc(0% - var(--shimmer-width)) 0;
+    mask-position: calc(0% - var(--shimmer-width)) 0;
+  }
+
+  to {
+    -webkit-mask-position: calc(100% + var(--shimmer-width)) 0;
+    mask-position: calc(100% + var(--shimmer-width)) 0;
+  }
+}
+
+.shimmer-text-container {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  overflow: hidden;
+}
+
+.shimmer-text-muted {
+  color: var(--color-muted-foreground, #6f6f6f);
+}
+
+.shimmer-overlay {
+  --shimmer-width: 4.5rem;
+
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    rgb(0 0 0 / 12%) 0.675rem,
+    rgb(0 0 0 / 55%) 1.575rem,
+    black 2.25rem,
+    rgb(0 0 0 / 55%) 2.925rem,
+    rgb(0 0 0 / 12%) 3.825rem,
+    transparent var(--shimmer-width),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    rgb(0 0 0 / 12%) 0.675rem,
+    rgb(0 0 0 / 55%) 1.575rem,
+    black 2.25rem,
+    rgb(0 0 0 / 55%) 2.925rem,
+    rgb(0 0 0 / 12%) 3.825rem,
+    transparent var(--shimmer-width),
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: var(--shimmer-width) 100%;
+  mask-size: var(--shimmer-width) 100%;
+  animation: shimmer-slide 2.2s linear infinite;
+}
+
+.shimmer-overlay > .shimmer-text {
+  display: block;
+  color: var(--color-background, #fcfcfc);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-overlay {
+    animation: none;
+    opacity: 0;
+  }
+}
