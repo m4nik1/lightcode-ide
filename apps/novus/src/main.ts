@@ -51,6 +51,11 @@ ipcMain.handle('server:getStatus', () => serverStatus);
 app.whenReady().then(async () => {
   createWindow();
 
+  if (process.env.LIGHTCODE_NO_SERVER) {
+    updateServerStatus('Disabled');
+    return;
+  }
+
   try {
     await startServer();
     updateServerStatus('Ready');
