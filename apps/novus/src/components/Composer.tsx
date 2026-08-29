@@ -11,6 +11,7 @@ import FileMentionMenu, {
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
+import { trpcClient } from "@/utils/trpc";
 
 type CollaborationMode = "build" | "plan";
 
@@ -35,6 +36,7 @@ export default function Composer() {
   const [mode, setMode] = useState<CollaborationMode>("build");
   const [mention, setMention] = useState<Mention | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [search, setSearch] = useState(false);
   const { messages, messageSend, isTurning, stopTurn } = useAIChat();
 
   const matches = useMemo(
@@ -127,6 +129,11 @@ export default function Composer() {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
+    }
+
+    if (event.key == "@" && !search) {
+      console.log("Triggered fff file search");
+      setSearch(true);
     }
   }
 

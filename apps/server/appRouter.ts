@@ -1,6 +1,7 @@
 import { publicProcedure, router } from "./trpc.ts";
 import { z } from "zod";
 import { ThreadService } from "./ThreadService.ts";
+import { FileFinder } from "@ff-labs/fff-node";
 import { AI_MODEL_IDS, REASONING_EFFORTS } from "./aiModelConfig.ts";
 import {
   createProject,
@@ -60,6 +61,36 @@ export const createAppRouter = (threadService: ThreadService) => router({
 
       return generatedTitle
     }),
+
+  fileSearch: publicProcedure
+    .input(
+      z.object({
+        projectPath: z.string(),
+        searchQuery: z.string()
+      }),
+    )
+    .query(async ({ input }) => {
+      console.log('input: ', input.searchQuery)
+      // Create instance to the projectPath
+      const fffInstance = FileFinder.create({ basePath: input.projectPath })
+      if(!fffInstance.ok) {
+        throw new Error(fffInstance.error)
+      }
+
+      console.log("FFF instance: ", fffInstance);
+
+      const finder = fffInstance.value;
+      // do an initial scan
+      await finder.waitForScan(250);
+
+      // actually do the file search
+      const files = finder.fileSearch(input.searchQuery, { pageSize: 10 })
+      if (!files.ok) {
+        throw new Error(files.error)
+      }
+
+      console.log('files: ', files.value.items);
+  }),
 
   stopTurn: publicProcedure
     .input(

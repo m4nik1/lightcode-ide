@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import './server-env';
-import { startServer, stopServer } from '../../server/index.ts';
+import { stopServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
@@ -14,6 +14,7 @@ if (started) {
 let mainWindow: BrowserWindow | null = null;
 let serverStatus = 'Stopped';
 let serverStopped = false;
+const shouldStartServer = !process.argv.includes('--no-server');
 
 function updateServerStatus(status: string) {
   serverStatus = status;
@@ -51,22 +52,22 @@ ipcMain.handle('server:getStatus', () => serverStatus);
 app.whenReady().then(async () => {
   createWindow();
 
-  if (process.env.LIGHTCODE_NO_SERVER) {
+  if (!shouldStartServer) {
     updateServerStatus('Disabled');
     return;
   }
 
-  try {
-    await startServer();
-    updateServerStatus('Ready');
-  } catch (err) {
-    console.error('Unable to start server: ', err);
-    updateServerStatus('Stopped (error)');
-  }
+  // try {
+  //   await startServer();
+  //   updateServerStatus('Ready');
+  // } catch (err) {
+  //   console.error('Unable to start server: ', err);
+  //   updateServerStatus('Stopped (error)');
+  // }
 });
 
 app.on('before-quit', (event) => {
-  if (serverStopped) return;
+  if (serverStopped || !shouldStartServer) return;
 
   event.preventDefault();
   void stopServer()
