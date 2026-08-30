@@ -6,6 +6,13 @@ import { stopServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
+if (
+  process.platform === 'linux' &&
+  (process.env.XDG_SESSION_TYPE === 'wayland' || process.env.WAYLAND_DISPLAY)
+) {
+  app.commandLine.appendSwitch('disable-features', 'Vulkan');
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
