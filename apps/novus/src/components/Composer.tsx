@@ -35,16 +35,8 @@ export default function Composer() {
   const [value, setValue] = useState("");
   const [mode, setMode] = useState<CollaborationMode>("build");
   const [mention, setMention] = useState<Mention | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [search, setSearch] = useState(false);
-  const { messages, messageSend, isTurning, stopTurn } = useAIChat();
-
-  const matches = useMemo(
-    () => (mention ? filterWorkspaceFiles(mention.query) : []),
-    [mention],
-  );
-  const isMentionOpen = matches.length > 0;
-  const activeMatchIndex = Math.min(activeIndex, matches.length - 1);
+  const { messageSend, isTurning, stopTurn } = useAIChat();
 
   const canSend = value.trim().length > 0;
   const actionButtonThemeClassName = isTurning
@@ -68,7 +60,6 @@ export default function Composer() {
 
   function syncMention(textarea: HTMLTextAreaElement) {
     setMention(detectMention(textarea.value, textarea.selectionStart ?? 0));
-    setActiveIndex(0);
   }
 
   // Inserts the file mention
@@ -91,35 +82,6 @@ export default function Composer() {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    // If the file menu for file search is on then these events will navigate into it
-    if (isMentionOpen) {
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        setActiveIndex((current) => (current + 1) % matches.length);
-        return;
-      }
-
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        setActiveIndex(
-          (current) => (current - 1 + matches.length) % matches.length,
-        );
-        return;
-      }
-
-      if (event.key === "Enter" || event.key === "Tab") {
-        event.preventDefault();
-        insertMention(matches[activeMatchIndex]);
-        return;
-      }
-
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setMention(null);
-        return;
-      }
-    }
-
     if (event.key === "Tab" && event.shiftKey) {
       event.preventDefault();
       toggleMode();
@@ -139,11 +101,9 @@ export default function Composer() {
 
   return (
     <div className="relative mx-auto min-h-28 w-80 min-w-0 sm:w-[60%]">
-      {isMentionOpen ? (
+      {search ? (
         <FileMentionMenu
           entries={matches}
-          activeIndex={activeMatchIndex}
-          onActiveIndexChange={setActiveIndex}
           onSelect={insertMention}
         />
       ) : null}
