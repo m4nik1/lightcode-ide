@@ -7,7 +7,7 @@ const fileSearchContext = createContext<{
     setCurrentProjectPath: (path: string) => void;
 } | undefined>(undefined);
 
-export function fileSearchProvider({ children }: { children: ReactNode }) {
+export function FileSearchProvider({ children }: { children: ReactNode }) {
     const [query, setQuery] = useState("");
     const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
 
