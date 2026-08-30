@@ -62,6 +62,19 @@ export const createAppRouter = (threadService: ThreadService) => router({
       return generatedTitle
     }),
 
+  /*
+   * {
+    relativePath: 'packages/codex-protocol/src/generated/v2/FileChangeRequestApprovalResponse.ts',
+    fileName: 'FileChangeRequestApprovalResponse.ts',
+    gitStatus: 'clean',
+    size: 327,
+    modified: 1786853354,
+    accessFrecencyScore: 0,
+    modificationFrecencyScore: 0,
+    totalFrecencyScore: 0
+  },
+   */
+
   fileSearch: publicProcedure
     .input(
       z.object({
@@ -89,7 +102,16 @@ export const createAppRouter = (threadService: ThreadService) => router({
         throw new Error(files.error)
       }
 
-      console.log('files: ', files.value.items);
+      const fileSearchResults = []
+      files.value.items.forEach((fileObj) => {
+        const { relativePath, fileName } = fileObj;
+        console.log('files: ', { relativePath, fileName });
+
+        fileSearchResults.push({ relativePath, fileName })
+      });
+
+      return fileSearchResults
+
   }),
 
   stopTurn: publicProcedure

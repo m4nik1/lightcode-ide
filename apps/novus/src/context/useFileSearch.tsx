@@ -1,23 +1,30 @@
 import { trpcClient } from "@/utils/trpc";
+import type { FileSearchResult } from "@/utils/trpc";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 const fileSearchContext = createContext<{
     query: string;
     setQuery: (query: string) => void;
     setCurrentProjectPath: (path: string) => void;
+    searchResults: FileSearchResult[];
 } | undefined>(undefined);
 
 export function FileSearchProvider({ children }: { children: ReactNode }) {
     const [query, setQuery] = useState("");
     const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
+    const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
 
     useEffect(() => {
         console.log("query changed: ", query);
-        trpcClient.fileSearch.query({ projectPath: currentProjectPath, searchQuery: query });
-    }, [query]);
+        trpcClient.fileSearch
+            .query({ projectPath: currentProjectPath, searchQuery: query })
+            .then(setSearchResults)
+            .catch((err) => console.error("file search failed: ", err));
+        console.log('results: ', searchResults)
+    }, [query, currentProjectPath]);
 
     return (
-        <fileSearchContext.Provider value={{ query, setQuery, setCurrentProjectPath }}>
+        <fileSearchContext.Provider value={{ query, setQuery, setCurrentProjectPath, searchResults }}>
             {children}
         </fileSearchContext.Provider>
     );

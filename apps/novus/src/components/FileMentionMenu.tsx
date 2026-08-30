@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
+import { useFileSearch } from "@/context/useFileSearch";
+import { FileSearchResult } from "@/utils/trpc";
 
 export type WorkspaceEntry = {
   name: string;
@@ -19,60 +21,23 @@ export type WorkspaceEntry = {
   kind: "file" | "folder";
 };
 
-const mockWorkspaceFiles: WorkspaceEntry[] = [
-  { name: "package-lock.json", dir: "", kind: "file" },
-  { name: "package.json", dir: "", kind: "file" },
-  { name: "Novus.png", dir: "public/assets", kind: "file" },
-  { name: "novus-logo.svg", dir: "public/assets", kind: "file" },
-  { name: "assets", dir: "public", kind: "folder" },
-  { name: "components", dir: "src", kind: "folder" },
-  { name: "Nav.jsx", dir: "src/components", kind: "file" },
-  { name: "EditorMock.jsx", dir: "src/components", kind: "file" },
-  { name: "Footer.jsx", dir: "src/components", kind: "file" },
-  { name: "Hero.jsx", dir: "src/components", kind: "file" },
-  { name: "Sidebar.jsx", dir: "src/components", kind: "file" },
-  { name: "App.jsx", dir: "src", kind: "file" },
-  { name: "main.jsx", dir: "src", kind: "file" },
-  { name: "index.css", dir: "src", kind: "file" },
-  { name: "theme.ts", dir: "src", kind: "file" },
-  { name: "lib", dir: "src", kind: "folder" },
-  { name: "utils.ts", dir: "src/lib", kind: "file" },
-  { name: "hooks", dir: "src", kind: "folder" },
-  { name: "useChat.ts", dir: "src/hooks", kind: "file" },
-  { name: "favicon.ico", dir: "public", kind: "file" },
-  { name: "index.html", dir: "", kind: "file" },
-  { name: "vite.config.ts", dir: "", kind: "file" },
-  { name: "tsconfig.json", dir: "", kind: "file" },
-  { name: "README.md", dir: "", kind: "file" },
-];
-
-export function entryPath(entry: WorkspaceEntry) {
-  return entry.dir ? `${entry.dir}/${entry.name}` : entry.name;
+export function entryPath(entry: FileSearchResult) {
+  return entry.relativePath ? `${entry.relativePath}/${entry.fileName}` : entry.fileName;
 }
 
-export function filterWorkspaceFiles(query: string) {
-  if (!query) return mockWorkspaceFiles;
-
-  const needle = query.toLowerCase();
-
-  return mockWorkspaceFiles.filter((entry) =>
-    entryPath(entry).toLowerCase().includes(needle),
-  );
-}
-
-function entryIcon(entry: WorkspaceEntry): {
+function entryIcon(entry: FileSearchResult): {
   Icon: LucideIcon;
   colorClassName: string;
 } {
-  if (entry.kind === "folder") {
-    return { Icon: FolderIcon, colorClassName: aiThemeClassNames.textMuted };
-  }
+  // if (entry.kind === "folder") {
+  //   return { Icon: FolderIcon, colorClassName: aiThemeClassNames.textMuted };
+  // }
 
-  if (entry.name === "package.json") {
+  if (entry.fileName === "package.json") {
     return { Icon: FileJsonIcon, colorClassName: "text-[#E5484D]" };
   }
 
-  const extension = entry.name.slice(entry.name.lastIndexOf(".") + 1);
+  const extension = entry.fileName.slice(entry.fileName.lastIndexOf(".") + 1);
 
   switch (extension.toLowerCase()) {
     case "json":
@@ -96,24 +61,22 @@ function entryIcon(entry: WorkspaceEntry): {
   }
 }
 
-type FileMentionMenuProps = {
-  entries: WorkspaceEntry[];
-  activeIndex: number;
-  onActiveIndexChange: (index: number) => void;
-  onSelect: (entry: WorkspaceEntry) => void;
-};
+// type FileMentionMenuProps = {
+//   onSelect: (entry: WorkspaceEntry) => void;
+// };
 
-export default function FileMentionMenu({
-  entries,
-  activeIndex,
-  onActiveIndexChange,
-  onSelect,
-}: FileMentionMenuProps) {
+export default function FileMentionMenu()
+// {
+//   onSelect,
+// }: FileMentionMenuProps) 
+{
   const activeRowRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    activeRowRef.current?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex]);
+  const { searchResults } = useFileSearch()
+  
+  // useEffect(() => {
+  //   activeRowRef.current?.scrollIntoView({ block: "nearest" });
+  // }, [activeIndex]);
 
   return (
     <div
@@ -127,9 +90,10 @@ export default function FileMentionMenu({
         role="listbox"
         className="chat-messages-scrollbar file-mention-fade max-h-[19rem] overflow-y-auto p-1.5"
       >
-        {entries.map((entry, index) => {
+        {searchResults.map((entry, index) => {
           const { Icon, colorClassName } = entryIcon(entry);
-          const isActive = index === activeIndex;
+          {/* const isActive = index === activeIndex; */}
+          const isActive = false;
 
           return (
             <button
@@ -139,8 +103,8 @@ export default function FileMentionMenu({
               role="option"
               aria-selected={isActive}
               onMouseDown={(event) => event.preventDefault()}
-              onMouseEnter={() => onActiveIndexChange(index)}
-              onClick={() => onSelect(entry)}
+              // onMouseEnter={() => onActiveIndexChange(index)}
+              // onClick={() => onSelect(entry)}
               className={cn(
                 "flex h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left transition-colors focus-visible:outline-none",
                 isActive && aiThemeClassNames.mentionActiveSurface,
@@ -156,16 +120,16 @@ export default function FileMentionMenu({
                   aiThemeClassNames.textPrimary,
                 )}
               >
-                {entry.name}
+                {entry.fileName}
               </span>
-              {entry.dir ? (
+              {entry.relativePath ? (
                 <span
                   className={cn(
                     "truncate text-xs",
                     aiThemeClassNames.textMuted,
                   )}
                 >
-                  {entry.dir}
+                  {entry.relativePath}
                 </span>
               ) : null}
             </button>

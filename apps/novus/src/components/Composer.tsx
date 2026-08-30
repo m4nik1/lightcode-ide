@@ -3,13 +3,11 @@ import { ArrowUpIcon, StopCircleIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import ModelPicker from "./ModelPicker";
 import AccessPicker from "./AccessPicker";
-import {
-  type WorkspaceEntry,
-} from "./FileMentionMenu";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
 import { useFileSearch } from "@/context/useFileSearch";
+import FileMentionMenu from "./FileMentionMenu";
 
 type CollaborationMode = "build" | "plan";
 
@@ -40,28 +38,11 @@ export default function Composer() {
   function toggleMode() {
     setMode((current) => (current === "build" ? "plan" : "build"));
   }
-
-  // Inserts the file mention
-  // TODO: Do some research of how AI agents like see these mentions
-  function insertMention(entry: WorkspaceEntry) {
-    const textarea = textareaRef.current;
-    if (!mention || !textarea) return;
-
-    const caret = textarea.selectionStart ?? value.length;
-    const insertion = `@${entryPath(entry)} `;
-    const nextCaret = mention.start + insertion.length;
-
-    setValue(value.slice(0, mention.start) + insertion + value.slice(caret));
-    setMention(null);
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(nextCaret, nextCaret);
-    });
-  }
+  
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if(search) {
+      console.log('event key: ', event.key)
       setQuery(query + event.key);
       setCurrentProjectPath(currentThread?.projectPath);
     }
@@ -84,11 +65,9 @@ export default function Composer() {
 
   return (
     <div className="relative mx-auto min-h-28 w-80 min-w-0 sm:w-[60%]">
-      {/* {search ? (
-        <FileMentionMenu
-          onSelect={insertMention}
-        />
-      ) : null} */}
+      {search ? (
+        <FileMentionMenu />
+      ) : null}
       <div
         className={cn(
           "relative flex min-h-28 flex-col overflow-hidden rounded-[22px] border transition-[border-color,background-color,box-shadow]",
