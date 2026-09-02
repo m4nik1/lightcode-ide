@@ -1,23 +1,49 @@
 import { FileFinder } from "@ff-labs/fff-node";
+import { fffInstance, fileItem } from "./types.ts";
 
 class lightSpeedSearch {
+  projectInstances: fffInstance
   constructor() {
     this.projectInstances = {};
   }
 
-  async indexProject(path: string) {
+  async indexProject(path: string): FileFinder {
     const fffInstance = FileFinder.create({ basePath: path });
     if(!fffInstance.ok) {
       throw new Error(fffInstance.error)
     }
 
-    console.log("FFF instance: ", fffInstance);
-    const finder = fffInstance.value;
+    const doesExist = Object.keys(this.projectInstances).find(project => project == path);
 
-    // Does an initial scan of the project
-    await finder.waitForScan(250);
+    if(!doesExist) {
+      console.log("FFF instance: ", fffInstance);
+      const finder = fffInstance.value;
 
-    // Save the finder instance via project path
-    this.projectInstances[path] = finder;
+      // Does an initial scan of the project
+      await finder.waitForScan(250);
+
+      // Save the finder instance via project path
+      this.projectInstances[path] = finder;
+    } else {
+      return this.projectInstances[doesExist];
+    }
+  }
+
+  executeFileSearch(fileInstance : FileFinder, query : string) : fileItem[] {
+    const files = fileInstance.fileSearch(query, { pageSize: 10 });
+    if(!files.ok) {
+      throw new Error('There was an error with the file instance: ' + files.error);
+    }
+
+    const searchResults: fileItem[] = []
+
+    files.value.items.forEach((fileObj) => {
+      const { relativePath, fileName } = fileObj;
+      console.log('files: ', { relativePath, fileName });
+
+        searchResults.push({ relativePath, fileName })
+    });
+
+    return searchResults
   }
 }

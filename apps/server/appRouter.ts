@@ -84,6 +84,8 @@ export const createAppRouter = (threadService: ThreadService) => router({
       // Does an initial scan of the project
       await finder.waitForScan(250);
 
+      // --------------------------------- actual file search  ----------------------------
+
       // actually do the file search
       const files = finder.fileSearch(input.searchQuery, { pageSize: 10 })
       if (!files.ok) {
