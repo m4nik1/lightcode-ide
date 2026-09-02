@@ -12,7 +12,7 @@ import FileMentionMenu, { entryPath } from "./FileMentionMenu";
 
 type CollaborationMode = "build" | "plan";
 
-const valuesNotAllowed = ['@']
+const valuesNotAllowed = ["@"];
 
 export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -21,7 +21,8 @@ export default function Composer() {
   const [search, setSearch] = useState(false);
   const [activeIndex, setIndex] = useState(0);
   const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
-  const { query, setQuery, setCurrentProjectPath, searchResults } = useFileSearch();
+  const { query, setQuery, setCurrentProjectPath, searchResults } =
+    useFileSearch();
 
   useEffect(() => {
     setIndex((currentIndex) =>
@@ -52,7 +53,8 @@ export default function Composer() {
   function handleFileSelect(entry: FileSearchResult) {
     const cursorPosition = textareaRef.current?.selectionStart ?? value.length;
     const mentionStart = value.lastIndexOf("@", cursorPosition - 1);
-    const replacementStart = mentionStart === -1 ? cursorPosition : mentionStart;
+    const replacementStart =
+      mentionStart === -1 ? cursorPosition : mentionStart;
     const mention = `@${entryPath(entry)} `;
     const nextCursorPosition = replacementStart + mention.length;
 
@@ -72,47 +74,48 @@ export default function Composer() {
     });
   }
 
-  function onValueChange(e : React.ChangeEvent<HTMLTextAreaElement>) {
+  function onValueChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setValue(e.target.value);
-  
+
     // When search is active, get the search query starting from special character
-    if(search) {
-      const cursorPosition = e.target.selectionStart
-      const mentionStart = e.target.value.lastIndexOf('@', cursorPosition - 1);
-      setQuery(mentionStart === -1 ? "" : e.target.value.slicde(mentionStart + 1, cursorPosition))
+    if (search) {
+      const cursorPosition = e.target.selectionStart;
+      const mentionStart = e.target.value.lastIndexOf("@", cursorPosition - 1);
+      setQuery(
+        mentionStart === -1
+          ? ""
+          : e.target.value.slice(mentionStart + 1, cursorPosition),
+      );
       setCurrentProjectPath(currentThread?.projectPath ?? "");
     } else {
-      setQuery('')
+      setQuery("");
     }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     // These events handle the file menu navigation
-    if(search) {
-      if(event.key === "ArrowUp") {
+    if (search) {
+      if (event.key === "ArrowUp") {
         event.preventDefault();
         // Navigate the index for the fileMentionMenu
         setIndex((currentIndex) => Math.max(0, currentIndex - 1));
-      }
-      else if(event.key === "ArrowDown") {
-        event.preventDefault()
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
         setIndex((currentIndex) =>
           Math.min(Math.max(searchResults.length - 1, 0), currentIndex + 1),
         );
       }
       // If the key pressed is escape quits the search
-      else if(event.key == 'Escape') {
-        setSearch(false)
-      }
-      else if(event.key == 'Enter') {
-        event.preventDefault()
+      else if (event.key == "Escape") {
+        setSearch(false);
+      } else if (event.key == "Enter") {
+        event.preventDefault();
         const selectedEntry = searchResults[activeIndex];
         if (selectedEntry) {
           handleFileSelect(selectedEntry);
         }
-      }
-      else if(event.key == ' ') {
-        setSearch(false)
+      } else if (event.key == " ") {
+        setSearch(false);
       }
     }
     if (event.key === "Tab" && event.shiftKey && !search) {
