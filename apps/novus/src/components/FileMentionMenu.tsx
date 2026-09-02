@@ -5,7 +5,6 @@ import {
   FileCodeIcon,
   FileJsonIcon,
   FileTextIcon,
-  FolderIcon,
   ImageIcon,
   PackageIcon,
   type LucideIcon,
@@ -14,6 +13,7 @@ import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useFileSearch } from "@/context/useFileSearch";
 import { FileSearchResult } from "@/utils/trpc";
+import FileItem from "./ui/FileItem";
 
 export type WorkspaceEntry = {
   name: string;
@@ -22,7 +22,9 @@ export type WorkspaceEntry = {
 };
 
 export function entryPath(entry: FileSearchResult) {
-  return entry.relativePath ? `${entry.relativePath}/${entry.fileName}` : entry.fileName;
+  return entry.relativePath
+    ? `${entry.relativePath}/${entry.fileName}`
+    : entry.fileName;
 }
 
 function entryIcon(entry: FileSearchResult): {
@@ -57,7 +59,10 @@ function entryIcon(entry: FileSearchResult): {
     case "ts":
       return { Icon: FileCodeIcon, colorClassName: "text-[#E8C33D]" };
     default:
-      return { Icon: FileTextIcon, colorClassName: aiThemeClassNames.textMuted };
+      return {
+        Icon: FileTextIcon,
+        colorClassName: aiThemeClassNames.textMuted,
+      };
   }
 }
 
@@ -66,15 +71,13 @@ type FileMentionMenuProps = {
   onSelect: (entry: FileSearchResult) => void;
 };
 
-export default function FileMentionMenu(
-{
+export default function FileMentionMenu({
   currentIndex,
   onSelect,
-}: FileMentionMenuProps)
-{
+}: FileMentionMenuProps) {
   const activeRowRef = useRef<HTMLButtonElement>(null);
 
-  const { searchResults } = useFileSearch()
+  const { searchResults } = useFileSearch();
 
   useEffect(() => {
     activeRowRef.current?.scrollIntoView({ block: "nearest" });
@@ -92,50 +95,10 @@ export default function FileMentionMenu(
         role="listbox"
         className="chat-messages-scrollbar file-mention-fade max-h-[19rem] overflow-y-auto p-1.5"
       >
-        // Maps out all the search results
-        // Arrow keys navigate the index and the active row is highlighted
+        // Maps out all the search results // Arrow keys navigate the index and
+        the active row is highlighted
         {searchResults.map((entry, index) => {
-          const { Icon, colorClassName } = entryIcon(entry);
-          const isActive = index === currentIndex;
-
-          return (
-            <button
-              key={entryPath(entry)}
-              ref={isActive ? activeRowRef : undefined}
-              type="button"
-              role="option"
-              aria-selected={isActive}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => onSelect(entry)}
-              className={cn(
-                "flex h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left transition-colors focus-visible:outline-none",
-                isActive && aiThemeClassNames.mentionActiveSurface,
-              )}
-            >
-              <Icon
-                className={cn("size-4 shrink-0", colorClassName)}
-                strokeWidth={1.75}
-              />
-              <span
-                className={cn(
-                  "truncate text-[13px]",
-                  aiThemeClassNames.textPrimary,
-                )}
-              >
-                {entry.fileName}
-              </span>
-              {entry.relativePath ? (
-                <span
-                  className={cn(
-                    "truncate text-xs",
-                    aiThemeClassNames.textMuted,
-                  )}
-                >
-                  {entry.relativePath}
-                </span>
-              ) : null}
-            </button>
-          );
+          <FileItem onSelect={onSelect} />;
         })}
       </div>
     </div>
