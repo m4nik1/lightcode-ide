@@ -74,10 +74,12 @@ export default function Composer() {
 
   function onValueChange(e : React.ChangeEvent<HTMLTextAreaElement>) {
     setValue(e.target.value);
-
+  
+    // When search is active, get the search query starting from special character
     if(search) {
-      const queryValue = valuesNotAllowed.findIndex(value => value == e.target.value) ? e.target.value : '';
-      setQuery(queryValue);
+      const cursorPosition = e.target.selectionStart
+      const mentionStart = e.target.value.lastIndexOf('@', cursorPosition - 1);
+      setQuery(mentionStart === -1 ? "" : e.target.value.slicde(mentionStart + 1, cursorPosition))
       setCurrentProjectPath(currentThread?.projectPath ?? "");
     } else {
       setQuery('')
