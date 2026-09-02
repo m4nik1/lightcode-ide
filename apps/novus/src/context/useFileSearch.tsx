@@ -20,8 +20,6 @@ export function FileSearchProvider({ children }: { children: ReactNode }) {
         return;
     }
 
-    let cancelled = false;
-  
     // Searches the files then sets the results
     trpcClient.fileSearch
     .query({ projectPath: currentProjectPath, searchQuery: query })
@@ -31,10 +29,6 @@ export function FileSearchProvider({ children }: { children: ReactNode }) {
     .catch((err) => {
       console.error("file search failed: ", err);
     });
-
-    return () => {
-          cancelled = true;
-      };
   }, [query]);
 
   return (

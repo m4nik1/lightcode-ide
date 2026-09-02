@@ -12,6 +12,7 @@ import {
   getThreads,
   loadMessagesFromThread,
 } from "./lightQueries.ts";
+import { fileItem } from "./types.ts";
 
 export const createAppRouter = (threadService: ThreadService) => router({
   greeting: publicProcedure
@@ -62,19 +63,6 @@ export const createAppRouter = (threadService: ThreadService) => router({
       return generatedTitle
     }),
 
-  /*
-   * {
-    relativePath: 'packages/codex-protocol/src/generated/v2/FileChangeRequestApprovalResponse.ts',
-    fileName: 'FileChangeRequestApprovalResponse.ts',
-    gitStatus: 'clean',
-    size: 327,
-    modified: 1786853354,
-    accessFrecencyScore: 0,
-    modificationFrecencyScore: 0,
-    totalFrecencyScore: 0
-  },
-   */
-
   fileSearch: publicProcedure
     .input(
       z.object({
@@ -83,7 +71,6 @@ export const createAppRouter = (threadService: ThreadService) => router({
       }),
     )
     .query(async ({ input }) => {
-      console.log('input: ', input.searchQuery)
       // Create instance to the projectPath
       const fffInstance = FileFinder.create({ basePath: input.projectPath })
       if(!fffInstance.ok) {
@@ -93,7 +80,8 @@ export const createAppRouter = (threadService: ThreadService) => router({
       console.log("FFF instance: ", fffInstance);
 
       const finder = fffInstance.value;
-      // do an initial scan
+
+      // Does an initial scan of the project
       await finder.waitForScan(250);
 
       // actually do the file search
@@ -102,7 +90,7 @@ export const createAppRouter = (threadService: ThreadService) => router({
         throw new Error(files.error)
       }
 
-      const fileSearchResults = []
+      const fileSearchResults: fileItem[] = []
       files.value.items.forEach((fileObj) => {
         const { relativePath, fileName } = fileObj;
         console.log('files: ', { relativePath, fileName });

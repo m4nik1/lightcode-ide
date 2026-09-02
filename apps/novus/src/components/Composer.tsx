@@ -109,7 +109,7 @@ export default function Composer() {
           handleFileSelect(selectedEntry);
         }
       }
-      else if(event.key == 'space') {
+      else if(event.key == ' ') {
         setSearch(false)
       }
     }
