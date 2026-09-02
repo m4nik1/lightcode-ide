@@ -10,24 +10,38 @@ const fileSearchContext = createContext<{
 } | undefined>(undefined);
 
 export function FileSearchProvider({ children }: { children: ReactNode }) {
-    const [query, setQuery] = useState("");
-    const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
-    const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
+  const [query, setQuery] = useState("");
+  const [currentProjectPath, setCurrentProjectPath] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
 
-    useEffect(() => {
-        console.log("query changed: ", query);
-        trpcClient.fileSearch
-            .query({ projectPath: currentProjectPath, searchQuery: query })
-            .then(setSearchResults)
-            .catch((err) => console.error("file search failed: ", err));
-        console.log('results: ', searchResults)
-    }, [query, currentProjectPath]);
+  useEffect(() => {
+    if (!currentProjectPath.trim()) {
+        setSearchResults([]);
+        return;
+    }
 
-    return (
-        <fileSearchContext.Provider value={{ query, setQuery, setCurrentProjectPath, searchResults }}>
-            {children}
-        </fileSearchContext.Provider>
-    );
+    let cancelled = false;
+  
+    // Searches the files then sets the results
+    trpcClient.fileSearch
+    .query({ projectPath: currentProjectPath, searchQuery: query })
+    .then((results) => {
+      setSearchResults(results);
+    })
+    .catch((err) => {
+      console.error("file search failed: ", err);
+    });
+
+    return () => {
+          cancelled = true;
+      };
+  }, [query]);
+
+  return (
+      <fileSearchContext.Provider value={{ query, setQuery, setCurrentProjectPath, searchResults }}>
+          {children}
+      </fileSearchContext.Provider>
+  );
 }
 
 export function useFileSearch() {

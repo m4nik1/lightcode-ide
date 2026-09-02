@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import './server-env';
-import { stopServer } from '../../server/index.ts';
+import { startServer, stopServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
@@ -64,13 +64,13 @@ app.whenReady().then(async () => {
     return;
   }
 
-  // try {
-  //   await startServer();
-  //   updateServerStatus('Ready');
-  // } catch (err) {
-  //   console.error('Unable to start server: ', err);
-  //   updateServerStatus('Stopped (error)');
-  // }
+  try {
+    await startServer();
+    updateServerStatus('Ready');
+  } catch (err) {
+    console.error('Unable to start server: ', err);
+    updateServerStatus('Stopped (error)');
+  }
 });
 
 app.on('before-quit', (event) => {

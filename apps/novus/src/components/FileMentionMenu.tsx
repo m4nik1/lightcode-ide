@@ -61,22 +61,24 @@ function entryIcon(entry: FileSearchResult): {
   }
 }
 
-// type FileMentionMenuProps = {
-//   onSelect: (entry: WorkspaceEntry) => void;
-// };
+type FileMentionMenuProps = {
+  currentIndex: number;
+  onSelect: (entry: FileSearchResult) => void;
+};
 
-export default function FileMentionMenu()
-// {
-//   onSelect,
-// }: FileMentionMenuProps) 
+export default function FileMentionMenu(
+{
+  currentIndex,
+  onSelect,
+}: FileMentionMenuProps)
 {
   const activeRowRef = useRef<HTMLButtonElement>(null);
 
   const { searchResults } = useFileSearch()
-  
-  // useEffect(() => {
-  //   activeRowRef.current?.scrollIntoView({ block: "nearest" });
-  // }, [activeIndex]);
+
+  useEffect(() => {
+    activeRowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [currentIndex]);
 
   return (
     <div
@@ -90,10 +92,11 @@ export default function FileMentionMenu()
         role="listbox"
         className="chat-messages-scrollbar file-mention-fade max-h-[19rem] overflow-y-auto p-1.5"
       >
+        // Maps out all the search results
+        // Arrow keys navigate the index and the active row is highlighted
         {searchResults.map((entry, index) => {
           const { Icon, colorClassName } = entryIcon(entry);
-          {/* const isActive = index === activeIndex; */}
-          const isActive = false;
+          const isActive = index === currentIndex;
 
           return (
             <button
@@ -103,8 +106,7 @@ export default function FileMentionMenu()
               role="option"
               aria-selected={isActive}
               onMouseDown={(event) => event.preventDefault()}
-              // onMouseEnter={() => onActiveIndexChange(index)}
-              // onClick={() => onSelect(entry)}
+              onClick={() => onSelect(entry)}
               className={cn(
                 "flex h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left transition-colors focus-visible:outline-none",
                 isActive && aiThemeClassNames.mentionActiveSurface,
