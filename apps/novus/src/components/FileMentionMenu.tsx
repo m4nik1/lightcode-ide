@@ -27,7 +27,7 @@ export function entryPath(entry: FileSearchResult) {
     : entry.fileName;
 }
 
-function entryIcon(entry: FileSearchResult): {
+export function entryIcon(entry: FileSearchResult): {
   Icon: LucideIcon;
   colorClassName: string;
 } {
@@ -95,11 +95,18 @@ export default function FileMentionMenu({
         role="listbox"
         className="chat-messages-scrollbar file-mention-fade max-h-[19rem] overflow-y-auto p-1.5"
       >
-        // Maps out all the search results // Arrow keys navigate the index and
-        the active row is highlighted
-        {searchResults.map((entry, index) => {
-          <FileItem onSelect={onSelect} />;
-        })}
+        {/* Maps out all the search results. Arrow keys navigate the index and
+        the active row is highlighted */}
+        {searchResults.map((entry, index) => (
+          <FileItem
+            key={entryPath(entry)}
+            entry={entry}
+            index={index}
+            currentIndex={currentIndex}
+            onSelect={onSelect}
+            activeRowRef={activeRowRef}
+          />
+        ))}
       </div>
     </div>
   );

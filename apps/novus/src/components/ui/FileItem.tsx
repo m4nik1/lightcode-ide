@@ -1,19 +1,28 @@
+import { type RefObject } from "react";
+import { cn } from "../../lib/utils";
+import { aiThemeClassNames } from "../../theme";
+import type { FileSearchResult } from "@/utils/trpc";
+import { entryIcon } from "../FileMentionMenu";
+
 interface FileItemProps {
-  onSelect: () => void;
+  entry: FileSearchResult;
+  onSelect: (entry: FileSearchResult) => void;
   index: number;
   currentIndex: number;
+  activeRowRef: RefObject<HTMLButtonElement | null>;
 }
 
 export default function FileItem({
+  entry,
   onSelect,
   index,
   currentIndex,
+  activeRowRef,
 }: FileItemProps) {
   const { Icon, colorClassName } = entryIcon(entry);
   const isActive = index === currentIndex;
   return (
     <button
-      key={entryPath(entry)}
       ref={isActive ? activeRowRef : undefined}
       type="button"
       role="option"
