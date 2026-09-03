@@ -5,6 +5,7 @@ import { CodexAppServerClient } from '@lightcode/codex-protocol';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { ThreadService } from './ThreadService.ts';
 import { createAppRouter } from './appRouter.ts';
+import lightSpeedSearch from './lightspeedSearch.ts';
 
 const DEFAULT_PORT = 2024;
 const DEFAULT_HOST = '127.0.0.1';
@@ -58,10 +59,13 @@ async function startServerOnce(options: StartServerOptions) {
     }),
   );
 
+  const lightSearch = new lightSpeedSearch();
+
+
   await threadService.start();
 
   const trpcHandler = createHTTPHandler({
-    router: createAppRouter(threadService),
+    router: createAppRouter(threadService, lightSearch),
     createContext() {
       return {};
     },

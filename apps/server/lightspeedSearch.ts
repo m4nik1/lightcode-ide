@@ -1,13 +1,13 @@
 import { FileFinder } from "@ff-labs/fff-node";
-import { fffInstance, fileItem } from "./types.ts";
+import type { fffInstance, fileItem } from "./types.ts";
 
-class lightSpeedSearch {
+export default class lightSpeedSearch {
   projectInstances: fffInstance
   constructor() {
     this.projectInstances = {};
   }
 
-  async indexProject(path: string): FileFinder {
+  async indexProject(path: string): Promise<FileFinder | undefined> {
     const fffInstance = FileFinder.create({ basePath: path });
     if(!fffInstance.ok) {
       throw new Error(fffInstance.error)
@@ -24,6 +24,7 @@ class lightSpeedSearch {
 
       // Save the finder instance via project path
       this.projectInstances[path] = finder;
+      return finder;
     } else {
       return this.projectInstances[doesExist];
     }
@@ -47,3 +48,4 @@ class lightSpeedSearch {
     return searchResults
   }
 }
+

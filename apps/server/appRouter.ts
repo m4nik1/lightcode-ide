@@ -1,7 +1,6 @@
 import { publicProcedure, router } from "./trpc.ts";
 import { z } from "zod";
 import { ThreadService } from "./ThreadService.ts";
-import { FileFinder } from "@ff-labs/fff-node";
 import { AI_MODEL_IDS, REASONING_EFFORTS } from "./aiModelConfig.ts";
 import {
   createProject,
@@ -12,9 +11,10 @@ import {
   getThreads,
   loadMessagesFromThread,
 } from "./lightQueries.ts";
-import { fileItem } from "./types.ts";
+import lightSpeedSearch from "./lightspeedSearch.ts";
+import { FileFinder } from "@ff-labs/fff-node";
 
-export const createAppRouter = (threadService: ThreadService) => router({
+export const createAppRouter = (threadService: ThreadService, lightSearch : lightSpeedSearch) => router({
   greeting: publicProcedure
     .input(
       z
@@ -72,36 +72,17 @@ export const createAppRouter = (threadService: ThreadService) => router({
     )
     .query(async ({ input }) => {
       // Create instance to the projectPath
-      const fffInstance = FileFinder.create({ basePath: input.projectPath })
-      if(!fffInstance.ok) {
-        throw new Error(fffInstance.error)
+      const lightSpeedInstance : FileFinder | undefined = await lightSearch.indexProject(input.projectPath);
+      
+      // Check that if its undefined
+      if(!lightSpeedInstance) {
+        return [];
       }
 
-      console.log("FFF instance: ", fffInstance);
+      // Actually do the file search
+      const fileResults = lightSearch.executeFileSearch(lightSpeedInstance, input.searchQuery);
 
-      const finder = fffInstance.value;
-
-      // Does an initial scan of the project
-      await finder.waitForScan(250);
-
-      // --------------------------------- actual file search  ----------------------------
-
-      // actually do the file search
-      const files = finder.fileSearch(input.searchQuery, { pageSize: 10 })
-      if (!files.ok) {
-        throw new Error(files.error)
-      }
-
-      const fileSearchResults: fileItem[] = []
-      files.value.items.forEach((fileObj) => {
-        const { relativePath, fileName } = fileObj;
-        console.log('files: ', { relativePath, fileName });
-
-        fileSearchResults.push({ relativePath, fileName })
-      });
-
-      return fileSearchResults
-
+      return fileResults;
   }),
 
   stopTurn: publicProcedure

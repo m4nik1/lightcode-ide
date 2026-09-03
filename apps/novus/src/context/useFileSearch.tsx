@@ -24,7 +24,7 @@ export function FileSearchProvider({ children }: { children: ReactNode }) {
     trpcClient.fileSearch
     .query({ projectPath: currentProjectPath, searchQuery: query })
     .then((results) => {
-      setSearchResults(results);
+      setSearchResults(results ?? []);
     })
     .catch((err) => {
       console.error("file search failed: ", err);
