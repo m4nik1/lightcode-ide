@@ -59,6 +59,19 @@ select {
   background-clip: content-box;
 }
 
+.file-mention-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - 2rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - 2rem),
+    transparent 100%
+  );
+}
+
 @keyframes shimmer-slide {
   from {
     -webkit-mask-position: calc(0% - var(--shimmer-width)) 0;

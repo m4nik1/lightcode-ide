@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUpIcon, StopCircleIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import ModelPicker from "./ModelPicker";
@@ -6,14 +6,29 @@ import AccessPicker from "./AccessPicker";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
+import { useFileSearch } from "@/context/useFileSearch";
+import type { FileSearchResult } from "@/utils/trpc";
+import FileMentionMenu, { entryPath } from "./FileMentionMenu";
 
 type CollaborationMode = "build" | "plan";
+
+const valuesNotAllowed = ["@"];
 
 export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [mode, setMode] = useState<CollaborationMode>("build");
-  const { messages, messageSend, isTurning, stopTurn } = useAIChat();
+  const [search, setSearch] = useState(false);
+  const [activeIndex, setIndex] = useState(0);
+  const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
+  const { query, setQuery, setCurrentProjectPath, searchResults } =
+    useFileSearch();
+
+  useEffect(() => {
+    setIndex((currentIndex) =>
+      currentIndex >= searchResults.length ? 0 : currentIndex,
+    );
+  }, [searchResults.length]);
 
   const canSend = value.trim().length > 0;
   const actionButtonThemeClassName = isTurning
@@ -35,21 +50,100 @@ export default function Composer() {
     setMode((current) => (current === "build" ? "plan" : "build"));
   }
 
+  function handleFileSelect(entry: FileSearchResult) {
+    const cursorPosition = textareaRef.current?.selectionStart ?? value.length;
+    const mentionStart = value.lastIndexOf("@", cursorPosition - 1);
+    const replacementStart =
+      mentionStart === -1 ? cursorPosition : mentionStart;
+    const mention = `@${entryPath(entry)} `;
+    const nextCursorPosition = replacementStart + mention.length;
+
+    setValue(
+      value.slice(0, replacementStart) + mention + value.slice(cursorPosition),
+    );
+    setSearch(false);
+    setQuery("");
+    setIndex(0);
+
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(
+        nextCursorPosition,
+        nextCursorPosition,
+      );
+    });
+  }
+
+  function onValueChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setValue(e.target.value);
+
+    // When search is active, get the search query starting from special character
+    if (search) {
+      const cursorPosition = e.target.selectionStart;
+      const mentionStart = e.target.value.lastIndexOf("@", cursorPosition - 1);
+      setQuery(
+        mentionStart === -1
+          ? ""
+          : e.target.value.slice(mentionStart + 1, cursorPosition),
+      );
+      setCurrentProjectPath(currentThread?.projectPath ?? "");
+    } else {
+      setQuery("");
+    }
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Tab" && event.shiftKey) {
+    // These events handle the file menu navigation
+    if (search) {
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        // Navigate the index for the fileMentionMenu
+        setIndex((currentIndex) => Math.max(0, currentIndex - 1));
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setIndex((currentIndex) =>
+          Math.min(Math.max(searchResults.length - 1, 0), currentIndex + 1),
+        );
+      }
+      // If the key pressed is escape quits the search
+      else if (event.key == "Escape") {
+        setSearch(false);
+      } else if (event.key == "Enter") {
+        event.preventDefault();
+        const selectedEntry = searchResults[activeIndex];
+        if (selectedEntry) {
+          handleFileSelect(selectedEntry);
+        }
+      } else if (event.key == " ") {
+        setSearch(false);
+      }
+    }
+    if (event.key === "Tab" && event.shiftKey && !search) {
       event.preventDefault();
       toggleMode();
       return;
     }
 
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !search) {
       event.preventDefault();
       handleSend();
+    }
+
+    // If the @ key is pressed then make search active
+    if (event.key == "@" && !search) {
+      setIndex(0);
+      setSearch(true);
     }
   }
 
   return (
     <div className="relative mx-auto min-h-28 w-80 min-w-0 sm:w-[60%]">
+      {search ? (
+        <FileMentionMenu
+          currentIndex={activeIndex}
+          onSelect={handleFileSelect}
+        />
+      ) : null}
       <div
         className={cn(
           "relative flex min-h-28 flex-col overflow-hidden rounded-[22px] border transition-[border-color,background-color,box-shadow]",
@@ -62,7 +156,9 @@ export default function Composer() {
         <Textarea
           ref={textareaRef}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            onValueChange(e);
+          }}
           placeholder="Ask for follow-up changes"
           rows={3}
           onKeyDown={(e) => handleKeyDown(e)}

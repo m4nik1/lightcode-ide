@@ -6,6 +6,13 @@ import { startServer, stopServer } from '../../server/index.ts';
 
 const isMac = process.platform === 'darwin';
 
+if (
+  process.platform === 'linux' &&
+  (process.env.XDG_SESSION_TYPE === 'wayland' || process.env.WAYLAND_DISPLAY)
+) {
+  app.commandLine.appendSwitch('disable-features', 'Vulkan');
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
@@ -14,6 +21,7 @@ if (started) {
 let mainWindow: BrowserWindow | null = null;
 let serverStatus = 'Stopped';
 let serverStopped = false;
+const shouldStartServer = !process.argv.includes('--no-server');
 
 function updateServerStatus(status: string) {
   serverStatus = status;
@@ -51,6 +59,11 @@ ipcMain.handle('server:getStatus', () => serverStatus);
 app.whenReady().then(async () => {
   createWindow();
 
+  if (!shouldStartServer) {
+    updateServerStatus('Disabled');
+    return;
+  }
+
   try {
     await startServer();
     updateServerStatus('Ready');
@@ -61,7 +74,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('before-quit', (event) => {
-  if (serverStopped) return;
+  if (serverStopped || !shouldStartServer) return;
 
   event.preventDefault();
   void stopServer()

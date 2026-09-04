@@ -7,7 +7,9 @@
   "private": true,
   "scripts": {
     "start": "electron-forge start",
+    "start:no-server": "electron-forge start -- --no-server",
     "dev": "electron-forge start",
+    "dev:no-server": "electron-forge start -- --no-server",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

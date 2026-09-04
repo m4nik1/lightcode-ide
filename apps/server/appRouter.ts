@@ -11,8 +11,10 @@ import {
   getThreads,
   loadMessagesFromThread,
 } from "./lightQueries.ts";
+import lightSpeedSearch from "./lightspeedSearch.ts";
+import { FileFinder } from "@ff-labs/fff-node";
 
-export const createAppRouter = (threadService: ThreadService) => router({
+export const createAppRouter = (threadService: ThreadService, lightSearch : lightSpeedSearch) => router({
   greeting: publicProcedure
     .input(
       z
@@ -60,6 +62,28 @@ export const createAppRouter = (threadService: ThreadService) => router({
 
       return generatedTitle
     }),
+
+  fileSearch: publicProcedure
+    .input(
+      z.object({
+        projectPath: z.string(),
+        searchQuery: z.string()
+      }),
+    )
+    .query(async ({ input }) => {
+      // Create instance to the projectPath
+      const lightSpeedInstance : FileFinder | undefined = await lightSearch.indexProject(input.projectPath);
+      
+      // Check that if its undefined
+      if(!lightSpeedInstance) {
+        return [];
+      }
+
+      // Actually do the file search
+      const fileResults = lightSearch.executeFileSearch(lightSpeedInstance, input.searchQuery);
+
+      return fileResults;
+  }),
 
   stopTurn: publicProcedure
     .input(

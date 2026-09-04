@@ -20,6 +20,11 @@ export type MessageRow = {
   role: "user" | "assistant";
 };
 
+export type FileSearchResult = {
+  relativePath: string;
+  fileName: string;
+};
+
 type AIEvent =
   | { method: "item/agentMessage/delta"; params: { delta: string } }
   | { method: "turn/completed" };
@@ -55,6 +60,12 @@ type Router = {
     mutate: (input: { threadID: string }) => Promise<string>;
   };
   stopTurn: { query: (input: { threadID: string }) => Promise<unknown> };
+  fileSearch: {
+    query: (input: {
+      projectPath: string;
+      searchQuery: string;
+    }) => Promise<FileSearchResult[]>;
+  };
 };
 
 export const queryClient = new QueryClient({

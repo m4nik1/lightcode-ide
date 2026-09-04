@@ -10,6 +10,13 @@ const iconRoot = MAIN_WINDOW_VITE_DEV_SERVER_URL ? process.cwd() : app.getAppPat
 const iconPath = path.join(iconRoot, 'assets', 'appIcon', iconFileName);
 const shouldOpenAIWindowOnly = process.argv.includes('--ai-window');
 
+if (
+  process.platform === 'linux' &&
+  (process.env.XDG_SESSION_TYPE === 'wayland' || process.env.WAYLAND_DISPLAY)
+) {
+  app.commandLine.appendSwitch('disable-features', 'Vulkan');
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();

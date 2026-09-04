@@ -4,6 +4,7 @@ export const aiTheme = {
   surface: "#1B1B1B",
   surfaceHover: "#222222",
   surfaceActive: "#292929",
+  mentionActive: "rgba(84,66,124,0.55)",
   border: "#2A2A2A",
   borderFocus: "#555555",
   textPrimary: "#FCFCFC",
@@ -25,6 +26,9 @@ export const aiThemeClassNames = {
     "bg-[#1B1B1B] shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_16px_44px_rgba(0,0,0,0.42)]",
   menuSurface:
     "bg-[#1B1B1B] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.5)]",
+  glassMenuSurface:
+    "bg-[rgba(27,27,27,0.62)] backdrop-blur-2xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_18px_46px_rgba(0,0,0,0.55)]",
+  glassBorder: "border-[rgba(255,255,255,0.1)]",
   messageSurface:
     "bg-[#292929] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_6px_18px_rgba(0,0,0,0.24)]",
   selectedSurface:
@@ -33,6 +37,7 @@ export const aiThemeClassNames = {
     "shadow-[inset_-1px_0_0_rgba(255,255,255,0.025),8px_0_28px_rgba(0,0,0,0.22)]",
   surfaceHover: "hover:bg-[#222222]",
   surfaceActive: "bg-[#292929]",
+  mentionActiveSurface: "bg-[rgba(84,66,124,0.55)]",
   border: "border-[#2A2A2A]",
   divider: "bg-[#2A2A2A]",
   borderFocus: "focus-visible:outline-[#555555]",

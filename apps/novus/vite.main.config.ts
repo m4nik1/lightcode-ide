@@ -4,7 +4,9 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['node:sqlite'],
+      // Keep native Node modules out of the JavaScript bundle. Forge packages
+      // these dependencies alongside the app and loads them at runtime.
+      external: ['node:sqlite', '@ff-labs/fff-node', 'ffi-rs'],
     },
   },
 });
