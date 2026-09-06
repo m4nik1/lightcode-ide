@@ -89,6 +89,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     setTurn(true);
 
     for await (const chunk of streamChat) {
+      // We are printing out this chunk event
+      console.log("event: ", chunk)
       if (chunk.method == "item/agentMessage/delta") {
         const responseText = chunk.params.delta;
 
