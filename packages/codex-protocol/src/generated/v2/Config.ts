@@ -11,6 +11,8 @@ import type { JsonValue } from "../serde_json/JsonValue.js";
 import type { AnalyticsConfig } from "./AnalyticsConfig.js";
 import type { ApprovalsReviewer } from "./ApprovalsReviewer.js";
 import type { AskForApproval } from "./AskForApproval.js";
+import type { BrowserUseConfig } from "./BrowserUseConfig.js";
+import type { ComputerUseConfig } from "./ComputerUseConfig.js";
 import type { ForcedChatgptWorkspaceIds } from "./ForcedChatgptWorkspaceIds.js";
 import type { SandboxMode } from "./SandboxMode.js";
 import type { SandboxWorkspaceWrite } from "./SandboxWorkspaceWrite.js";
@@ -20,4 +22,4 @@ export type Config = {model: string | null, review_model: string | null, model_c
  * [UNSTABLE] Optional default for where approval requests are routed for
  * review.
  */
-approvals_reviewer: ApprovalsReviewer | null, sandbox_mode: SandboxMode | null, sandbox_workspace_write: SandboxWorkspaceWrite | null, forced_chatgpt_workspace_id: ForcedChatgptWorkspaceIds | null, forced_login_method: ForcedLoginMethod | null, web_search: WebSearchMode | null, tools: ToolsV2 | null, instructions: string | null, developer_instructions: string | null, compact_prompt: string | null, model_reasoning_effort: ReasoningEffort | null, model_reasoning_summary: ReasoningSummary | null, model_verbosity: Verbosity | null, service_tier: string | null, analytics: AnalyticsConfig | null, desktop: { [key in string]?: JsonValue } | null} & ({ [key in string]?: number | string | boolean | Array<JsonValue> | { [key in string]?: JsonValue } | null });
+approvals_reviewer: ApprovalsReviewer | null, sandbox_mode: SandboxMode | null, sandbox_workspace_write: SandboxWorkspaceWrite | null, forced_chatgpt_workspace_id: ForcedChatgptWorkspaceIds | null, forced_login_method: ForcedLoginMethod | null, web_search: WebSearchMode | null, tools: ToolsV2 | null, instructions: string | null, developer_instructions: string | null, compact_prompt: string | null, model_reasoning_effort: ReasoningEffort | null, model_reasoning_summary: ReasoningSummary | null, model_verbosity: Verbosity | null, service_tier: string | null, analytics: AnalyticsConfig | null, browser_use: BrowserUseConfig | null, computer_use: ComputerUseConfig | null, desktop: { [key in string]?: JsonValue } | null} & ({ [key in string]?: number | string | boolean | Array<JsonValue> | { [key in string]?: JsonValue } | null });
