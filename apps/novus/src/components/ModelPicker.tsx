@@ -22,7 +22,10 @@ export type PickerOption<TValue extends string> = {
 };
 
 const modelOptions: PickerOption<AIModelId>[] = [
-  { label: "GPT-5.6 Luna", value: "gpt-5.6-luna" },
+  {
+    label: "GPT-6 Astra",
+    value: 'gpt-6-astra',
+  },
   {
     label: "GPT-5.6 Sol",
     value: "gpt-5.6-sol",
@@ -31,7 +34,7 @@ const modelOptions: PickerOption<AIModelId>[] = [
     label: "GPT-5.6 Terra",
     value: "gpt-5.6-terra",
   },
-  { label: "GPT-5.5", value: "gpt-5.5" },
+  { label: "GPT-5.6 Luna", value: "gpt-5.6-luna" },
 ];
 
 const thinkingOptions: PickerOption<AIReasoningEffort>[] = [

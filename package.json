@@ -30,6 +30,7 @@
     "esbuild@0.21.5": true
   },
   "dependencies": {
+    "@openai/codex": "^0.153.4",
     "shadcn": "^4.12.0"
   }
 }
