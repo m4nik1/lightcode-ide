@@ -24,10 +24,12 @@ export const aiThemeClassNames = {
   surface: "bg-[#1B1B1B]",
   raisedSurface:
     "bg-[#1B1B1B] shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_16px_44px_rgba(0,0,0,0.42)]",
+  composerSurface:
+    "bg-[#1B1B1B]/80 bg-linear-to-b from-white/[0.035] to-transparent backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_40px_rgba(0,0,0,0.3)]",
   menuSurface:
     "bg-[#1B1B1B] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.5)]",
   glassMenuSurface:
-    "bg-[rgba(27,27,27,0.62)] backdrop-blur-2xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_18px_46px_rgba(0,0,0,0.55)]",
+    "bg-[#1B1B1B]/55 bg-linear-to-br from-white/[0.06] to-transparent backdrop-blur-3xl backdrop-saturate-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_18px_48px_rgba(0,0,0,0.4)]",
   glassBorder: "border-[rgba(255,255,255,0.1)]",
   messageSurface:
     "bg-[#292929] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_6px_18px_rgba(0,0,0,0.24)]",

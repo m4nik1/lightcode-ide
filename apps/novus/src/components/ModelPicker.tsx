@@ -4,11 +4,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
-import { CodexIcon } from "./sidebar/icons";
 import { useAIChat } from "../context/useAIChat";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 
@@ -19,18 +22,16 @@ export type PickerOption<TValue extends string> = {
 };
 
 const modelOptions: PickerOption<AIModelId>[] = [
-  {label: "GPT-5.6-Luna", value: 'gpt-5.6-luna', description: 'Tiny but big'},  
+  { label: "GPT-5.6 Luna", value: "gpt-5.6-luna" },
   {
-    label: "GPT-5.6-Sol",
+    label: "GPT-5.6 Sol",
     value: "gpt-5.6-sol",
-    description: "Latest and greatest",
   },
   {
-    label: "GPT-5.6-Terra",
+    label: "GPT-5.6 Terra",
     value: "gpt-5.6-terra",
-    description: "Small but mighty",
   },
-  { label: "GPT-5.5", value: "gpt-5.5", description: "Most capable" },
+  { label: "GPT-5.5", value: "gpt-5.5" },
 ];
 
 const thinkingOptions: PickerOption<AIReasoningEffort>[] = [
@@ -47,6 +48,7 @@ type PickerDropdownProps<TValue extends string> = {
   align?: "start" | "end";
   triggerLeading?: ReactNode;
   triggerClassName?: string;
+  showChevron?: boolean;
 };
 
 export function PickerDropdown<TValue extends string>({
@@ -57,6 +59,7 @@ export function PickerDropdown<TValue extends string>({
   align = "start",
   triggerLeading,
   triggerClassName,
+  showChevron = true,
 }: PickerDropdownProps<TValue>) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? options[0].label;
@@ -67,7 +70,8 @@ export function PickerDropdown<TValue extends string>({
         <button
           type="button"
           className={cn(
-            "group/trigger inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-normal transition-[background-color,color,transform] focus-visible:outline-none active:translate-y-px",
+            "group/trigger inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-2",
+            aiThemeClassNames.focusRing,
             aiThemeClassNames.surfaceHover,
             aiThemeClassNames.dataOpenSurfaceHover,
             triggerClassName ??
@@ -76,11 +80,12 @@ export function PickerDropdown<TValue extends string>({
         >
           {triggerLeading}
           {selectedLabel}
-          <ChevronDownIcon className="size-3 opacity-50 transition-transform group-data-[state=open]/trigger:rotate-180" />
+          {showChevron ? <ChevronDownIcon aria-hidden="true" className="size-3.5 opacity-50 transition-transform group-data-[state=open]/trigger:rotate-180" /> : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align={align}
+        side="top"
         sideOffset={8}
         className={cn(
           "rounded-xl border p-1 ring-0",
@@ -129,7 +134,6 @@ export default function ModelPicker() {
 
   function modelSelected(model: AIModelId) {
     setSelectedModel(model);
-    console.log("Model selected:", model, " and Thinking level:", thinkingLevel);
     modelSet(model, thinkingLevel);
   }
 
@@ -139,23 +143,45 @@ export default function ModelPicker() {
   }
 
   return (
-    <div className="flex items-center gap-0.5">
-      <PickerDropdown
-        options={modelOptions}
-        value={selectedModel}
-        onSelect={modelSelected}
-        menuWidth="min-w-56"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Model: ${selectedModel}, reasoning: ${thinkingLevel}`}
+          className={cn(
+            "group/trigger inline-flex h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-sm font-normal transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 data-[state=open]:bg-white/5",
+            aiThemeClassNames.textPrimary,
+            aiThemeClassNames.focusRing,
+          )}
+        >
+          <span className="truncate">{modelOptions.find((option) => option.value === selectedModel)?.label}</span>
+          <span className="shrink-0 text-[#8C8C8C]">{thinkingOptions.find((option) => option.value === thinkingLevel)?.label}</span>
+          <ChevronDownIcon aria-hidden="true" className="ml-0.5 size-4 shrink-0 text-[#8C8C8C] transition-transform group-data-[state=open]/trigger:rotate-180" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
         align="end"
-        triggerLeading={<CodexIcon className="size-4" />}
-        triggerClassName={cn(aiThemeClassNames.textPrimary, "font-medium")}
-      />
-      <PickerDropdown
-        options={thinkingOptions}
-        value={thinkingLevel}
-        onSelect={thinkingSelected}
-        menuWidth="min-w-32"
-        align="end"
-      />
-    </div>
+        side="top"
+        sideOffset={12}
+        className={cn("min-w-56 rounded-xl border p-1 ring-0", aiThemeClassNames.border, aiThemeClassNames.menuSurface)}
+      >
+        <DropdownMenuRadioGroup aria-label="Model" value={selectedModel} onValueChange={(model) => modelSelected(model as AIModelId)}>
+          {modelOptions.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value} className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator className={aiThemeClassNames.divider} />
+        <DropdownMenuLabel className={aiThemeClassNames.textMuted}>Reasoning</DropdownMenuLabel>
+        <DropdownMenuRadioGroup aria-label="Reasoning" value={thinkingLevel} onValueChange={(thinking) => thinkingSelected(thinking as AIReasoningEffort)}>
+          {thinkingOptions.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value} className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

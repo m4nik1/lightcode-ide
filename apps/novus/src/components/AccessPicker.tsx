@@ -1,7 +1,5 @@
-import { CircleAlertIcon } from "lucide-react";
+import { ShieldAlertIcon } from "lucide-react";
 import { PickerDropdown, type PickerOption } from "./ModelPicker";
-import { cn } from "../lib/utils";
-import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
 
 type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
@@ -27,16 +25,13 @@ export default function AccessPicker() {
       value={access}
       onSelect={accessSet}
       menuWidth="min-w-64"
+      showChevron={false}
       triggerLeading={
-        isFullAccess ? <CircleAlertIcon className="size-3.5" /> : null
+        isFullAccess ? <ShieldAlertIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" /> : null
       }
       triggerClassName={
         isFullAccess
-          ? cn(
-              aiThemeClassNames.textWarning,
-              aiThemeClassNames.hoverTextWarning,
-              aiThemeClassNames.dataOpenTextWarning,
-            )
+          ? "text-[#FF873D] hover:text-[#FFA265] data-[state=open]:text-[#FF873D]"
           : undefined
       }
     />

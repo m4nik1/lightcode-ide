@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { aiThemeClassNames } from "../theme";
@@ -20,24 +20,45 @@ export type ChatMessage = {
   role: "user" | "assistant";
 };
 
-export default function ChatMessages() {
+export default function ChatMessages({
+  bottomInset = 24,
+}: {
+  bottomInset?: number;
+}) {
   const { messages } = useAIChat();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hasScrolledRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const atBottom =
+      scrollContainer.scrollHeight -
+        scrollContainer.scrollTop -
+        scrollContainer.clientHeight <=
+      2;
+    // Measure the old scroll range before applying space for the resized composer.
+    scrollContainer.style.paddingBottom = `${bottomInset}px`;
+    scrollContainer.style.scrollPaddingBottom = `${bottomInset}px`;
+    if (atBottom) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  }, [bottomInset]);
+
+  useLayoutEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
     scrollContainer.scrollTo({
       top: scrollContainer.scrollHeight,
-      behavior: "smooth",
+      behavior: hasScrolledRef.current ? "smooth" : "auto",
     });
+    hasScrolledRef.current = true;
   }, [messages]);
 
   return (
     <div
       ref={scrollContainerRef}
-      className="chat-messages-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-6"
+      className="chat-messages-viewport chat-messages-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-6"
     >
       <div className="flex w-full max-w-[1080px] flex-col gap-3 self-center sm:w-[75%]">
         {messages.map((message) => {

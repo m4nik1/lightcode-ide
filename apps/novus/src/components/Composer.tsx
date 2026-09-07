@@ -1,18 +1,23 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowUpIcon, StopCircleIcon } from "lucide-react";
+import { ArrowUpIcon, ListTodoIcon, PlusIcon, SquareIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import ModelPicker from "./ModelPicker";
 import AccessPicker from "./AccessPicker";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
-import { useFileSearch } from "@/context/useFileSearch";
+import { useFileSearch } from "../context/useFileSearch";
 import type { FileSearchResult } from "@/utils/trpc";
 import FileMentionMenu, { entryPath } from "./FileMentionMenu";
 
 type CollaborationMode = "build" | "plan";
-
-const valuesNotAllowed = ["@"];
 
 export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -21,7 +26,7 @@ export default function Composer() {
   const [search, setSearch] = useState(false);
   const [activeIndex, setIndex] = useState(0);
   const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
-  const { query, setQuery, setCurrentProjectPath, searchResults } =
+  const { setQuery, setCurrentProjectPath, searchResults } =
     useFileSearch();
 
   useEffect(() => {
@@ -34,13 +39,14 @@ export default function Composer() {
   const actionButtonThemeClassName = isTurning
     ? aiThemeClassNames.stopAction
     : canSend
-      ? aiThemeClassNames.primaryAction
-      : aiThemeClassNames.primaryActionDisabled;
+      ? "bg-[#2D6BD1] text-white hover:bg-[#3979E0] active:scale-95"
+      : "cursor-not-allowed bg-[#2D6BD1]/45 text-white/45";
 
   function handleSend() {
     if (isTurning) {
       stopTurn();
     } else {
+      if (!canSend) return;
       void messageSend(value, mode);
     }
     setValue("");
@@ -137,73 +143,84 @@ export default function Composer() {
   }
 
   return (
-    <div className="relative mx-auto min-h-28 w-80 min-w-0 sm:w-[60%]">
+    <div className="relative mx-auto w-full min-w-0 max-w-4xl">
       {search ? (
         <FileMentionMenu
           currentIndex={activeIndex}
           onSelect={handleFileSelect}
         />
       ) : null}
-      <div
-        className={cn(
-          "relative flex min-h-28 flex-col overflow-hidden rounded-[22px] border transition-[border-color,background-color,box-shadow]",
-          aiThemeClassNames.raisedSurface,
-          aiThemeClassNames.border,
-          aiThemeClassNames.focusWithinBorder,
-          aiThemeClassNames.focusWithinDepth,
-        )}
-      >
+      <div className="composer-surface">
+        <div className="composer-glass" aria-hidden="true" />
         <Textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => {
             onValueChange(e);
           }}
-          placeholder="Ask for follow-up changes"
+          aria-label="Message"
+          placeholder="Do anything"
           rows={3}
           onKeyDown={(e) => handleKeyDown(e)}
           className={cn(
-            "min-h-28  resize-none border-0 bg-transparent px-5 pt-5 pb-14 text-sm leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0",
+            "chat-messages-scrollbar min-h-24 max-h-64 resize-none rounded-none border-0 bg-transparent px-5 pt-5 pb-3 text-base leading-6 shadow-none placeholder:text-[#606060] focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent",
             aiThemeClassNames.textPrimary,
-            aiThemeClassNames.placeholder,
           )}
         />
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 pb-3.5">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pb-3 pt-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Composer options, ${mode} mode`}
+                  title="Composer options (Shift+Tab to switch mode)"
+                  className={cn(
+                    "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[#FCFCFC] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 data-[state=open]:bg-white/5",
+                    aiThemeClassNames.focusRing,
+                    mode === "plan" && "text-violet-300",
+                  )}
+                >
+                  {mode === "plan" ? (
+                    <ListTodoIcon className="size-5" aria-hidden="true" />
+                  ) : (
+                    <PlusIcon className="size-6" strokeWidth={1.5} aria-hidden="true" />
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                side="top"
+                sideOffset={12}
+                className={cn("min-w-40 rounded-xl border p-1 ring-0", aiThemeClassNames.border, aiThemeClassNames.menuSurface)}
+              >
+                <DropdownMenuRadioGroup value={mode} onValueChange={(nextMode) => setMode(nextMode as CollaborationMode)}>
+                  <DropdownMenuRadioItem value="build" className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>Build</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="plan" className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>Plan</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <AccessPicker />
-            <button
-              type="button"
-              aria-label={`Mode: ${mode}`}
-              aria-pressed={mode === "plan"}
-              onClick={toggleMode}
-              className={cn(
-                "inline-flex h-7 items-center rounded-lg px-2 text-xs font-normal transition-[background-color,color,opacity] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-                aiThemeClassNames.surfaceHover,
-                mode === "plan"
-                  ? aiThemeClassNames.textPrimary
-                  : aiThemeClassNames.textMuted,
-              )}
-            >
-              {mode === "plan" ? "Plan" : "Build"}
-            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex min-w-0 max-w-full items-center justify-end gap-3">
             <ModelPicker />
             <button
               type="button"
               onClick={handleSend}
-              aria-label="Send message"
+              disabled={!isTurning && !canSend}
+              aria-label={isTurning ? "Stop response" : "Send message"}
+              title={isTurning ? "Stop response" : "Send message (Enter)"}
               className={cn(
-                "inline-flex size-9 items-center justify-center rounded-full transition-[background-color,color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-2",
+                "inline-flex size-10 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] focus-visible:outline-none focus-visible:ring-2",
                 aiThemeClassNames.focusRing,
                 actionButtonThemeClassName,
               )}
             >
               {isTurning ? (
-                <StopCircleIcon className="size-[18px]" strokeWidth={2} />
+                <SquareIcon className="size-3.5" fill="currentColor" aria-hidden="true" />
               ) : (
-                <ArrowUpIcon className="size-[18px]" strokeWidth={2} />
+                <ArrowUpIcon className="size-[18px]" strokeWidth={2} aria-hidden="true" />
               )}
             </button>
           </div>
