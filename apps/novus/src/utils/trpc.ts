@@ -12,6 +12,7 @@ export type ThreadRow = {
   id: string;
   project_id: string;
   name: string;
+  created_at: number;
 };
 
 export type MessageRow = {

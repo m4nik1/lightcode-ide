@@ -4,7 +4,7 @@ import type { thread } from "./types";
 import { aiThemeClassNames } from "../../theme";
 import { cn } from "../../lib/utils";
 import { FolderPlus } from "lucide-react";
-import { ProjectDropdown } from "./ProjectDropdown";
+import { ThreadItem } from "./ThreadItem";
 import { trpcClient } from "../../utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import { useAIChat } from "../../context/useAIChat";
@@ -29,9 +29,19 @@ export default function AISidebar() {
     : null;
 
   const draftCount = useRef(0);
+  const threads = projects
+    .flatMap((project) =>
+      project.threads.map((thread) => ({ thread, projectName: project.name })),
+    )
+    .sort((a, b) => (b.thread.createdAt ?? 0) - (a.thread.createdAt ?? 0));
 
-  async function handleNewChat(projectId = currentThread?.projectId) {
-    if (!projectId) return;
+  async function handleNewChat(
+    projectId = currentThread?.projectId ?? projects[0]?.id,
+  ) {
+    if (!projectId) {
+      createProject();
+      return;
+    }
 
     const project = projects.find(({ id }) => id === projectId);
     if (!project) return;
@@ -44,6 +54,7 @@ export default function AISidebar() {
       projectId,
       title: "Untitled chat",
       projectPath: project.path,
+      createdAt: Date.now(),
     };
 
     const threadCreate = await trpcClient.addThread.mutate({
@@ -69,8 +80,6 @@ export default function AISidebar() {
   }
 
   function deleteThread(threadID: string) {
-    if (!currentThread) return;
-
     setProjects((current) =>
       current.map((project) => ({
         ...project,
@@ -101,6 +110,7 @@ export default function AISidebar() {
               projectId: row.project_id,
               title: row.name,
               projectPath: project.path,
+              createdAt: row.created_at,
             })),
           };
         }),
@@ -140,7 +150,11 @@ export default function AISidebar() {
         aiThemeClassNames.textPrimary,
       )}
     >
-      <SidebarHeader onNewChat={() => handleNewChat()} />
+      <SidebarHeader
+        onNewChat={() => handleNewChat()}
+        projects={projects}
+        onNewChatInProject={handleNewChat}
+      />
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         <div className="flex items-center pb-1.5">
@@ -150,7 +164,7 @@ export default function AISidebar() {
               aiThemeClassNames.textMuted,
             )}
           >
-            Projects
+            Threads
           </span>
           <button
             type="button"
@@ -175,7 +189,7 @@ export default function AISidebar() {
               <div
                 key={row}
                 className={cn(
-                  "h-7 animate-pulse rounded-xl",
+                  "h-[56px] animate-pulse rounded-xl",
                   aiThemeClassNames.surface,
                 )}
                 style={{ width: `${88 - row * 14}%` }}
@@ -202,15 +216,23 @@ export default function AISidebar() {
               Add a project to start chatting
             </span>
           </button>
+        ) : threads.length === 0 ? (
+          <p
+            className={cn("px-3 py-4 text-[12px]", aiThemeClassNames.textMuted)}
+          >
+            No chats yet. Start a new chat above.
+          </p>
         ) : (
-          projects.map((project) => (
-            <ProjectDropdown
-              key={project.id}
-              project={project}
-              onCreateThread={() => handleNewChat(project.id)}
-              onDeleteThread={deleteThread}
-            />
-          ))
+          <div className="space-y-0.5">
+            {threads.map(({ thread, projectName }) => (
+              <ThreadItem
+                key={thread.id}
+                thread={thread}
+                projectName={projectName}
+                onDeleteThread={deleteThread}
+              />
+            ))}
+          </div>
         )}
       </div>
     </aside>

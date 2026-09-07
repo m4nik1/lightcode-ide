@@ -81,9 +81,16 @@ export function ProjectDropdown({
             No chats yet
           </p>
         ) : (
-          project.threads.map((t: thread) => (
-            <ThreadItem key={t.id} thread={t} onDeleteThread={onDeleteThread} />
-          ))
+          <div className="space-y-0.5 pt-1 pb-2">
+            {project.threads.map((t: thread) => (
+              <ThreadItem
+                key={t.id}
+                thread={t}
+                projectName={project.name}
+                onDeleteThread={onDeleteThread}
+              />
+            ))}
+          </div>
         ))}
     </div>
   );

@@ -3,6 +3,7 @@ export type thread = {
   projectId: string;
   title: string;
   projectPath: string;
+  createdAt?: number;
 }
 
 export type AIThread = {
