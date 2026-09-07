@@ -59,17 +59,186 @@ select {
   background-clip: content-box;
 }
 
-.file-mention-fade {
+.composer-surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 28px;
+  background: transparent;
+  transition: border-color 200ms ease;
+}
+
+.composer-surface:focus-within {
+  border-color: rgb(255 255 255 / 20%);
+}
+
+.composer-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: rgba(32, 26, 39, 0.32);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+  backdrop-filter: blur(12px) saturate(115%);
+}
+
+.composer-surface > :not(.composer-glass) {
+  position: relative;
+}
+
+.file-mention-menu {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  z-index: 40;
+  margin-bottom: 12px;
+  border-radius: 22px;
+  background: transparent;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+}
+
+/* Keep backdrop sampling separate from the scrolling foreground's mask. */
+.file-mention-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: inherit;
+  background: rgba(32, 26, 39, 0.32);
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+  backdrop-filter: blur(12px) saturate(115%);
+}
+
+.file-mention-scroll {
+  position: relative;
+  max-height: min(324px, 40vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 8px 32px;
+  padding: 8px;
+  border-radius: inherit;
+  background: transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(180 166 190 / 22%) transparent;
+}
+
+.file-mention-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-mention-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-mention-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(180 166 190 / 22%);
+}
+
+.file-mention-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(180 166 190 / 38%);
+}
+
+.file-mention-rows[data-more-below="true"] {
   -webkit-mask-image: linear-gradient(
     to bottom,
-    black calc(100% - 2rem),
-    transparent 100%
+    black calc(var(--file-mention-fade-end) - 24px),
+    transparent var(--file-mention-fade-end)
   );
   mask-image: linear-gradient(
     to bottom,
-    black calc(100% - 2rem),
-    transparent 100%
+    black calc(var(--file-mention-fade-end) - 24px),
+    transparent var(--file-mention-fade-end)
   );
+}
+
+.file-mention-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #f6f2f8;
+  font: 400 13px/20px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.file-mention-row:hover {
+  background: rgb(187 160 213 / 10%);
+}
+
+.file-mention-row[aria-selected="true"] {
+  background: rgb(151 111 181 / 32%);
+}
+
+.file-mention-row:focus-visible {
+  outline: 2px solid rgb(207 176 235 / 65%);
+  outline-offset: -2px;
+}
+
+.file-mention-icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.file-mention-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 10px/1 var(--font-sans);
+}
+
+.file-mention-badge-ts {
+  border-radius: 5px;
+  color: #78baff;
+  background: rgb(72 129 191 / 25%);
+}
+
+.file-mention-badge-js {
+  border-radius: 3px;
+  color: #f1d36d;
+  background: rgb(202 165 51 / 22%);
+}
+
+.file-mention-badge-npm {
+  color: white;
+  background: #cb2535;
+}
+
+.file-mention-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.file-mention-name,
+.file-mention-directory {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.file-mention-name {
+  flex: 0 1 auto;
+  font-weight: 500;
+}
+
+.file-mention-directory {
+  flex: 0 9999 auto;
+  color: #c1b4c6;
 }
 
 @keyframes shimmer-slide {

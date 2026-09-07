@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AtomIcon,
   BracesIcon,
@@ -9,10 +9,9 @@ import {
   PackageIcon,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
-import { useFileSearch } from "@/context/useFileSearch";
-import { FileSearchResult } from "@/utils/trpc";
+import { useFileSearch } from "../context/useFileSearch";
+import type { FileSearchResult } from "@/utils/trpc";
 import FileItem from "./ui/FileItem";
 
 export type WorkspaceEntry = {
@@ -76,37 +75,64 @@ export default function FileMentionMenu({
   onSelect,
 }: FileMentionMenuProps) {
   const activeRowRef = useRef<HTMLButtonElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const [hasMoreBelow, setHasMoreBelow] = useState(false);
 
   const { searchResults } = useFileSearch();
 
-  useEffect(() => {
+  const updateOverflow = useCallback(() => {
+    const scroll = scrollRef.current;
+    if (!scroll) return;
+
+    setHasMoreBelow(
+      scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight > 1,
+    );
+    // The rows move with scrolling; anchor their mask to the viewport's bottom.
+    rowsRef.current?.style.setProperty(
+      "--file-mention-fade-end",
+      `${scroll.scrollTop + scroll.clientHeight - 8}px`,
+    );
+  }, []);
+
+  useLayoutEffect(() => {
     activeRowRef.current?.scrollIntoView({ block: "nearest" });
-  }, [currentIndex]);
+    updateOverflow();
+  }, [currentIndex, searchResults, updateOverflow]);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(updateOverflow);
+    if (scrollRef.current) observer.observe(scrollRef.current);
+    if (rowsRef.current) observer.observe(rowsRef.current);
+    return () => observer.disconnect();
+  }, [updateOverflow]);
 
   return (
-    <div
-      className={cn(
-        "absolute inset-x-0 bottom-full z-40 mb-2 overflow-hidden rounded-[18px] border",
-        aiThemeClassNames.glassBorder,
-        aiThemeClassNames.glassMenuSurface,
-      )}
-    >
+    <div className="file-mention-menu">
+      <div className="file-mention-glass" aria-hidden="true" />
       <div
+        ref={scrollRef}
         role="listbox"
-        className="chat-messages-scrollbar file-mention-fade max-h-[19rem] overflow-y-auto p-1.5"
+        aria-label="Workspace files"
+        className="file-mention-scroll"
+        onScroll={updateOverflow}
       >
-        {/* Maps out all the search results. Arrow keys navigate the index and
-        the active row is highlighted */}
-        {searchResults.map((entry, index) => (
-          <FileItem
-            key={entryPath(entry)}
-            entry={entry}
-            index={index}
-            currentIndex={currentIndex}
-            onSelect={onSelect}
-            activeRowRef={activeRowRef}
-          />
-        ))}
+        <div
+          ref={rowsRef}
+          className="file-mention-rows"
+          data-more-below={hasMoreBelow}
+        >
+          {searchResults.map((entry, index) => (
+            <FileItem
+              key={entryPath(entry)}
+              entry={entry}
+              index={index}
+              currentIndex={currentIndex}
+              onSelect={onSelect}
+              activeRowRef={activeRowRef}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

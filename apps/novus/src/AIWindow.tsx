@@ -1,4 +1,4 @@
-import { type CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import AISidebar from "./components/sidebar/AISidebar";
 import Composer from "./components/Composer";
 import ChatMessages from "./components/ChatMessages";
@@ -28,6 +28,22 @@ function ChatTopBar() {
 }
 
 export function AIWindow() {
+  const composerAreaRef = useRef<HTMLDivElement>(null);
+  const [composerInset, setComposerInset] = useState(160);
+
+  useLayoutEffect(() => {
+    const composerArea = composerAreaRef.current;
+    if (!composerArea) return;
+
+    const measure = () => {
+      setComposerInset(composerArea.getBoundingClientRect().height + 24);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(composerArea);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <main style={styles.root}>
       <div aria-hidden="true" style={styles.blurBackdrop} />
@@ -39,8 +55,8 @@ export function AIWindow() {
           <div style={styles.mainColumn}>
             <ChatTopBar />
             <section style={styles.content}>
-              <ChatMessages />
-              <div style={styles.composerArea}>
+              <ChatMessages bottomInset={composerInset} />
+              <div ref={composerAreaRef} style={styles.composerArea}>
                 <div style={styles.promptWrap}>
                   <Composer />
                 </div>
@@ -140,18 +156,23 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: "0 24px 22px",
+    padding: "0 24px",
     minHeight: 0,
     position: "relative",
   },
   composerArea: {
-    width: "100%",
+    position: "absolute",
+    insetInline: 24,
+    bottom: 0,
+    paddingBottom: 22,
+    pointerEvents: "none",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     flexShrink: 0,
   },
   promptWrap: {
+    pointerEvents: "auto",
     width: "100%",
     maxWidth: 1440,
   },
