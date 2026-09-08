@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowUpIcon, ListTodoIcon, PlusIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, HammerIcon, ListTodoIcon, SquareIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import ModelPicker from "./ModelPicker";
 import AccessPicker from "./AccessPicker";
 import { cn } from "../lib/utils";
@@ -169,37 +162,24 @@ export default function Composer() {
         />
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pb-3 pt-1">
           <div className="flex min-w-0 items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={`Composer options, ${mode} mode`}
-                  title="Composer options (Shift+Tab to switch mode)"
-                  className={cn(
-                    "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[#FCFCFC] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 data-[state=open]:bg-white/5",
-                    aiThemeClassNames.focusRing,
-                    mode === "plan" && "text-violet-300",
-                  )}
-                >
-                  {mode === "plan" ? (
-                    <ListTodoIcon className="size-5" aria-hidden="true" />
-                  ) : (
-                    <PlusIcon className="size-6" strokeWidth={1.5} aria-hidden="true" />
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                side="top"
-                sideOffset={12}
-                className={cn("min-w-40 rounded-xl border p-1 ring-0", aiThemeClassNames.border, aiThemeClassNames.menuSurface)}
-              >
-                <DropdownMenuRadioGroup value={mode} onValueChange={(nextMode) => setMode(nextMode as CollaborationMode)}>
-                  <DropdownMenuRadioItem value="build" className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>Build</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="plan" className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>Plan</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              type="button"
+              onClick={toggleMode}
+              aria-label={mode === "build" ? "Build mode, switch to Plan" : "Plan mode, switch to Build"}
+              title={mode === "build" ? "Build mode — switch to Plan (Shift+Tab)" : "Plan mode — switch to Build (Shift+Tab)"}
+              className={cn(
+                "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2",
+                aiThemeClassNames.focusRing,
+                mode === "plan" ? "text-violet-300" : "text-[#FCFCFC]",
+              )}
+            >
+              {mode === "plan" ? (
+                <ListTodoIcon className="size-5" aria-hidden="true" />
+              ) : (
+                <HammerIcon className="size-5" strokeWidth={1.5} aria-hidden="true" />
+              )}
+              <span>{mode === "plan" ? "Plan" : "Build"}</span>
+            </button>
             <AccessPicker />
           </div>
 
