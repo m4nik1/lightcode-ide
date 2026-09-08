@@ -12,6 +12,7 @@
     "dev:no-server": "electron-forge start -- --no-server",
     "package": "electron-forge package",
     "make": "electron-forge make",
+    "make:dmg": "electron-forge make --platform=darwin --targets=@electron-forge/maker-dmg",
     "publish": "electron-forge publish",
     "build": "electron-forge make",
     "lint": "eslint --ext .ts,.tsx .",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.11.2",
     "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-dmg": "^7.11.2",
     "@electron-forge/maker-rpm": "^7.11.2",
     "@electron-forge/maker-squirrel": "^7.11.2",
     "@electron-forge/maker-zip": "^7.11.2",
