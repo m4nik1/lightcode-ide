@@ -106,7 +106,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       }
 
       if (chunk.method === "turn/completed") {
-        console.log("Turn completed");
         setTurn(false);
       } else {
         setTurn(true);
@@ -164,6 +163,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   }
 
   function modelSet(model: AIModelId, thinking: AIReasoningEffort) {
+    console.log("Picked: ", model, " with thinking: ", thinking);
     setModel({ model, thinking });
   }
 
