@@ -32,8 +32,8 @@ export default function Composer() {
   const actionButtonThemeClassName = isTurning
     ? aiThemeClassNames.stopAction
     : canSend
-      ? "bg-[#2D6BD1] text-white hover:bg-[#3979E0] active:scale-95"
-      : "cursor-not-allowed bg-[#2D6BD1]/45 text-white/45";
+      ? aiThemeClassNames.accentAction
+      : aiThemeClassNames.accentActionDisabled;
 
   function handleSend() {
     if (isTurning) {
@@ -156,8 +156,9 @@ export default function Composer() {
           rows={3}
           onKeyDown={(e) => handleKeyDown(e)}
           className={cn(
-            "chat-messages-scrollbar min-h-24 max-h-64 resize-none rounded-none border-0 bg-transparent px-5 pt-5 pb-3 text-base leading-6 shadow-none placeholder:text-[#606060] focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent",
+            "chat-messages-scrollbar min-h-24 max-h-64 resize-none rounded-none border-0 bg-transparent px-5 pt-5 pb-3 text-base leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent",
             aiThemeClassNames.textPrimary,
+            aiThemeClassNames.placeholder,
           )}
         />
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pb-3 pt-1">
@@ -170,7 +171,9 @@ export default function Composer() {
               className={cn(
                 "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2",
                 aiThemeClassNames.focusRing,
-                mode === "plan" ? "text-violet-300" : "text-[#FCFCFC]",
+                mode === "plan"
+                  ? aiThemeClassNames.textAccent
+                  : aiThemeClassNames.textPrimary,
               )}
             >
               {mode === "plan" ? (

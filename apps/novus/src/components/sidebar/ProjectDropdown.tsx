@@ -19,12 +19,14 @@ export function ProjectDropdown({
   onDeleteThread,
 }: ProjectDropdownProps) {
   const [expanded, setExpanded] = useState(true);
+  const threadCount = project.threads.length;
+  const listId = `project-${project.id}-threads`;
 
   return (
-    <div className="py-0.5">
+    <li className="py-px">
       <div
         className={cn(
-          "group flex w-full select-none items-center rounded-xl text-[13px] transition-colors",
+          "group flex h-8 w-full select-none items-center rounded-lg text-[13px] font-medium transition-colors",
           aiThemeClassNames.textMuted,
           aiThemeClassNames.surfaceHover,
           aiThemeClassNames.hoverTextPrimary,
@@ -33,31 +35,33 @@ export function ProjectDropdown({
         <button
           type="button"
           aria-expanded={expanded}
+          aria-controls={listId}
           onClick={() => setExpanded((current) => !current)}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-[7px] pr-1 pl-3 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+            "flex h-full min-w-0 flex-1 items-center gap-2 rounded-lg pr-1 pl-3 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.borderFocus,
           )}
         >
           <ChevronIcon expanded={expanded} />
           <Folder className="size-3.5 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{project.name}</span>
-          <span
-            className={cn(
-              "mr-1 inline-flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] tabular-nums",
-              aiThemeClassNames.surfaceActive,
-              aiThemeClassNames.textMuted,
-            )}
-          >
-            {project.threads.length}
-          </span>
+          {!expanded && threadCount > 0 && (
+            <span
+              className={cn(
+                "shrink-0 pr-1 text-[11px] font-normal tabular-nums",
+                aiThemeClassNames.textDisabled,
+              )}
+            >
+              {threadCount}
+            </span>
+          )}
         </button>
         <button
           type="button"
-          aria-label={`Create thread in ${project.name}`}
+          aria-label={`New chat in ${project.name}`}
           onClick={onCreateThread}
           className={cn(
-            "mr-2 inline-flex size-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-[-1px] group-hover:opacity-100",
+            "mr-1.5 inline-flex size-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-[-1px] group-hover:opacity-100",
             aiThemeClassNames.textMuted,
             aiThemeClassNames.surfaceHover,
             aiThemeClassNames.hoverTextPrimary,
@@ -70,21 +74,29 @@ export function ProjectDropdown({
         </button>
       </div>
 
-      {expanded &&
-        (project.threads.length === 0 ? (
-          <p
-            className={cn(
-              "py-1.5 pl-[30px] text-[12px]",
-              aiThemeClassNames.textDisabled,
-            )}
-          >
-            No chats yet
-          </p>
-        ) : (
-          project.threads.map((t: thread) => (
-            <ThreadItem key={t.id} thread={t} onDeleteThread={onDeleteThread} />
-          ))
-        ))}
-    </div>
+      {expanded && (
+        <ul id={listId} className="m-0 list-none p-0">
+          {threadCount === 0 ? (
+            <li
+              className={cn(
+                "relative flex h-8 items-center pl-8 text-[12px] before:absolute before:top-0 before:bottom-0 before:left-[17px] before:w-px",
+                aiThemeClassNames.rail,
+                aiThemeClassNames.textDisabled,
+              )}
+            >
+              No chats yet
+            </li>
+          ) : (
+            project.threads.map((t: thread) => (
+              <ThreadItem
+                key={t.id}
+                thread={t}
+                onDeleteThread={onDeleteThread}
+              />
+            ))
+          )}
+        </ul>
+      )}
+    </li>
   );
 }

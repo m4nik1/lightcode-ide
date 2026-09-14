@@ -131,30 +131,30 @@ export default function AISidebar() {
   });
 
   return (
-    <aside
+    <nav
+      aria-label="Projects and chats"
       className={cn(
-        "relative box-border flex h-full w-80 shrink-0 flex-col border-r text-[13px]",
+        "relative box-border flex h-full w-68 shrink-0 flex-col border-r text-[13px]",
         aiThemeClassNames.sidebar,
         aiThemeClassNames.border,
-        aiThemeClassNames.sidebarDepth,
         aiThemeClassNames.textPrimary,
       )}
     >
       <SidebarHeader onNewChat={() => handleNewChat()} />
 
-      <div className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
-        <div className="flex items-center pb-1.5">
-          <span
+      <div className="chat-messages-scrollbar relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+        <div className="flex h-8 items-center pr-1.5">
+          <h2
             className={cn(
-              "pl-2 text-[11px] font-medium tracking-[0.08em] uppercase",
+              "m-0 pl-3 text-[13px] font-medium",
               aiThemeClassNames.textMuted,
             )}
           >
             Projects
-          </span>
+          </h2>
           <button
             type="button"
-            aria-label="Create project"
+            aria-label="Add project"
             className={cn(
               "ml-auto inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md transition-[background-color,color] focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
               aiThemeClassNames.textMuted,
@@ -170,49 +170,52 @@ export default function AISidebar() {
           </button>
         </div>
         {projectsQuery.isLoading ? (
-          <div className="space-y-1.5 px-1 pt-1" aria-hidden>
+          <div className="space-y-2 px-3 pt-2" aria-hidden>
             {[0, 1, 2].map((row) => (
               <div
                 key={row}
                 className={cn(
-                  "h-7 animate-pulse rounded-xl",
-                  aiThemeClassNames.surface,
+                  "h-3.5 animate-pulse rounded motion-reduce:animate-none",
+                  aiThemeClassNames.surfaceActive,
                 )}
-                style={{ width: `${88 - row * 14}%` }}
+                style={{ width: `${72 - row * 16}%` }}
               />
             ))}
           </div>
         ) : projects.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => createProject()}
-            className={cn(
-              "mt-1 flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed px-3 py-6 text-center transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
-              aiThemeClassNames.border,
-              aiThemeClassNames.textMuted,
-              aiThemeClassNames.surfaceHover,
-              aiThemeClassNames.hoverTextPrimary,
-              aiThemeClassNames.focusVisibleSurfaceHover,
-              aiThemeClassNames.borderFocus,
-            )}
-          >
-            <FolderPlus className="size-4" />
-            <span>No projects yet</span>
-            <span className={cn("text-[12px]", aiThemeClassNames.textDisabled)}>
-              Add a project to start chatting
-            </span>
-          </button>
+          <div className="px-3 pt-2">
+            <p className={cn("m-0 leading-5", aiThemeClassNames.textMuted)}>
+              Add a project folder to start chatting about its code.
+            </p>
+            <button
+              type="button"
+              onClick={() => createProject()}
+              className={cn(
+                "mt-3 inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[12px] font-medium transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+                aiThemeClassNames.border,
+                aiThemeClassNames.textPrimary,
+                aiThemeClassNames.surfaceHover,
+                aiThemeClassNames.focusVisibleSurfaceHover,
+                aiThemeClassNames.borderFocus,
+              )}
+            >
+              <FolderPlus className="size-3.5" />
+              Add project
+            </button>
+          </div>
         ) : (
-          projects.map((project) => (
-            <ProjectDropdown
-              key={project.id}
-              project={project}
-              onCreateThread={() => handleNewChat(project.id)}
-              onDeleteThread={deleteThread}
-            />
-          ))
+          <ul className="m-0 list-none p-0">
+            {projects.map((project) => (
+              <ProjectDropdown
+                key={project.id}
+                project={project}
+                onCreateThread={() => handleNewChat(project.id)}
+                onDeleteThread={deleteThread}
+              />
+            ))}
+          </ul>
         )}
       </div>
-    </aside>
+    </nav>
   );
 }
