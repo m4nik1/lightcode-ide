@@ -1,6 +1,5 @@
 import { Trash2 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { CodexIcon } from "./icons";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../../theme";
 import { useAIChat } from "../../context/useAIChat";
@@ -25,60 +24,57 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
   }
 
   return (
-    <div
+    <li
       className={cn(
-        "group relative flex min-h-8 w-full select-none items-center rounded-xl text-[13px] transition-colors",
-        isSelected
-          ? cn(aiThemeClassNames.selectedSurface, aiThemeClassNames.textPrimary)
-          : cn(
-              aiThemeClassNames.textMuted,
-              aiThemeClassNames.surfaceHover,
-              aiThemeClassNames.hoverTextPrimary,
-            ),
+        // The rail: a 1px line at x=17px that joins this row to the project above.
+        // Each row paints its own segment so stacked rows form one continuous line.
+        "group relative flex h-8 w-full select-none items-center pl-[22px] text-[13px] before:absolute before:top-0 before:bottom-0 before:left-[17px] before:w-px before:transition-colors",
+        isSelected ? aiThemeClassNames.railSelected : aiThemeClassNames.rail,
       )}
     >
-      {isSelected && (
-        <span
-          aria-hidden
-          className="absolute top-1/2 left-0 h-4 w-0.5 -translate-y-1/2 rounded-full bg-[#FCFCFC]"
-        />
-      )}
-      <button
-        type="button"
-        aria-pressed={isSelected}
-        onClick={() => setCurrentThread(thread)}
+      <div
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 pr-1 pl-[30px] text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
-          aiThemeClassNames.borderFocus,
+          "flex h-full min-w-0 flex-1 items-center rounded-lg transition-colors",
+          isSelected
+            ? cn(
+                aiThemeClassNames.accentSoftSurface,
+                aiThemeClassNames.textPrimary,
+              )
+            : cn(
+                aiThemeClassNames.textMuted,
+                aiThemeClassNames.surfaceHover,
+                aiThemeClassNames.hoverTextPrimary,
+              ),
         )}
       >
-        <span
+        <button
+          type="button"
+          aria-current={isSelected ? "true" : undefined}
+          onClick={() => setCurrentThread(thread)}
           className={cn(
-            "flex size-4 shrink-0 items-center justify-center transition-colors",
-            aiThemeClassNames.textMuted,
-            aiThemeClassNames.hoverTextPrimary,
+            "flex h-full min-w-0 flex-1 items-center rounded-lg pl-2.5 pr-1 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+            aiThemeClassNames.borderFocus,
           )}
         >
-          <CodexIcon />
-        </span>
-        <span className="min-w-0 truncate">{thread.title}</span>
-      </button>
-      <button
-        type="button"
-        aria-label={`Delete ${thread.title}`}
-        onClick={handleDeleteThread}
-        className={cn(
-          "mr-2 inline-flex size-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-[-1px] group-hover:opacity-100",
-          aiThemeClassNames.textMuted,
-          aiThemeClassNames.surfaceHover,
-          aiThemeClassNames.hoverTextPrimary,
-          aiThemeClassNames.focusVisibleSurfaceHover,
-          aiThemeClassNames.focusVisibleTextPrimary,
-          aiThemeClassNames.borderFocus,
-        )}
-      >
-        <Trash2 className="size-4" />
-      </button>
-    </div>
+          <span className="min-w-0 truncate">{thread.title}</span>
+        </button>
+        <button
+          type="button"
+          aria-label={`Delete ${thread.title}`}
+          onClick={handleDeleteThread}
+          className={cn(
+            "mr-1.5 inline-flex size-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-[-1px] group-hover:opacity-100",
+            aiThemeClassNames.textMuted,
+            aiThemeClassNames.surfaceHover,
+            aiThemeClassNames.hoverTextPrimary,
+            aiThemeClassNames.focusVisibleSurfaceHover,
+            aiThemeClassNames.focusVisibleTextPrimary,
+            aiThemeClassNames.borderFocus,
+          )}
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+    </li>
   );
 }
