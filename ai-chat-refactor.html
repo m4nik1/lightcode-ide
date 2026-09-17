@@ -131,6 +131,27 @@
         </div>
       </section>
 
+      <section aria-labelledby="concurrency">
+        <h2 id="concurrency">Multiple threads can run at once</h2>
+        <div class="note">
+          <p><strong>Selection is a view, not a running task.</strong> Selecting B changes the visible messages. A keeps streaming into <code>["messages", A]</code>; sending in B starts a separate request.</p>
+          <p><strong>One active request per thread.</strong> A and B may run concurrently. A second send to A is blocked until A finishes. A’s completion, stop, or error must never change B’s status.</p>
+          <p><strong>One shared session manager.</strong> Keep <code>AiChatProvider</code> mounted above thread views. Never key it by the selected thread or mount a session hook per message panel.</p>
+        </div>
+        <div class="table-wrap" style="margin-top: 12px">
+          <table>
+            <thead><tr><th scope="col">Current failure</th><th scope="col">Proposed correction</th></tr></thead>
+            <tbody>
+              <tr><td>Global <code>isTurning</code> mixes A and B.</td><td>Store status by thread ID; derive the composer’s status from selection.</td></tr>
+              <tr><td>Returning to A replaces live text with history.</td><td>Reuse A’s message cache. Do not refetch history during its run.</td></tr>
+              <tr><td>Global stop state can point at an idle thread.</td><td>Resolve the exact thread’s active request before stopping.</td></tr>
+              <tr><td>Double-clicks can start duplicate sends.</td><td>Acquire a synchronous per-thread guard before any await.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="path">The protocol client already filters notifications by thread ID and turn ID in <code>packages/codex-protocol/src/client.ts</code>. Preserve that isolation.</p>
+      </section>
+
       <section aria-labelledby="code">
         <h2 id="code">Proposed code, explained</h2>
         <p class="muted">Complete proposed hook and provider files below. The final section shows the changes needed in existing UI files.</p>
@@ -235,8 +256,10 @@ export type ChatSession = {
   isLoadingMessages: boolean;
   isTurning: boolean;
   error: string | null;
+  runningThreadIDs: string[];
+  threadStatuses: Record&lt;string, ThreadStatus&gt;;
   send: (text: string, mode: ChatMode) =&gt; Promise&lt;void&gt;;
-  stop: () =&gt; Promise&lt;void&gt;;
+  stop: (targetThreadID?: string) =&gt; Promise&lt;void&gt;;
 };
 
 type Request = {
@@ -254,7 +277,7 @@ type SendInput = {
   request: Request;
 };
 
-type Status = { busy: boolean; error: string | null };
+export type ThreadStatus = { busy: boolean; error: string | null };
 const errorText = (error: unknown) =&gt;
   error instanceof Error ? error.message : "Something went wrong.";
 
@@ -274,14 +297,14 @@ export function useChatSession({
 }: Options): ChatSession {
   const client = useQueryClient();
   const active = useRef(new Map&lt;string, Request&gt;());
-  const [statuses, setStatuses] = useState&lt;Record&lt;string, Status&gt;&gt;({});
+  const [statuses, setStatuses] = useState&lt;Record&lt;string, ThreadStatus&gt;&gt;({});
   const threadID = currentThread?.id;
   const history = useQuery({
     ...messageOptions(threadID ?? ""),
     enabled: !!threadID,
   });
 
-  function patchStatus(id: string, patch: Partial&lt;Status&gt;) {
+  function patchStatus(id: string, patch: Partial&lt;ThreadStatus&gt;) {
     setStatuses((current) =&gt; ({
       ...current,
       [id]: { busy: false, error: null, ...current[id], ...patch },
@@ -307,6 +330,8 @@ export function useChatSession({
   }
 
   const sendMutation = useMutation({
+    // No shared mutation scope: different threads must execute concurrently.
+    // Do not use this mutation's isPending/error as global chat state.
     retry: false,
     mutationFn: async (input: SendInput) =&gt; {
       const { thread, text, mode, model, access, request } = input;
@@ -398,12 +423,12 @@ export function useChatSession({
     }
   }
 
-  async function stop() {
-    if (!threadID) return;
-    const request = active.current.get(threadID);
+  async function stop(targetThreadID = threadID) {
+    if (!targetThreadID) return;
+    const request = active.current.get(targetThreadID);
     if (!request || request.phase === "finishing" || request.stopRequested) return;
     request.stopRequested = true;
-    if (request.phase === "streaming") await interrupt(threadID, request);
+    if (request.phase === "streaming") await interrupt(targetThreadID, request);
     // Loading: skip send. Connecting: interrupt when the first delta arrives.
   }
 
@@ -413,12 +438,16 @@ export function useChatSession({
     isLoadingMessages: !!threadID &amp;&amp; history.isPending,
     isTurning: status?.busy ?? false,
     error: status?.error ?? (history.error ? errorText(history.error) : null),
+    runningThreadIDs: Object.keys(statuses).filter((id) =&gt; statuses[id]?.busy),
+    threadStatuses: statuses,
     send,
     stop,
   };
 }</code></pre>
             <p><strong>Read it in order:</strong> <code>useQuery</code> displays history → <code>send</code> locks the thread → the mutation loads history and streams into its cache → <code>finally</code> unlocks it. <code>return</code> exposes only what the UI needs.</p>
             <p><strong>Why both refs and state?</strong> The ref blocks a second send immediately, before React rerenders. State makes busy/error changes visible to the UI. Messages live only in the query cache.</p>
+            <p><strong>Concurrency:</strong> each call captures its thread, model, access, and request object before awaiting. Each stream writes only to that thread’s cache. <code>useMutation</code> allows concurrent calls by default; its latest-call status is intentionally ignored. Status updates and cleanup are keyed by thread, and cleanup verifies request identity.</p>
+            <p><strong>Exports for the UI:</strong> <code>isTurning</code> describes only the selected thread. <code>threadStatuses</code> powers background activity/error badges; <code>runningThreadIDs</code> lists all busy threads. <code>stop()</code> targets selection, while <code>stop(id)</code> targets a specific background thread.</p>
             <p><strong>Cache policy:</strong> infinite stale/GC times preserve history even when a long-running thread is not selected. This keeps messages in memory for the window’s lifetime. Remove entries when deleting threads; explicitly refresh external changes only when idle.</p>
             <p><strong>Failure policy:</strong> keep partial text and show the error. Do not retry automatically: the server may already have accepted the message. Here <code>isTurning</code> includes setup and title refresh so a new send cannot overlap finishing work.</p>
             <p><strong>Current stop limitation:</strong> the client’s event type exposes only deltas and completion, so an early stop waits for the first delta. Immediate interruption during reasoning needs a typed turn-start event and a server-ready signal. Also, <code>apps/server/lightThread.ts</code> checks <code>turnId</code> in <code>stopTurn()</code> but never assigns it in the inspected code. That server issue must be fixed for interruption to succeed.</p>
@@ -451,6 +480,8 @@ type AIContext = {
   isTurning: boolean;
   isLoadingMessages: boolean;
   error: string | null;
+  runningThreadIDs: ChatSession["runningThreadIDs"];
+  threadStatuses: ChatSession["threadStatuses"];
 };
 
 const aiContext = createContext&lt;AIContext | undefined&gt;(undefined);
@@ -487,6 +518,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       isTurning: session.isTurning,
       isLoadingMessages: session.isLoadingMessages,
       error: session.error,
+      runningThreadIDs: session.runningThreadIDs,
+      threadStatuses: session.threadStatuses,
     }}&gt;
       {children}
     &lt;/aiContext.Provider&gt;
@@ -528,6 +561,42 @@ client.removeQueries({ queryKey: ["messages", deletedThreadID], exact: true });<
 {isLoadingMessages &amp;&amp; &lt;p role="status"&gt;Loading messages…&lt;/p&gt;}
 {error &amp;&amp; &lt;p role="alert"&gt;{error}&lt;/p&gt;}</code></pre>
             <p><strong>Composer.tsx:</strong> its existing <code>messageSend</code>, <code>isTurning</code>, and <code>stopTurn</code> names still work. The session catches action errors and exposes them through context.</p>
+            <p><strong>ThreadItem.tsx:</strong> use that row’s ID to show background activity. Wrap stop in a callback so React does not pass a click event as the thread ID.</p>
+            <pre><code>const { threadStatuses, stopTurn } = useAIChat();
+const status = threadStatuses[thread.id];
+
+// In the row's existing content:
+{status?.busy &amp;&amp; &lt;span role="status"&gt;Running&lt;/span&gt;}
+{status?.error &amp;&amp; &lt;span title={status.error}&gt;Error&lt;/span&gt;}
+
+// Optional separate action beside the row's selection button:
+&lt;button onClick={() =&gt; void stopTurn(thread.id)} disabled={!status?.busy}&gt;
+  Stop
+&lt;/button&gt;</code></pre>
+            <p><strong>Deletion:</strong> disable deleting a busy thread until its run has settled. Deleting only its cache would let the live stream recreate it. Treat finishing/title refresh as busy too.</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>05 · Server requirements for concurrent runs</summary>
+          <div class="example">
+            <p><strong>ThreadService.ts:</strong> add a per-thread server guard around the entire existing <code>sendMessage</code> generator. The frontend guard protects one window; the server guard protects against duplicate requests from other windows too. Different IDs remain independent.</p>
+            <pre><code>// Class field:
+private activeThreadIDs = new Set&lt;string&gt;();
+
+// At the start of sendMessage, before its first await:
+if (this.activeThreadIDs.has(input.threadID)) {
+  throw new Error("This thread already has an active turn.");
+}
+this.activeThreadIDs.add(input.threadID);
+try {
+  // Existing creation, persistence, and streaming body goes here.
+} finally {
+  this.activeThreadIDs.delete(input.threadID);
+}</code></pre>
+            <p><strong>lightThread.ts:</strong> capture <code>event.params.turn.id</code> on <code>turn/started</code> before yielding it, then clear the stored ID when that turn completes or the generator exits. This supplies the ID required by the existing interrupt call.</p>
+            <p><strong>utils/trpc.ts:</strong> expand the handwritten <code>AIEvent</code> type to include turn-start and completion status. Then the session can process queued stops at turn start instead of waiting for text, and distinguish completed, interrupted, and failed turns. The complete hook above deliberately uses the current event type; early stop remains limited until this server/client change is implemented.</p>
+            <p><strong>Verification:</strong> start A and B; switch repeatedly; finish A while B streams; stop A while B streams; fail A; double-send to B; switch back after a long run. Verify separate messages, errors, busy state, titles, and stop targets. Also test a second window sending to the same thread.</p>
           </div>
         </details>
       </section>
@@ -542,7 +611,7 @@ client.removeQueries({ queryKey: ["messages", deletedThreadID], exact: true });<
         </ol>
       </section>
 
-      <footer>Verify: delayed history · switching threads mid-stream · duplicate sends · stopping · stream failures</footer>
+      <footer>Verify: concurrent A/B runs · delayed history · background completion · isolated stop/errors · duplicate sends</footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" data-manual></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
