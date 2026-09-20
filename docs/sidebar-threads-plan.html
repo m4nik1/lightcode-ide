@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sidebar threads — refactor plan</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fafaf9; color: #242424; font: 15px/1.65 system-ui, sans-serif; }
+    main { max-width: 780px; margin: auto; padding: 56px 24px; }
+    header { padding-bottom: 24px; border-bottom: 1px solid #ddd; }
+    h1 { margin: 4px 0 12px; font-size: clamp(26px, 5vw, 34px); line-height: 1.2; letter-spacing: -.035em; }
+    h2 { margin: 28px 0 8px; font-size: 18px; }
+    p { margin: 8px 0 14px; }
+    .label, footer { color: #666; font-size: 12px; }
+    .label { text-transform: uppercase; letter-spacing: .1em; }
+    code { font: 13px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    :not(pre) > code { background: #eeedea; padding: 2px 4px; border-radius: 3px; overflow-wrap: anywhere; }
+    pre { margin: 14px 0; padding: 16px; background: #f0efec; border: 1px solid #e2e0dc; border-radius: 6px; overflow-x: auto; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 6px 0; }
+    a { color: inherit; text-underline-offset: 3px; }
+    footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd; }
+    @media print { main { padding: 0; } pre { white-space: pre-wrap; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="label">Implementation plan · Novus</div>
+    <h1>Manage threads by project</h1>
+    <p>Keep projects and threads in React Query. Each project gets its own thread list, so adding a chat updates that list directly.</p>
+  </header>
+
+  <section>
+    <h2>1. Give each list an address</h2>
+    <p>Remove the combined <code>projects</code> state from <code>AISidebar.tsx</code>. Keep project metadata and thread rows in separate cache entries.</p>
+    <pre><code>["projects"]            → ProjectRow[]
+["threads", projectId]  → ThreadRow[]</code></pre>
+    <p>The cache stores the data; query hooks subscribe to it. Updating a key notifies its subscribers, so there is no second project/thread copy to synchronize.</p>
+  </section>
+
+  <section>
+    <h2>2. Preserve coordinated loading</h2>
+    <p>Replace the loading effect with <code>useQueries</code> in the sidebar. It loads one thread query per project in parallel and keeps results in those keys. Pass each result to its project dropdown.</p>
+    <pre><code>const projects = getProjects.data ?? [];
+const threadQueries = useQueries({
+  queries: projects.map((project) => ({
+    queryKey: ["threads", project.id],
+    queryFn: () => trpcClient.getThreads.query({
+      projectID: project.id,
+    }),
+    staleTime: 60_000,
+  })),
+});
+
+const loading = threadQueries.some((query) => query.isPending);</code></pre>
+    <p>Use the aggregate loading state to keep a coordinated initial reveal; show errors with a retry action. Selection and title changes no longer trigger the loader. The current code already makes one query per project; HTTP batching is a separate transport concern.</p>
+  </section>
+
+  <section>
+    <h2>3. Write to the affected project</h2>
+    <p>A new <code>useThreads.ts</code> module owns shared query options and create/delete/title cache updates. After creation succeeds, prepend the saved row to the existing list.</p>
+    <pre><code>// Inside createThread(project); after addThread succeeds.
+const key = ["threads", project.id];
+await queryClient.cancelQueries({ queryKey: key, exact: true });
+
+queryClient.setQueryData&lt;ThreadRow[]&gt;(key, (rows) =>
+  rows === undefined ? undefined : [
+    { ...created, project_id: project.id },
+    ...rows.filter((row) => row.id !== created.id),
+  ],
+);
+
+if (queryClient.getQueryData(key) === undefined) {
+  await queryClient.fetchQuery(threadOptions(project.id));
+}</code></pre>
+    <p><code>threadOptions</code> supplies the same key and fetcher used above. Cancel stale reads before writing; if the list is absent, fetch the complete list. Return the created thread with the project's path, then select it. Surface failures and allow retry.</p>
+    <p>Deletion filters this same list after server success. Title generation updates its matching row and the selected thread, replacing <code>projectsQuery.refetch()</code>. Deleting the selected thread also clears selection.</p>
+  </section>
+
+  <section>
+    <h2>Files to change</h2>
+    <ul>
+      <li><code>context/useThreads.ts</code> — add shared query options and thread mutations.</li>
+      <li><code>sidebar/AISidebar.tsx</code> — remove nested state, reload effect and unused draft IDs; load via queries and select created chats.</li>
+      <li><code>sidebar/ProjectDropdown.tsx</code> and <code>ThreadItem.tsx</code> — accept separate project/thread data and route deletion through the shared module.</li>
+      <li><code>context/useAIChat.tsx</code> — update cached titles; allow clearing selection. Use the existing <code>useProjects</code> hook for project creation.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Verify the result</h2>
+    <ol>
+      <li>Load multiple projects: correct threads, loading, empty and error states.</li>
+      <li>Create, rename and delete: only the target project's cached list changes; selection stays correct.</li>
+      <li>Switch chats: no thread-list requests caused by selection. Check creation during loading and rapid repeated creates.</li>
+      <li>Run the Novus typecheck and relevant lint checks after implementation.</li>
+    </ol>
+    <p><strong>Expected gain:</strong> no project-array reconstruction on thread writes and no all-project reload on chat selection. Immutable updates still copy one project's thread list; they are not O(1), and other components may still render.</p>
+  </section>
+
+  <footer>
+    Plan only · Snippets illustrate the proposed implementation.<br>
+    Reference: <a href="https://github.com/TanStack/query/blob/main/docs/reference/QueryClient.md">TanStack Query cache updates</a>.
+  </footer>
+</main>
+</body>
+</html>

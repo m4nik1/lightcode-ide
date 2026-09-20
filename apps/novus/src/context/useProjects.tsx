@@ -1,10 +1,10 @@
-/*
-    This hook is here to load the projects/threads in the sidebar
-*/
+import { trpcClient } from "@/utils/trpc";
+import { useQuery } from "@tanstack/react-query";
 
+// Loads sidebar projects and exposes project creation.
 
-export function projectProvider({ children } : { children: ReactNode }) {
-  const projectsQuery = useQuery({
+export function useProjects() {
+  const getProjects = useQuery({
     queryKey: ["projects"],
     queryFn: () => trpcClient.getProjects.query(),
   });
@@ -28,16 +28,8 @@ export function projectProvider({ children } : { children: ReactNode }) {
       path: projectFolderPath,
     });
 
-    await projectsQuery.refetch();
+    await getProjects.refetch();
   }
 
-  return (
-    <projectsContext.provider
-      value={{
-        projectsQuery,
-        createProject
-      }}
-    >
-    </projectsContext.provider>
-  )
+  return { getProjects, createProject };
 }

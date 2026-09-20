@@ -6,8 +6,8 @@ import { cn } from "../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
 import { trpcClient } from "../../utils/trpc";
-import { useQuery } from "@tanstack/react-query";
 import { useAIChat } from "../../context/useAIChat";
+import { useProjects } from "@/context/useProjects";
 
 export interface Project {
   id: string;
@@ -18,10 +18,7 @@ export interface Project {
 
 export default function AISidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => trpcClient.getProjects.query(),
-  });
+  const { getProjects } = useProjects();
   const { createProject, currentThread, setCurrentThread } = useAIChat();
 
   const currentTitle = currentThread
@@ -80,8 +77,8 @@ export default function AISidebar() {
   }
 
   useEffect(() => {
-    if (projectsQuery.data == null) return;
-    const projectRows = projectsQuery.data;
+    if (getProjects.data == null) return;
+    const projectRows = getProjects.data;
 
     let cancelled = false;
 
@@ -116,7 +113,7 @@ export default function AISidebar() {
     return () => {
       cancelled = true;
     };
-  }, [projectsQuery.data, currentTitle]);
+  }, [getProjects.data, currentTitle]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -169,7 +166,7 @@ export default function AISidebar() {
             <FolderPlus className="size-3.25" />
           </button>
         </div>
-        {projectsQuery.isLoading ? (
+        {getProjects.isLoading ? (
           <div className="space-y-2 px-3 pt-2" aria-hidden>
             {[0, 1, 2].map((row) => (
               <div
