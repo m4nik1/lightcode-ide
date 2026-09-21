@@ -1,23 +1,38 @@
-/*
-    Context for the current thread
-*/
-
-import { createContext, ReactNode, useContext, useState } from "react"
+import { createContext, type ReactNode, useContext, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { thread } from "../components/sidebar/types";
+import { trpcClient } from "../utils/trpc";
 
-interface context {
+interface ThreadContext {
   currentThread: thread | null;
-  newThread: (projectId: string) => void;
+  newThread: (projectId: string, projectPath: string) => Promise<thread>;
   setThread: (thread: thread) => void;
 }
 
-const threadContext = createContext<context | undefined>(undefined)
+const threadContext = createContext<ThreadContext | undefined>(undefined);
 
-export function threadProvider({ children }: { children: ReactNode }) {
-  const [currentThread, setThread] = useState< thread | null>(null);
+export function ThreadProvider({ children }: { children: ReactNode }) {
+  const [currentThread, setThread] = useState<thread | null>(null);
+  const queryClient = useQueryClient();
 
-  function newThread(projectId : string) {
+  async function newThread(projectId: string, projectPath: string) {
+    const result = await trpcClient.addThread.mutate({
+      threadName: "Untitled chat",
+      projectId,
+    });
 
+    const createdThread: thread = {
+      id: result.id,
+      title: result.name,
+      projectId,
+      projectPath,
+    };
+
+    await queryClient.invalidateQueries({
+      queryKey: ["threads", projectId],
+    });
+    setThread(createdThread);
+    return createdThread;
   }
 
   return (

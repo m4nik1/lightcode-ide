@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, type ReactNode } from "react";
 import { trpcClient } from "../utils/trpc";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChatMessage } from "../components/ChatMessages";
 import type { thread } from "../components/sidebar/types";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
@@ -28,6 +28,7 @@ type AIModel = {
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [messagesByThread, setMessagesByThread] = useState<
     Record<string, ChatMessage[]>
   >({});
@@ -122,7 +123,10 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         : current;
     });
 
-    await projectsQuery.refetch();
+    // Lets the thread/project list know its out of date
+    await queryClient.invalidateQueries({
+      queryKey: ["threads", currentThread.projectId],
+    });
   }
 
   function stopTurn() {
