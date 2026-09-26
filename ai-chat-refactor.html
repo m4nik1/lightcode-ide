@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI chat · Refactor plan</title>
+    <style>
+      :root { color-scheme: light dark; --bg: #fff; --fg: #18181b; --muted: #71717a; --border: #e4e4e7; --surface: #fafafa; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+      main { max-width: 880px; margin: auto; padding: 64px 24px 40px; }
+      .badge { display: inline-block; padding: 2px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-weight: 600; }
+      h1 { margin: 16px 0 10px; font-size: clamp(28px, 5vw, 38px); line-height: 1.2; letter-spacing: -1.4px; font-weight: 650; }
+      h2 { margin: 0 0 14px; font-size: 17px; letter-spacing: -.35px; }
+      h3 { margin: 10px 0; font-size: 14px; }
+      p { margin: 0; }
+      .muted, .path { color: var(--muted); }
+      .path { margin-top: 14px; font-size: 12px; overflow-wrap: anywhere; }
+      section { margin-top: 32px; }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .card { padding: 20px; border: 1px solid var(--border); border-radius: 10px; }
+      .label { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+      code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; }
+      ul { padding-left: 17px; margin: 12px 0 0; }
+      li + li { margin-top: 6px; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+      table { border-collapse: collapse; width: 100%; text-align: left; }
+      th, td { padding: 11px 16px; border-bottom: 1px solid var(--border); }
+      th { background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 500; }
+      tr:last-child td { border-bottom: 0; }
+      .note { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+      .note p + p { margin-top: 8px; }
+      details { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+      summary { padding: 16px 20px; cursor: pointer; font-weight: 600; }
+      summary:focus-visible { outline: 2px solid var(--fg); outline-offset: -4px; }
+      .example { padding: 0 20px 20px; }
+      .example p + p { margin-top: 10px; }
+      pre { padding: 16px; overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; line-height: 1.6; tab-size: 2; }
+      pre code { font-size: 12px; }
+      .token.comment { color: #71717a; }
+      .token.keyword, .token.operator { color: #7c3aed; }
+      .token.string, .token.attr-value { color: #047857; }
+      .token.function, .token.tag { color: #0369a1; }
+      .token.number, .token.boolean { color: #b45309; }
+      .token.class-name, .token.builtin, .token.attr-name { color: #be185d; }
+      @media (prefers-color-scheme: dark) {
+        .token.comment { color: #a1a1aa; }
+        .token.keyword, .token.operator { color: #c4b5fd; }
+        .token.string, .token.attr-value { color: #6ee7b7; }
+        .token.function, .token.tag { color: #7dd3fc; }
+        .token.number, .token.boolean { color: #fcd34d; }
+        .token.class-name, .token.builtin, .token.attr-name { color: #f9a8d4; }
+      }
+      ol { margin: 0; padding-left: 22px; }
+      footer { margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #09090b; --fg: #fafafa; --muted: #a1a1aa; --border: #27272a; --surface: #111113; } }
+      @media (max-width: 680px) { main { padding-top: 32px; } .grid { grid-template-columns: 1fr; } }
+      @media print { :root { color-scheme: light; --bg: #fff; --fg: #18181b; --muted: #52525b; --border: #ddd; --surface: #fafafa; } main { padding: 16px; } .card, .note, tr { break-inside: avoid; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="badge">Refactor plan</span>
+        <h1>One context. Three clear owners.</h1>
+        <p class="muted">Let TanStack Query own cached data. Keep chat coordination in one hook.</p>
+        <p class="path"><code>apps/novus/src/context/useAIChat.tsx</code></p>
+      </header>
+
+      <section aria-labelledby="modules">
+        <h2 id="modules">The split</h2>
+        <div class="grid">
+          <article class="card">
+            <span class="label">01 · Projects</span>
+            <h3><code>hooks/useProjects.ts</code></h3>
+            <p class="muted">Own project loading and creation.</p>
+            <ul>
+              <li>Query the project list.</li>
+              <li>Pick a folder and create via a mutation.</li>
+              <li>Invalidate projects after creation.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <span class="label">02 · Conversation</span>
+            <h3><code>hooks/useChatSession.ts</code></h3>
+            <p class="muted">Own the full chat lifecycle.</p>
+            <ul>
+              <li>Query history by thread ID.</li>
+              <li>Send, stream, stop, and handle errors.</li>
+              <li>Track turns per thread and refresh titles.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <span class="label">03 · Shared context</span>
+            <h3><code>context/useAIChat.tsx</code></h3>
+            <p class="muted">Own selection and preferences.</p>
+            <ul>
+              <li>Keep selected thread, model, and access.</li>
+              <li>Call <code>useChatSession</code>.</li>
+              <li>Expose state and actions to the UI.</li>
+            </ul>
+          </article>
+        </div>
+        <p class="path">Paths are relative to <code>apps/novus/src/</code>. The sidebar calls <code>useProjects()</code> directly.</p>
+      </section>
+
+      <section aria-labelledby="query">
+        <h2 id="query">Where TanStack Query fits</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Data / action</th><th scope="col">Approach</th></tr></thead>
+            <tbody>
+              <tr><td>Projects</td><td><code>useQuery(["projects"])</code></td></tr>
+              <tr><td>Threads in the sidebar</td><td><code>useQuery(["threads", projectId])</code></td></tr>
+              <tr><td>Message history</td><td><code>useQuery(["messages", threadID])</code></td></tr>
+              <tr><td>Create project / send message</td><td><code>useMutation</code>; consume the stream inside send.</td></tr>
+              <tr><td>Optimistic messages / stream deltas</td><td><code>setQueryData</code> updates the message cache.</td></tr>
+              <tr><td>Title generated</td><td>Update selected title; invalidate the affected thread list.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="path">Query keys shown in shorthand. Remove <code>messagesByThread</code>: the message cache becomes the single source of truth.</p>
+      </section>
+
+      <section aria-labelledby="lifecycle">
+        <h2 id="lifecycle">Keep the lifecycle safe</h2>
+        <div class="note">
+          <p><strong>Load before sending.</strong> Ensure history is cached before adding optimistic messages. Cancel competing fetches and prevent refetches from overwriting an active stream.</p>
+          <p><strong>Track each thread.</strong> Guard against duplicate sends before the first await. Stop the captured thread; clean up that request’s turn state in <code>finally</code>.</p>
+          <p><strong>Keep history and streaming together.</strong> They update the same data. TanStack Query handles caching; the session hook still handles streaming and cancellation.</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="concurrency">
+        <h2 id="concurrency">Multiple threads can run at once</h2>
+        <div class="note">
+          <p><strong>Selection is a view, not a running task.</strong> Selecting B changes the visible messages. A keeps streaming into <code>["messages", A]</code>; sending in B starts a separate request.</p>
+          <p><strong>One active request per thread.</strong> A and B may run concurrently. A second send to A is blocked until A finishes. A’s completion, stop, or error must never change B’s status.</p>
+          <p><strong>One shared session manager.</strong> Keep <code>AiChatProvider</code> mounted above thread views. Never key it by the selected thread or mount a session hook per message panel.</p>
+        </div>
+        <div class="table-wrap" style="margin-top: 12px">
+          <table>
+            <thead><tr><th scope="col">Current failure</th><th scope="col">Proposed correction</th></tr></thead>
+            <tbody>
+              <tr><td>Global <code>isTurning</code> mixes A and B.</td><td>Store status by thread ID; derive the composer’s status from selection.</td></tr>
+              <tr><td>Returning to A replaces live text with history.</td><td>Reuse A’s message cache. Do not refetch history during its run.</td></tr>
+              <tr><td>Global stop state can point at an idle thread.</td><td>Resolve the exact thread’s active request before stopping.</td></tr>
+              <tr><td>Double-clicks can start duplicate sends.</td><td>Acquire a synchronous per-thread guard before any await.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="path">The protocol client already filters notifications by thread ID and turn ID in <code>packages/codex-protocol/src/client.ts</code>. Preserve that isolation.</p>
+      </section>
+
+      <section aria-labelledby="code">
+        <h2 id="code">Proposed code, explained</h2>
+        <p class="muted">Complete proposed hook and provider files below. The final section shows the changes needed in existing UI files.</p>
+        <div class="note" style="margin-top: 16px">
+          <p><strong>What is useChatSession?</strong> An exported React hook, called once by the provider. It accepts the selected thread and preferences, then returns messages, loading/error state, and send/stop actions.</p>
+          <p><strong>What does it hide?</strong> Loading history, adding optimistic messages, reading the stream, updating the cache, and tracking each thread’s request. UI components use <code>useAIChat()</code> to access this shared session; they do not create their own sessions.</p>
+        </div>
+
+        <details open>
+          <summary>01 · Extract project management</summary>
+          <div class="example">
+            <p><code>hooks/useProjects.ts</code> owns the folder picker, query, and creation mutation. The sidebar receives data and actions from one place.</p>
+            <pre><code>import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient } from "../utils/trpc";
+
+export function useProjects() {
+  const client = useQueryClient();
+  const projects = useQuery({
+    queryKey: ["projects"],
+    queryFn: () =&gt; trpcClient.getProjects.query(),
+  });
+
+  const createProject = useMutation({
+    mutationFn: async () =&gt; {
+      const { filePaths } = await window.electronAPI.openFolder();
+      const path = filePaths[0];
+      const projectName = path?.split(/[\\/]/).filter(Boolean).at(-1);
+      if (!path || !projectName) return false;
+
+      await trpcClient.addProject.mutate({ projectName, path });
+      return true;
+    },
+    onSuccess: async (created) =&gt; {
+      if (created) {
+        await client.invalidateQueries({ queryKey: ["projects"] });
+      }
+    },
+  });
+
+  const threadQueries = useQueries({
+    queries: (projects.data ?? []).map((project) =&gt; ({
+      queryKey: ["threads", project.id],
+      queryFn: () =&gt; trpcClient.getThreads.query({ projectID: project.id }),
+    })),
+  });
+
+  const sidebarProjects = (projects.data ?? []).map((project, index) =&gt; ({
+    ...project,
+    threads: (threadQueries[index]?.data ?? []).map((row) =&gt; ({
+      id: row.id,
+      projectId: row.project_id,
+      title: row.name,
+      projectPath: project.path,
+    })),
+  }));
+
+  return {
+    projects: sidebarProjects,
+    isLoading: projects.isPending || threadQueries.some((query) =&gt; query.isPending),
+    error: projects.error ?? threadQueries.find((query) =&gt; query.error)?.error ?? null,
+    createProject,
+  };
+}</code></pre>
+            <p><strong>Sidebar change:</strong> remove its duplicate project query and take <code>createProject</code> out of chat context.</p>
+            <pre><code>const { projects, isLoading, error, createProject } = useProjects();
+
+// Add-project button:
+&lt;button
+  onClick={() =&gt; createProject.mutate()}
+  disabled={createProject.isPending}
+&gt;
+  Add project
+&lt;/button&gt;
+
+{createProject.isError &amp;&amp; &lt;p role="alert"&gt;Could not add project.&lt;/p&gt;}</code></pre>
+          </div>
+        </details>
+
+        <details>
+          <summary>02 · hooks/useChatSession.ts — complete file</summary>
+          <div class="example">
+            <p><strong>Inputs:</strong> selected thread, model, access, and a title-update callback. <strong>Output:</strong> the exported <code>ChatSession</code> interface. Helpers and request bookkeeping stay private.</p>
+            <pre><code>import { useRef, useState } from "react";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient, type MessageRow } from "../utils/trpc";
+import type { thread } from "../components/sidebar/types";
+import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
+
+export type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
+export type ChatMode = "build" | "plan";
+export type AIModel = { model: AIModelId; thinking: AIReasoningEffort };
+
+type Options = {
+  currentThread: thread | null;
+  model: AIModel;
+  access: AccessMode;
+  onTitleChanged: (threadID: string, title: string) =&gt; void;
+};
+
+export type ChatSession = {
+  messages: MessageRow[];
+  isLoadingMessages: boolean;
+  isTurning: boolean;
+  error: string | null;
+  runningThreadIDs: string[];
+  threadStatuses: Record&lt;string, ThreadStatus&gt;;
+  send: (text: string, mode: ChatMode) =&gt; Promise&lt;void&gt;;
+  stop: (targetThreadID?: string) =&gt; Promise&lt;void&gt;;
+};
+
+type Request = {
+  phase: "loading" | "connecting" | "streaming" | "finishing";
+  stopRequested: boolean;
+  stopInFlight: Promise&lt;void&gt; | null;
+};
+
+type SendInput = {
+  thread: thread;
+  text: string;
+  mode: ChatMode;
+  model: AIModel;
+  access: AccessMode;
+  request: Request;
+};
+
+export type ThreadStatus = { busy: boolean; error: string | null };
+const errorText = (error: unknown) =&gt;
+  error instanceof Error ? error.message : "Something went wrong.";
+
+const messageKey = (id: string) =&gt; ["messages", id] as const;
+
+const messageOptions = (id: string) =&gt; queryOptions({
+  queryKey: messageKey(id),
+  queryFn: () =&gt; trpcClient.loadMessages.query({ threadID: id }),
+  staleTime: Infinity,
+  gcTime: Infinity,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+});
+
+export function useChatSession({
+  currentThread, model, access, onTitleChanged,
+}: Options): ChatSession {
+  const client = useQueryClient();
+  const active = useRef(new Map&lt;string, Request&gt;());
+  const [statuses, setStatuses] = useState&lt;Record&lt;string, ThreadStatus&gt;&gt;({});
+  const threadID = currentThread?.id;
+  const history = useQuery({
+    ...messageOptions(threadID ?? ""),
+    enabled: !!threadID,
+  });
+
+  function patchStatus(id: string, patch: Partial&lt;ThreadStatus&gt;) {
+    setStatuses((current) =&gt; ({
+      ...current,
+      [id]: { busy: false, error: null, ...current[id], ...patch },
+    }));
+  }
+
+  // Stop errors remain visible; stream consumption continues until it ends.
+  async function interrupt(id: string, request: Request) {
+    if (request.stopInFlight) return request.stopInFlight;
+    request.stopInFlight = (async () =&gt; {
+      try {
+        await trpcClient.stopTurn.query({ threadID: id });
+      } catch (error) {
+        request.stopRequested = false;
+        if (active.current.get(id) === request) {
+          patchStatus(id, { error: `Could not stop: ${errorText(error)}` });
+        }
+      } finally {
+        request.stopInFlight = null;
+      }
+    })();
+    await request.stopInFlight;
+  }
+
+  const sendMutation = useMutation({
+    // No shared mutation scope: different threads must execute concurrently.
+    // Do not use this mutation's isPending/error as global chat state.
+    retry: false,
+    mutationFn: async (input: SendInput) =&gt; {
+      const { thread, text, mode, model, access, request } = input;
+      const id = thread.id;
+      const key = messageKey(id);
+      await client.ensureQueryData(messageOptions(id));
+      await client.cancelQueries({ queryKey: key, exact: true });
+      if (request.stopRequested) return;
+
+      const assistantID = crypto.randomUUID();
+      client.setQueryData&lt;MessageRow[]&gt;(key, (messages = []) =&gt; [
+        ...messages,
+        { id: crypto.randomUUID(), role: "user", text },
+        { id: assistantID, role: "assistant", text: "" },
+      ]);
+
+      request.phase = "connecting";
+      const stream = await trpcClient.queryAI.query({
+        threadID: id, message: text, model, mode, access,
+      });
+
+      let completed = false;
+      for await (const event of stream) {
+        if (event.method === "turn/completed") {
+          completed = true;
+          request.phase = "finishing";
+          continue;
+        }
+
+        // Wait for response content before interrupting a newly started turn.
+        if (event.method !== "item/agentMessage/delta") continue;
+        const firstDelta = request.phase === "connecting";
+        request.phase = "streaming";
+        if (firstDelta &amp;&amp; request.stopRequested) {
+          await interrupt(id, request);
+        }
+
+        const delta = event.params.delta;
+        client.setQueryData&lt;MessageRow[]&gt;(key, (messages = []) =&gt;
+          messages.map((message) =&gt;
+            message.id === assistantID
+              ? { ...message, text: message.text + delta }
+              : message,
+          ),
+        );
+      }
+
+      // Do not release the guard while an interrupt request is unresolved.
+      await request.stopInFlight;
+      request.phase = "finishing";
+      if (!completed &amp;&amp; !request.stopRequested) {
+        throw new Error("The response stream ended before completion.");
+      }
+      if (!completed || request.stopRequested) return;
+
+      try {
+        const title = await trpcClient.getThreadTitle.mutate({ threadID: id });
+        onTitleChanged(id, title);
+        await client.invalidateQueries({ queryKey: ["threads", thread.projectId] });
+      } catch (error) {
+        patchStatus(id, { error: `Reply received; title refresh failed: ${errorText(error)}` });
+      }
+    },
+  });
+
+  async function send(value: string, mode: ChatMode) {
+    const text = value.trim();
+    if (!text || !currentThread || active.current.has(currentThread.id)) return;
+
+    const id = currentThread.id;
+    const request: Request = {
+      phase: "loading", stopRequested: false, stopInFlight: null,
+    };
+    active.current.set(id, request); // Synchronous duplicate-send guard.
+    patchStatus(id, { busy: true, error: null });
+
+    try {
+      await sendMutation.mutateAsync({
+        thread: currentThread, text, mode, model, access, request,
+      });
+    } catch (error) {
+      patchStatus(id, { error: errorText(error) });
+    } finally {
+      await request.stopInFlight;
+      if (active.current.get(id) === request) {
+        active.current.delete(id);
+        patchStatus(id, { busy: false });
+      }
+    }
+  }
+
+  async function stop(targetThreadID = threadID) {
+    if (!targetThreadID) return;
+    const request = active.current.get(targetThreadID);
+    if (!request || request.phase === "finishing" || request.stopRequested) return;
+    request.stopRequested = true;
+    if (request.phase === "streaming") await interrupt(targetThreadID, request);
+    // Loading: skip send. Connecting: interrupt when the first delta arrives.
+  }
+
+  const status = threadID ? statuses[threadID] : undefined;
+  return {
+    messages: history.data ?? [],
+    isLoadingMessages: !!threadID &amp;&amp; history.isPending,
+    isTurning: status?.busy ?? false,
+    error: status?.error ?? (history.error ? errorText(history.error) : null),
+    runningThreadIDs: Object.keys(statuses).filter((id) =&gt; statuses[id]?.busy),
+    threadStatuses: statuses,
+    send,
+    stop,
+  };
+}</code></pre>
+            <p><strong>Read it in order:</strong> <code>useQuery</code> displays history → <code>send</code> locks the thread → the mutation loads history and streams into its cache → <code>finally</code> unlocks it. <code>return</code> exposes only what the UI needs.</p>
+            <p><strong>Why both refs and state?</strong> The ref blocks a second send immediately, before React rerenders. State makes busy/error changes visible to the UI. Messages live only in the query cache.</p>
+            <p><strong>Concurrency:</strong> each call captures its thread, model, access, and request object before awaiting. Each stream writes only to that thread’s cache. <code>useMutation</code> allows concurrent calls by default; its latest-call status is intentionally ignored. Status updates and cleanup are keyed by thread, and cleanup verifies request identity.</p>
+            <p><strong>Exports for the UI:</strong> <code>isTurning</code> describes only the selected thread. <code>threadStatuses</code> powers background activity/error badges; <code>runningThreadIDs</code> lists all busy threads. <code>stop()</code> targets selection, while <code>stop(id)</code> targets a specific background thread.</p>
+            <p><strong>Cache policy:</strong> infinite stale/GC times preserve history even when a long-running thread is not selected. This keeps messages in memory for the window’s lifetime. Remove entries when deleting threads; explicitly refresh external changes only when idle.</p>
+            <p><strong>Failure policy:</strong> keep partial text and show the error. Do not retry automatically: the server may already have accepted the message. Here <code>isTurning</code> includes setup and title refresh so a new send cannot overlap finishing work.</p>
+            <p><strong>Current stop limitation:</strong> the client’s event type exposes only deltas and completion, so an early stop waits for the first delta. Immediate interruption during reasoning needs a typed turn-start event and a server-ready signal. Also, <code>apps/server/lightThread.ts</code> checks <code>turnId</code> in <code>stopTurn()</code> but never assigns it in the inspected code. That server issue must be fixed for interruption to succeed.</p>
+            <p><strong>Lifetime:</strong> mount this hook once in the window-level provider. Switching threads keeps streams alive. A provider-unmount cancellation policy would need explicit transport/server support; this proposal does not imply that closing a window stops server work.</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>03 · context/useAIChat.tsx — complete file</summary>
+          <div class="example">
+            <p>Import the hook and its exported types. The provider translates the session’s short action names into the names existing UI components already use.</p>
+            <pre><code>import { createContext, useContext, useState, type ReactNode } from "react";
+import type { thread } from "../components/sidebar/types";
+import {
+  useChatSession,
+  type AccessMode,
+  type AIModel,
+  type ChatSession,
+} from "../hooks/useChatSession";
+
+type AIContext = {
+  currentThread: thread | null;
+  setCurrentThread: (thread: thread) =&gt; void;
+  modelSet: (model: AIModel["model"], thinking: AIModel["thinking"]) =&gt; void;
+  access: AccessMode;
+  accessSet: (access: AccessMode) =&gt; void;
+  messages: ChatSession["messages"];
+  messageSend: ChatSession["send"];
+  stopTurn: ChatSession["stop"];
+  isTurning: boolean;
+  isLoadingMessages: boolean;
+  error: string | null;
+  runningThreadIDs: ChatSession["runningThreadIDs"];
+  threadStatuses: ChatSession["threadStatuses"];
+};
+
+const aiContext = createContext&lt;AIContext | undefined&gt;(undefined);
+
+export function AiChatProvider({ children }: { children: ReactNode }) {
+  const [currentThread, setThread] = useState&lt;thread | null&gt;(null);
+  const [model, setModel] = useState&lt;AIModel&gt;({
+    model: "gpt-5.6-luna",
+    thinking: "low",
+  });
+  const [access, setAccess] = useState&lt;AccessMode&gt;("workspace-write");
+
+  const session = useChatSession({
+    currentThread,
+    model,
+    access,
+    onTitleChanged(threadID, title) {
+      setThread((current) =&gt;
+        current?.id === threadID ? { ...current, title } : current,
+      );
+    },
+  });
+
+  return (
+    &lt;aiContext.Provider value={{
+      currentThread,
+      setCurrentThread: setThread,
+      modelSet: (model, thinking) =&gt; setModel({ model, thinking }),
+      access,
+      accessSet: setAccess,
+      messages: session.messages,
+      messageSend: session.send,
+      stopTurn: session.stop,
+      isTurning: session.isTurning,
+      isLoadingMessages: session.isLoadingMessages,
+      error: session.error,
+      runningThreadIDs: session.runningThreadIDs,
+      threadStatuses: session.threadStatuses,
+    }}&gt;
+      {children}
+    &lt;/aiContext.Provider&gt;
+  );
+}
+
+export function useAIChat() {
+  const context = useContext(aiContext);
+  if (!context) {
+    throw new Error("useAIChat must be used within an AiChatProvider!");
+  }
+  return context;
+}</code></pre>
+            <p><strong>Exports:</strong> <code>AiChatProvider</code> creates the shared session; <code>useAIChat</code> reads it. <code>useChatSession</code> is exported from its own file, but only the provider calls it.</p>
+            <p><strong>Result:</strong> the provider selects and shares. The session coordinates. TanStack Query stores fetched data.</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>04 · Existing UI files — integration changes</summary>
+          <div class="example">
+            <p><strong>AISidebar.tsx:</strong> import <code>useProjects</code> and <code>useQueryClient</code>. Remove local <code>projects</code> state, the project query, <code>currentTitle</code>, and the history-loading effect. The hook now supplies the complete sidebar data.</p>
+            <pre><code>const client = useQueryClient();
+const { projects, isLoading, error, createProject } = useProjects();
+const { currentThread, setCurrentThread } = useAIChat();
+
+// After addThread succeeds, replace setProjects(...) with:
+await client.invalidateQueries({ queryKey: ["threads", createdThread.projectId] });
+setCurrentThread(createdThread);
+
+// After deletion succeeds, refresh that project's list and remove its history:
+await client.invalidateQueries({ queryKey: ["threads", projectId] });
+client.removeQueries({ queryKey: ["messages", deletedThreadID], exact: true });</code></pre>
+            <p>Use <code>isLoading</code> for the sidebar loading branch and render <code>error?.message</code> when fetching fails. Project creation uses <code>createProject.mutate()</code>, as shown above. Resolve the deleted thread’s project ID before deletion and apply cache cleanup only after success.</p>
+            <p><strong>ChatMessages.tsx:</strong> read and display the session’s loading/error state next to the existing message list.</p>
+            <pre><code>const { messages, isLoadingMessages, error } = useAIChat();
+
+// Inside the existing JSX:
+{isLoadingMessages &amp;&amp; &lt;p role="status"&gt;Loading messages…&lt;/p&gt;}
+{error &amp;&amp; &lt;p role="alert"&gt;{error}&lt;/p&gt;}</code></pre>
+            <p><strong>Composer.tsx:</strong> its existing <code>messageSend</code>, <code>isTurning</code>, and <code>stopTurn</code> names still work. The session catches action errors and exposes them through context.</p>
+            <p><strong>ThreadItem.tsx:</strong> use that row’s ID to show background activity. Wrap stop in a callback so React does not pass a click event as the thread ID.</p>
+            <pre><code>const { threadStatuses, stopTurn } = useAIChat();
+const status = threadStatuses[thread.id];
+
+// In the row's existing content:
+{status?.busy &amp;&amp; &lt;span role="status"&gt;Running&lt;/span&gt;}
+{status?.error &amp;&amp; &lt;span title={status.error}&gt;Error&lt;/span&gt;}
+
+// Optional separate action beside the row's selection button:
+&lt;button onClick={() =&gt; void stopTurn(thread.id)} disabled={!status?.busy}&gt;
+  Stop
+&lt;/button&gt;</code></pre>
+            <p><strong>Deletion:</strong> disable deleting a busy thread until its run has settled. Deleting only its cache would let the live stream recreate it. Treat finishing/title refresh as busy too.</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>05 · Server requirements for concurrent runs</summary>
+          <div class="example">
+            <p><strong>ThreadService.ts:</strong> add a per-thread server guard around the entire existing <code>sendMessage</code> generator. The frontend guard protects one window; the server guard protects against duplicate requests from other windows too. Different IDs remain independent.</p>
+            <pre><code>// Class field:
+private activeThreadIDs = new Set&lt;string&gt;();
+
+// At the start of sendMessage, before its first await:
+if (this.activeThreadIDs.has(input.threadID)) {
+  throw new Error("This thread already has an active turn.");
+}
+this.activeThreadIDs.add(input.threadID);
+try {
+  // Existing creation, persistence, and streaming body goes here.
+} finally {
+  this.activeThreadIDs.delete(input.threadID);
+}</code></pre>
+            <p><strong>lightThread.ts:</strong> capture <code>event.params.turn.id</code> on <code>turn/started</code> before yielding it, then clear the stored ID when that turn completes or the generator exits. This supplies the ID required by the existing interrupt call.</p>
+            <p><strong>utils/trpc.ts:</strong> expand the handwritten <code>AIEvent</code> type to include turn-start and completion status. Then the session can process queued stops at turn start instead of waiting for text, and distinguish completed, interrupted, and failed turns. The complete hook above deliberately uses the current event type; early stop remains limited until this server/client change is implemented.</p>
+            <p><strong>Verification:</strong> start A and B; switch repeatedly; finish A while B streams; stop A while B streams; fail A; double-send to B; switch back after a long run. Verify separate messages, errors, busy state, titles, and stop targets. Also test a second window sending to the same thread.</p>
+          </div>
+        </details>
+      </section>
+
+      <section aria-labelledby="order">
+        <h2 id="order">Refactor in this order</h2>
+        <ol>
+          <li><strong>Extract projects.</strong> Move fetching and creation; update the sidebar.</li>
+          <li><strong>Introduce message queries.</strong> Replace manual message state with the cache.</li>
+          <li><strong>Extract the session.</strong> Move sending, streaming, stopping, and title refresh.</li>
+          <li><strong>Trim the provider.</strong> Keep settings, selection, and context wiring.</li>
+        </ol>
+      </section>
+
+      <footer>Verify: concurrent A/B runs · delayed history · background completion · isolated stop/errors · duplicate sends</footer>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" data-manual></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-jsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js"></script>
+    <script>
+      if (window.Prism) {
+        document.querySelectorAll("pre code").forEach((block) => {
+          block.classList.add("language-tsx");
+          Prism.highlightElement(block);
+        });
+      }
+    </script>
+  </body>
+</html>
