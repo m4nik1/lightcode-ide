@@ -1,7 +1,7 @@
 import { createContext, useState, useContext, type ReactNode } from "react";
 import { trpcClient } from "../utils/trpc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ChatMessage } from "../components/ChatMessages";
+import type { ChatMessage } from "../components/ChatView";
 import type { thread } from "../components/sidebar/types";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 
@@ -9,7 +9,7 @@ type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 
 type AIContext = {
   messages: ChatMessage[];
-  messageSend: (value: string, mode: "build" | "plan") => Promise<void>;
+  model: AIModel;
   modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   access: AccessMode;
   accessSet: (access: AccessMode) => void;
@@ -93,7 +93,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     <aiContext.Provider
       value={{
         messages,
-        messageSend,
+        model,
         modelSet,
         access,
         accessSet,

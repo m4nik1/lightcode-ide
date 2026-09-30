@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import AISidebar from "./components/sidebar/AISidebar";
 import Composer from "./components/Composer";
-import ChatMessages from "./components/ChatMessages";
+import ChatMessages from "./components/ChatView";
 import { aiTheme } from "./theme";
 import { AiChatProvider, useAIChat } from "./context/useAIChat";
 import { Folder } from "lucide-react";
