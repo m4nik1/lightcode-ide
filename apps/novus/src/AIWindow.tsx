@@ -1,10 +1,11 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import AISidebar from "./components/sidebar/AISidebar";
 import Composer from "./components/Composer";
-import ChatMessages from "./components/ChatMessages";
+import ChatMessages from "./components/ChatView";
 import { aiTheme } from "./theme";
 import { AiChatProvider, useAIChat } from "./context/useAIChat";
 import { Folder } from "lucide-react";
+import { ThreadProvider } from "./context/useThreads";
 import { FileSearchProvider } from "./context/useFileSearch";
 
 function ChatTopBar() {
@@ -48,22 +49,24 @@ export function AIWindow() {
     <main style={styles.root}>
       <div aria-hidden="true" style={styles.blurBackdrop} />
       <FileSearchProvider>
-        <AiChatProvider>
-          <div style={styles.sidebarLayer}>
-            <AISidebar />
-          </div>
-          <div style={styles.mainColumn}>
-            <ChatTopBar />
-            <section style={styles.content}>
-              <ChatMessages bottomInset={composerInset} />
-              <div ref={composerAreaRef} style={styles.composerArea}>
-                <div style={styles.promptWrap}>
-                  <Composer />
+        <ThreadProvider>
+          <AiChatProvider>
+            <div style={styles.sidebarLayer}>
+              <AISidebar />
+            </div>
+            <div style={styles.mainColumn}>
+              <ChatTopBar />
+              <section style={styles.content}>
+                <ChatMessages bottomInset={composerInset} />
+                <div ref={composerAreaRef} style={styles.composerArea}>
+                  <div style={styles.promptWrap}>
+                    <Composer />
+                  </div>
                 </div>
-              </div>
-            </section>
-          </div>
-        </AiChatProvider>
+              </section>
+            </div>
+          </AiChatProvider>
+        </ThreadProvider>
       </FileSearchProvider>
     </main>
   );

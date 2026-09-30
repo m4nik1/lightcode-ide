@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Text streaming: opencode vs lightcode</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #0a0a0a;
+    --muted: #737373;
+    --border: #e5e5e5;
+    --card: #fafafa;
+    --accent: #0a0a0a;
+    --danger: #e5484d;
+    --ok: #30a46c;
+    --code-bg: #f4f4f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --fg: #ededed;
+      --muted: #a1a1a1;
+      --border: #262626;
+      --card: #0a0a0a;
+      --accent: #ededed;
+      --danger: #ff6369;
+      --ok: #3dd68c;
+      --code-bg: #171717;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 64px 24px 96px; }
+  code, .mono { font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  code {
+    font-size: 0.86em;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 6px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 36px; line-height: 1.15; letter-spacing: -0.03em; margin: 0 0 12px; font-weight: 700; }
+  h2 { font-size: 22px; letter-spacing: -0.02em; margin: 64px 0 8px; font-weight: 600; }
+  h3 { font-size: 15px; margin: 32px 0 6px; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .lead { color: var(--muted); font-size: 17px; max-width: 680px; }
+  .muted { color: var(--muted); }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 48px 0 0; }
+
+  .card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+  .card .cap { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 20px 0; }
+  .grid .card { margin: 0; }
+  .grid h3 { margin-top: 0; }
+
+  .table-wrap { border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; margin: 20px 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-weight: 500; color: var(--muted); background: var(--card); font-size: 13px; }
+  td:first-child { font-weight: 500; white-space: nowrap; width: 150px; }
+  td code { font-size: 12px; }
+
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; margin: 16px 0; }
+  ol.steps li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 14px; }
+  ol.steps li::before {
+    content: counter(s);
+    position: absolute; left: 0; top: 1px;
+    width: 24px; height: 24px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 12px; font-weight: 600;
+    display: grid; place-items: center;
+  }
+
+  /* SVG theming */
+  svg { display: block; width: 100%; height: auto; }
+  svg text { fill: var(--fg); font-family: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-weight: 500; }
+  svg .s { fill: var(--muted); font-family: "Geist Mono", ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 400; }
+  svg .lbl { fill: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+  svg .box { fill: var(--bg); stroke: var(--border); stroke-width: 1.25; }
+  svg .box-hi { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; }
+  svg .box-bad { fill: var(--bg); stroke: var(--danger); stroke-width: 1.5; stroke-dasharray: 5 4; }
+  svg .tok { fill: var(--code-bg); stroke: var(--border); stroke-width: 1; }
+  svg .merged { fill: var(--accent); }
+  svg .merged-t { fill: var(--bg); font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; }
+  svg .line { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  svg .dash { stroke: var(--border); stroke-width: 1.25; stroke-dasharray: 4 4; fill: none; }
+  svg .live { fill: none; stroke: var(--muted); stroke-width: 1.25; stroke-dasharray: 3 3; }
+  svg .solid { fill: var(--accent); }
+  svg .bad-t { fill: var(--danger); }
+  svg .arrow-head { fill: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+  <span class="badge">Streaming · architecture notes</span>
+  <h1>Text streaming: opencode vs lightcode</h1>
+  <p class="lead">
+    opencode publishes every token as a small typed event onto one long-lived SSE connection and batches
+    them on the client. lightcode forwards raw Codex notifications through one tRPC stream per request,
+    and the renderer currently discards the text deltas.
+  </p>
+
+  <!-- ─────────────────────────── Comparison table ─────────────────────────── -->
+  <h2>Side by side</h2>
+  <p class="muted">Where each project puts its buffering, persistence and failure handling.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Aspect</th><th>opencode</th><th>lightcode</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Upstream</td>
+          <td>Provider HTTP SSE, framed by <code>packages/llm</code> (<code>Framing.sse</code>) into typed <code>LLMEvent</code>s.</td>
+          <td>Codex CLI child process (<code>app-server --stdio</code>), JSONL notifications via <code>@lightcode/codex-protocol</code>.</td>
+        </tr>
+        <tr>
+          <td>Unit streamed</td>
+          <td>Domain events: <code>session.next.text.delta</code> <code>{ textID, delta }</code> (v1: <code>message.part.delta</code>).</td>
+          <td>Raw Codex <code>ServerNotification</code>s, e.g. <code>item/agentMessage/delta</code>.</td>
+        </tr>
+        <tr>
+          <td>Transport to client</td>
+          <td>One long-lived <code>text/event-stream</code> (<code>event.subscribe</code>) carrying all events for all sessions.</td>
+          <td>tRPC <code>httpBatchStreamLink</code>: an async generator, one stream per <code>queryAI</code> call.</td>
+        </tr>
+        <tr>
+          <td>Coupling to the request</td>
+          <td>Decoupled. Prompt is admitted durably, execution is woken separately, events arrive on the shared stream.</td>
+          <td>Coupled. The stream <em>is</em> the response of the request that started the turn.</td>
+        </tr>
+        <tr>
+          <td>Server buffering</td>
+          <td>Bounded subscriber (<code>256</code>) on v2; unbounded queue on v1. <code>X-Accel-Buffering: no</code>. One event per token (coalescing is a TODO).</td>
+          <td><code>BoundedAsyncQueue</code> (<code>1024</code>) per turn; overflow fails the turn. No coalescing.</td>
+        </tr>
+        <tr>
+          <td>Keep-alive / reconnect</td>
+          <td>Heartbeat every 15 s (v2) / 10 s (v1). Client re-subscribes after 250 ms.</td>
+          <td>None. If the HTTP stream drops, the turn's live output is lost.</td>
+        </tr>
+        <tr>
+          <td>Persistence</td>
+          <td>Deltas are live-only. <code>Text.Ended</code> carries the full text and is durable and replayable.</td>
+          <td>Deltas are ephemeral. Only <code>item/completed</code> with <code>phase == final_answer</code> is stored.</td>
+        </tr>
+        <tr>
+          <td>Client batching</td>
+          <td>Queue, flush every 16 ms, merge consecutive deltas for the same part, yield to the loop every 8 ms, one Solid <code>batch()</code>.</td>
+          <td>None. Each chunk is handled as it arrives (and today does nothing).</td>
+        </tr>
+        <tr>
+          <td>Client state</td>
+          <td>Reducer: <code>text += delta</code>; <code>text.ended</code> overwrites with the authoritative value.</td>
+          <td>Intended: React Query cache. Currently <code>loadMessages</code> only; deltas are dropped.</td>
+        </tr>
+        <tr>
+          <td>Cancellation</td>
+          <td>Interrupt targets the active process-local ownership chain for the session; idle is a no-op.</td>
+          <td><code>stopTurn</code> needs <code>turnId</code>, which is never assigned. Client disconnect does not interrupt the turn.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ─────────────────────────── opencode ─────────────────────────── -->
+  <h2>How streaming works in opencode</h2>
+  <p class="muted">Token to pixel, in two hops: server publishes events, client batches them.</p>
+
+  <div class="card">
+    <svg viewBox="0 0 960 300" role="img" aria-label="opencode streaming pipeline">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-head" />
+        </marker>
+      </defs>
+
+      <text class="lbl" x="0" y="14">SERVER · packages/llm, core</text>
+
+      <!-- row 1 -->
+      <rect class="box" x="0"   y="28" width="190" height="70" rx="10" />
+      <text x="16" y="56">Provider stream</text>
+      <text class="s" x="16" y="76">SSE frames</text>
+
+      <rect class="box" x="250" y="28" width="190" height="70" rx="10" />
+      <text x="266" y="56">LLMEvent</text>
+      <text class="s" x="266" y="76">text-start · delta · end</text>
+
+      <rect class="box" x="500" y="28" width="190" height="70" rx="10" />
+      <text x="516" y="56">publish-llm-event</text>
+      <text class="s" x="516" y="76">buffer + publish per delta</text>
+
+      <rect class="box-hi" x="750" y="28" width="190" height="70" rx="10" />
+      <text x="766" y="56">EventV2 bus</text>
+      <text class="s" x="766" y="76">session.next.text.delta</text>
+
+      <line class="line" x1="192" y1="63" x2="246" y2="63" marker-end="url(#ah)" />
+      <line class="line" x1="442" y1="63" x2="496" y2="63" marker-end="url(#ah)" />
+      <line class="line" x1="692" y1="63" x2="746" y2="63" marker-end="url(#ah)" />
+
+      <!-- elbow across the wire -->
+      <path class="line" d="M845 100 L845 152 L95 152 L95 204" marker-end="url(#ah)" />
+      <text class="s" x="430" y="145">one long-lived text/event-stream</text>
+
+      <text class="lbl" x="112" y="196">WIRE + CLIENT · packages/server, app</text>
+
+      <!-- row 2 -->
+      <rect class="box" x="0"   y="208" width="190" height="70" rx="10" />
+      <text x="16" y="236">event.subscribe</text>
+      <text class="s" x="16" y="256">Sse.encode · heartbeat</text>
+
+      <rect class="box-hi" x="250" y="208" width="190" height="70" rx="10" />
+      <text x="266" y="236">Client queue</text>
+      <text class="s" x="266" y="256">16 ms flush · coalesce</text>
+
+      <rect class="box" x="500" y="208" width="190" height="70" rx="10" />
+      <text x="516" y="236">Reducer</text>
+      <text class="s" x="516" y="256">text += delta</text>
+
+      <rect class="box" x="750" y="208" width="190" height="70" rx="10" />
+      <text x="766" y="236">Render</text>
+      <text class="s" x="766" y="256">Solid batch()</text>
+
+      <line class="line" x1="192" y1="243" x2="246" y2="243" marker-end="url(#ah)" />
+      <line class="line" x1="442" y1="243" x2="496" y2="243" marker-end="url(#ah)" />
+      <line class="line" x1="692" y1="243" x2="746" y2="243" marker-end="url(#ah)" />
+    </svg>
+    <p class="cap">The server never batches; every provider token becomes one event. All smoothing happens in the client queue.</p>
+  </div>
+
+  <ol class="steps">
+    <li><strong>Provider to <code>LLMEvent</code>.</strong> <code>packages/llm</code> decodes the provider's SSE body into typed events: <code>text-start</code>, <code>text-delta</code>, <code>text-end</code>.</li>
+    <li><strong>Publish per delta.</strong> <code>publish-llm-event.ts</code> appends each delta to an in-memory buffer and publishes <code>session.next.text.delta</code>. On <code>text-end</code> it publishes <code>Text.Ended</code> with the joined text.</li>
+    <li><strong>Fan out over SSE.</strong> <code>handlers/event.ts</code> subscribes to the bus with a bounded queue (256), sends <code>server.connected</code>, then live events, plus a <code>: heartbeat</code> comment. Headers disable proxy buffering.</li>
+    <li><strong>Queue and coalesce.</strong> <code>server-sdk.tsx</code> reads with <code>for await</code>, pushes into a queue, and flushes on a 16 ms timer. <code>coalesceServerEvents</code> concatenates consecutive deltas for the same part.</li>
+    <li><strong>Reduce and render.</strong> The reducer appends the delta. <code>text.ended</code> replaces the text with the full value, so any drift is corrected.</li>
+  </ol>
+
+  <h3>Why the client coalesces</h3>
+  <div class="card">
+    <svg viewBox="0 0 960 250" role="img" aria-label="Deltas coalesced into one update per frame">
+      <text class="lbl" x="0" y="36">SSE FRAMES</text>
+      <text class="lbl" x="0" y="176">STATE UPDATES</text>
+
+      <!-- frame separators -->
+      <line class="dash" x1="120" y1="14" x2="120" y2="222" />
+      <line class="dash" x1="330" y1="14" x2="330" y2="222" />
+      <line class="dash" x1="540" y1="14" x2="540" y2="222" />
+      <line class="dash" x1="750" y1="14" x2="750" y2="222" />
+      <line class="dash" x1="960" y1="14" x2="960" y2="222" />
+      <text class="s" x="126" y="12">16 ms</text>
+      <text class="s" x="336" y="12">16 ms</text>
+      <text class="s" x="546" y="12">16 ms</text>
+      <text class="s" x="756" y="12">16 ms</text>
+
+      <!-- tokens frame 1 -->
+      <rect class="tok" x="130" y="24" width="60" height="28" rx="6" /><text class="s" x="138" y="43">The</text>
+      <rect class="tok" x="196" y="24" width="60" height="28" rx="6" /><text class="s" x="204" y="43">quick</text>
+      <rect class="tok" x="262" y="24" width="60" height="28" rx="6" /><text class="s" x="270" y="43">brown</text>
+      <!-- frame 2 -->
+      <rect class="tok" x="340" y="24" width="60" height="28" rx="6" /><text class="s" x="348" y="43">fox</text>
+      <rect class="tok" x="406" y="24" width="60" height="28" rx="6" /><text class="s" x="414" y="43">jumps</text>
+      <rect class="tok" x="472" y="24" width="60" height="28" rx="6" /><text class="s" x="480" y="43">over</text>
+      <!-- frame 3 -->
+      <rect class="tok" x="550" y="24" width="60" height="28" rx="6" /><text class="s" x="558" y="43">the</text>
+      <rect class="tok" x="616" y="24" width="60" height="28" rx="6" /><text class="s" x="624" y="43">lazy</text>
+      <!-- frame 4 -->
+      <rect class="tok" x="760" y="24" width="60" height="28" rx="6" /><text class="s" x="768" y="43">dog</text>
+      <rect class="tok" x="826" y="24" width="60" height="28" rx="6" /><text class="s" x="834" y="43">and</text>
+      <rect class="tok" x="892" y="24" width="60" height="28" rx="6" /><text class="s" x="900" y="43">runs</text>
+
+      <!-- arrows -->
+      <path class="line" d="M225 56 L225 74 M225 74 L225 150" marker-end="url(#ah2)" />
+      <path class="line" d="M435 56 L435 150" marker-end="url(#ah2)" />
+      <path class="line" d="M645 56 L645 150" marker-end="url(#ah2)" />
+      <path class="line" d="M855 56 L855 150" marker-end="url(#ah2)" />
+      <text class="s" x="232" y="108">concat</text>
+      <text class="s" x="442" y="108">concat</text>
+      <text class="s" x="652" y="108">concat</text>
+      <text class="s" x="862" y="108">concat</text>
+
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-head" />
+        </marker>
+      </defs>
+
+      <!-- merged -->
+      <rect class="merged" x="130" y="156" width="190" height="36" rx="8" /><text class="merged-t" x="142" y="179">The quick brown</text>
+      <rect class="merged" x="340" y="156" width="190" height="36" rx="8" /><text class="merged-t" x="352" y="179">fox jumps over</text>
+      <rect class="merged" x="550" y="156" width="190" height="36" rx="8" /><text class="merged-t" x="562" y="179">the lazy</text>
+      <rect class="merged" x="760" y="156" width="190" height="36" rx="8" /><text class="merged-t" x="772" y="179">dog and runs</text>
+
+      <text class="s" x="130" y="242">11 events in, 4 store updates out. Each update is a single Solid batch() and render.</text>
+    </svg>
+    <p class="cap">Without coalescing, every token is a reactive update. With it, render cost scales with frames, not tokens.</p>
+  </div>
+
+  <h3>Live-only deltas, durable ends</h3>
+  <div class="card">
+    <svg viewBox="0 0 960 200" role="img" aria-label="Event lifecycle: started, deltas, ended">
+      <line class="line" x1="30" y1="86" x2="930" y2="86" />
+
+      <!-- started -->
+      <circle class="solid" cx="60" cy="86" r="9" />
+      <text x="30" y="58">text.started</text>
+      <text class="s" x="30" y="126">creates empty part</text>
+
+      <!-- deltas -->
+      <circle class="live" cx="230" cy="86" r="7" />
+      <circle class="live" cx="290" cy="86" r="7" />
+      <circle class="live" cx="350" cy="86" r="7" />
+      <circle class="live" cx="410" cy="86" r="7" />
+      <circle class="live" cx="470" cy="86" r="7" />
+      <circle class="live" cx="530" cy="86" r="7" />
+      <circle class="live" cx="590" cy="86" r="7" />
+      <circle class="live" cx="650" cy="86" r="7" />
+      <path class="line" d="M215 56 L215 48 L665 48 L665 56" />
+      <text x="330" y="38">text.delta × N</text>
+      <text class="s" x="215" y="126">live only · not stored · appended to UI</text>
+
+      <!-- ended -->
+      <circle class="solid" cx="870" cy="86" r="11" />
+      <text x="800" y="58">text.ended</text>
+      <text class="s" x="700" y="126">full text · durable · replayable</text>
+      <text class="s" x="700" y="144">UI overwrites with authoritative value</text>
+
+      <text class="s" x="30" y="184">A reconnecting client misses deltas, but replay gives it the ended text, so history is always correct.</text>
+    </svg>
+    <p class="cap">The stream is a preview. The database row is the truth.</p>
+  </div>
+
+  <!-- ─────────────────────────── lightcode ─────────────────────────── -->
+  <h2>How streaming works in lightcode today</h2>
+  <p class="muted">Same idea, fewer stages, and a dead end at the last one.</p>
+
+  <div class="card">
+    <svg viewBox="0 0 960 190" role="img" aria-label="lightcode streaming pipeline">
+      <defs>
+        <marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-head" />
+        </marker>
+      </defs>
+
+      <rect class="box" x="0" y="20" width="160" height="72" rx="10" />
+      <text x="14" y="48">Codex CLI</text>
+      <text class="s" x="14" y="68">app-server --stdio</text>
+
+      <rect class="box" x="200" y="20" width="160" height="72" rx="10" />
+      <text x="214" y="48">streamTurn</text>
+      <text class="s" x="214" y="68">bounded queue · 1024</text>
+
+      <rect class="box-hi" x="400" y="20" width="160" height="72" rx="10" />
+      <text x="414" y="48">ThreadService</text>
+      <text class="s" x="414" y="68">store on final_answer</text>
+
+      <rect class="box" x="600" y="20" width="160" height="72" rx="10" />
+      <text x="614" y="48">queryAI</text>
+      <text class="s" x="614" y="68">httpBatchStreamLink</text>
+
+      <rect class="box-bad" x="800" y="20" width="160" height="72" rx="10" />
+      <text x="814" y="48">useChatSession</text>
+      <text class="s bad-t" x="814" y="68">delta read, dropped</text>
+
+      <line class="line" x1="162" y1="56" x2="196" y2="56" marker-end="url(#ah3)" />
+      <line class="line" x1="362" y1="56" x2="396" y2="56" marker-end="url(#ah3)" />
+      <line class="line" x1="562" y1="56" x2="596" y2="56" marker-end="url(#ah3)" />
+      <line class="line" x1="762" y1="56" x2="796" y2="56" marker-end="url(#ah3)" />
+
+      <path class="line" d="M480 94 L480 130 L900 130" />
+      <text class="s" x="490" y="148">notifications pass through unchanged</text>
+      <text class="s" x="490" y="166">the stream lives and dies with this one HTTP request</text>
+    </svg>
+    <p class="cap">Everything up to <code>queryAI</code> works. The last hop reads <code>chunk.params.delta</code> and never writes it anywhere.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>What works</h3>
+      <p class="muted">Stdio notifications are filtered per thread and turn, buffered, and streamed to the renderer. The final answer is persisted at <code>item/completed</code>.</p>
+    </div>
+    <div class="card">
+      <h3>What is missing</h3>
+      <p class="muted">No client accumulation, no batching, no reconnect, and <code>turnId</code> is never set, so <code>stopTurn</code> always throws.</p>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── Takeaways ─────────────────────────── -->
+  <h2>What to borrow</h2>
+  <ol class="steps">
+    <li><strong>Accumulate in one store.</strong> Stream into <code>["messages", threadID]</code> in the React Query cache with <code>setQueryData</code>, and treat the DB row as the truth.</li>
+    <li><strong>Coalesce on the client.</strong> Buffer deltas in a string and flush every ~16 ms (or <code>requestAnimationFrame</code>) so one flush is one render.</li>
+    <li><strong>Reconcile on end.</strong> When the turn completes, flush the buffer, then invalidate or overwrite with the stored final text, like <code>text.ended</code>.</li>
+    <li><strong>Make the turn cancellable.</strong> Capture <code>turnId</code> from <code>turn/started</code>, and interrupt on stop or client disconnect.</li>
+    <li><strong>Later: decouple stream from request.</strong> A shared event stream with heartbeat and reconnect would survive dropped connections. That is a larger change than the four above.</li>
+  </ol>
+
+  <hr />
+  <p class="muted" style="margin-top:16px;font-size:13px">
+    Sources: opencode <code>packages/{llm,core,server,app}</code>; lightcode <code>apps/{server,novus}</code> and <code>packages/codex-protocol</code>.
+  </p>
+
+</main>
+</body>
+</html>
