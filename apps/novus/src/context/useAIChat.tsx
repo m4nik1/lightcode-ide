@@ -27,7 +27,6 @@ type AIModel = {
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient();
   const [messagesByThread, setMessagesByThread] = useState<
     Record<string, ChatMessage[]>
   >({});
@@ -39,10 +38,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     thinking: "low",
   });
   const [access, setAccess] = useState<AccessMode>("workspace-write");
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => trpcClient.getProjects.query(),
-  });
   const messages = currentThread
     ? (messagesByThread[currentThread.id] ?? [])
     : [];
