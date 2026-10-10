@@ -170,7 +170,7 @@
 
 <header>
   <h1>Per-thread streaming plan</h1>
-  <p class="lede">Move streamed text out of the shared chat context into a per-thread store. Thread A keeps streaming while you open B, and each view re-renders only for its own thread. Proposal only; no app code has changed.</p>
+  <p class="lede">Move streamed text out of the shared chat context into one zustand store per thread. A keeps streaming while you view B, and each view re-renders only for its own thread. Proposal only; no app code has changed.</p>
 </header>
 
 <!-- Interactive model of the proposed store -->
@@ -191,27 +191,27 @@
     <canvas id="gl"></canvas>
     <div class="loading">Loading stream diagram…</div>
     <div class="overlay" id="overlay"></div>
-    <div class="fallback">The 3D view needs WebGL and the Three.js CDN. The readout below runs the same store model without it.</div>
+    <div class="fallback">The 3D view needs WebGL and the Three.js CDN. The readout below runs the same model without it.</div>
   </div>
   <div class="readout" id="readout" role="tabpanel" aria-labelledby="tab-A">
     <div class="col" id="col-A"></div>
     <div class="col" id="col-B"></div>
   </div>
   <div class="live" aria-label="Selected thread view"><div class="live-text" id="live"></div></div>
-  <p class="caption" id="status-line" role="status" aria-live="polite">Send in A, switch to B, send there too. Both keep receiving chunks; only the selected thread reaches the view.</p>
+  <p class="caption" id="status-line" role="status" aria-live="polite">Send in A, switch to B, send there too. Both keep streaming; only the selected thread reaches the view.</p>
 </section>
-<p class="muted" style="margin-top:-18px;font-size:12.5px">Left to right: server stream, store entry, mounted view. Dots into an entry are chunks; dots into the view are snapshot notifications from the selected thread only. The demo blocks a second send per thread for simplicity; the real overlap policy is open.</p>
+<p class="muted" style="margin-top:-18px;font-size:12.5px">Left to right: server stream, store, view. Dots into a store are chunks; dots into the view come from the selected thread only. The demo blocks a second send per thread; the real policy is open.</p>
 
 <!-- Today -->
 <section>
   <h2>What happens today</h2>
   <ul>
-    <li><code>context/useAIChat.tsx</code> keeps <code>Record&lt;string, ChatMessage[]&gt;</code>. Every delta copies the record, runs <code>.map()</code> over the thread history and re-renders every consumer.</li>
-    <li><code>isTurning</code> is global and flips on for every non-<code>turn/completed</code> event, so threads cannot report separate status.</li>
-    <li><code>setCurrentThread</code> always reloads and replaces the array, so switching back mid-stream can overwrite live text with stale server history.</li>
+    <li><code>context/useAIChat.tsx</code> holds <code>Record&lt;string, ChatMessage[]&gt;</code>. Each delta copies it, maps the thread's history and re-renders every consumer.</li>
+    <li><code>isTurning</code> is global, so threads can't show their own status.</li>
+    <li><code>setCurrentThread</code> always reloads, so switching back mid-stream can replace live text with stale history.</li>
     <li><code>lightThread.ts</code> never sets <code>turnId</code>, so <code>stopTurn()</code> always throws.</li>
-    <li>The server persists only <code>final_answer</code> messages. The frontend <code>AIEvent</code> type knows only the delta and <code>turn/completed</code>, with no IDs or outcome.</li>
-    <li><code>AISidebar.tsx</code> keeps its own project state beside the React Query cache.</li>
+    <li>The server saves only <code>final_answer</code> messages. The frontend <code>AIEvent</code> type knows only the delta and <code>turn/completed</code>, with no IDs or outcome.</li>
+    <li><code>AISidebar.tsx</code> keeps its own project state beside React Query.</li>
   </ul>
 </section>
 
@@ -220,27 +220,27 @@
   <section>
     <h2>Decided <span class="pill">approved</span></h2>
     <ul>
-      <li>No <code>.map</code>, history scan or all-thread record copy per chunk.</li>
+      <li>No <code>.map</code>, history scan or record copy per chunk.</li>
       <li>A keeps streaming while B is selected; B can start while A runs.</li>
       <li>Partial text stays in memory after error, stop and thread switches.</li>
-      <li>Per-thread store with per-thread listeners and cached immutable snapshots.</li>
-      <li>Switching or unmounting a view unsubscribes; it never aborts a stream.</li>
+      <li>One zustand store per thread, read with selectors.</li>
+      <li>Switching or unmounting a view never stops a stream.</li>
       <li>No token text in shared context.</li>
-      <li>Per-thread status; no global <code>isTurning</code>.</li>
+      <li>Status is per thread; no global <code>isTurning</code>.</li>
     </ul>
   </section>
   <section>
     <h2>Unresolved <span class="pill open">needs a call</span></h2>
     <ul>
-      <li>Second send on a streaming thread: block, queue, steer or run concurrently. The plan assumes none.</li>
-      <li>How tool calls and reasoning group under a turn. Today all <code>agentMessage</code> deltas join into one response; the plan keeps that.</li>
+      <li>Second send on a streaming thread: block, queue, steer or run both? Not chosen yet.</li>
+      <li>How tool calls and reasoning group under a turn. For now all <code>agentMessage</code> deltas join into one reply.</li>
     </ul>
   </section>
   <section>
     <h2>Deferred <span class="pill">later</span></h2>
     <ul>
-      <li>Persisting partial text and recovering it after reload.</li>
-      <li>Reconciling server history IDs with optimistic frontend IDs.</li>
+      <li>Keeping partial text across reloads.</li>
+      <li>Matching server message IDs with local IDs.</li>
     </ul>
   </section>
 </div>
@@ -252,170 +252,244 @@
   <div class="phases">
 
     <details open>
-      <summary><span class="n">1</span><span><span class="t">Store and boundaries</span><span class="s">Per-thread store read via useSyncExternalStore</span></span><span class="chev">›</span></summary>
+      <summary><span class="n">1</span><span><span class="t">Per-thread zustand stores</span><span class="s">One vanilla store per thread, read with selectors</span></span><span class="chev">›</span></summary>
       <div class="body">
-        <p>A plain TypeScript store, created once above the chat view so it outlives the mounted thread. Entries are mutable internally; React sees only frozen snapshots, and published arrays and messages are never mutated.</p>
-<pre><code>type ThreadStatus = "idle" | "loading" | "streaming"
-  | "completed" | "interrupted" | "failed";
 
-type ThreadEntry = {
-  history: readonly ChatMessage[];        // committed; replaced only on commit/hydrate
-  live: { requestId: string; turnId: string | null; text: string } | null;
-  retained: readonly ChatMessage[]; // partial drafts; append only when settling
+        <p>Install: <code>npm install zustand@^5 -w @novus/web</code> (desktop already uses 5.0.14).</p>
+        <p>Each thread gets its own store in a Map. A delta updates only that store, so other threads' subscribers never run. One global store would copy the record and run every selector per chunk.</p>
+        <h3><code>apps/web/src/lib/threadStore.ts</code> <span class="pill">new</span></h3>
+        <pre><code>export type ThreadStatus = "idle" | "streaming" | "completed" | "interrupted" | "failed";
+export type SettledStatus = Exclude&lt;ThreadStatus, "idle" | "streaming"&gt;;
+
+export type ThreadState = {
+  history: readonly ChatMessage[]; // replaced only on send, settle and hydrate
+  live: { requestId: string; text: string } | null;
   status: ThreadStatus;
   error: string | null;
-  hydration: "none" | "pending" | "done";
-  snapshot: ThreadSnapshot | null;   // cache; null = needs rebuild
+  hydrated: boolean;
 };
 
-class ThreadChatStore {
-  private entries = new Map&lt;string, ThreadEntry&gt;();
-  private listeners = new Map&lt;string, Set&lt;() =&gt; void&gt;&gt;();
+const stores = new Map&lt;string, StoreApi&lt;ThreadState&gt;&gt;();
 
-  subscribe(threadId: string, fn: () =&gt; void) {
-    let set = this.listeners.get(threadId);
-    if (!set) this.listeners.set(threadId, (set = new Set()));
-    set.add(fn);
-    return () =&gt; { set!.delete(fn); if (!set!.size) this.listeners.delete(threadId); };
-  }
+// ... getThreadStore(id): get or create the store
+// ... useThread(id, selector): useStore on that store
+// ... hydrate(id): load history once; shares an in-flight request
+// ... beginTurn(id, requestId, text): add the user message, live = "", status "streaming"
 
-  getSnapshot(threadId: string): ThreadSnapshot {
-    const e = this.entries.get(threadId);
-    if (!e) return EMPTY_SNAPSHOT;               // shared frozen constant
-    return (e.snapshot ??= Object.freeze({
-      history: e.history, live: e.live?.text ?? null,
-      retained: e.retained, status: e.status, error: e.error,
-    }));
-  }
+export function appendDelta(threadId: string, requestId: string, delta: string) {
+  const store = getThreadStore(threadId);
+  const { live } = store.getState();
+  if (live?.requestId !== requestId) return; // stale stream
+  store.setState({ live: { requestId, text: live.text + delta } }); // history untouched
+}
 
-  appendDelta(threadId: string, requestId: string, delta: string) {
-    const e = this.entries.get(threadId);       // direct lookup, no scan
-    if (!e?.live || e.live.requestId !== requestId) return;  // stale stream
-    e.live.text += delta;
-    e.snapshot = null;                           // new object next read
-    this.emit(threadId);                         // only this thread's listeners
-  }
+export function settle(threadId: string, requestId: string, status: SettledStatus, error: string | null) {
+  getThreadStore(threadId).setState((s) =&gt; {
+    if (s.live?.requestId !== requestId) return s; // same object: no notify
+    const reply: ChatMessage = {
+      id: requestId,
+      role: "assistant",
+      text: s.live.text,
+      interrupted: status !== "completed",
+    };
+    const keep = status === "completed" || reply.text.length &gt; 0;
+    return { history: keep ? [...s.history, reply] : s.history, live: null, status, error };
+  });
 }</code></pre>
         <ul>
-          <li>The snapshot reference is stable between changes, as <code>useSyncExternalStore</code> requires; a change builds a new one.</li>
-          <li>Deltas never touch <code>history</code>, so <code>ChatMessages</code> can memoize it and re-render only the live block.</li>
-          <li>Per chunk: one Map lookup, one concat, one small object, one listener call. The live block still re-renders, but history-sized and thread-count-sized work is gone.</li>
+          <li>Per chunk: one Map lookup, one string join, one small object. <code>history</code> keeps its reference.</li>
+          <li>On stop or failure, partial text joins history once, marked <code>interrupted</code>.</li>
+          <li>Returning <code>s</code> skips the notify, so stale settles do nothing.</li>
         </ul>
+
       </div>
     </details>
 
     <details>
-      <summary><span class="n">2</span><span><span class="t">Stream lifecycle</span><span class="s">One service owns each stream</span></span><span class="chev">›</span></summary>
+      <summary><span class="n">2</span><span><span class="t">Stream lifecycle</span><span class="s">Plain functions that own a stream from send to settle</span></span><span class="chev">›</span></summary>
       <div class="body">
-        <p><code>ThreadStreamService</code> starts queries and writes only through the <code>threadId</code> and fresh <code>requestId</code> it captured, so selection can change freely.</p>
-<pre><code>async send(threadId, text, settings) {
-  const requestId = crypto.randomUUID();
-  store.beginTurn(threadId, requestId, userMessage(text)); // status: streaming
-  let outcome: ThreadStatus = "failed";
+
+        <p>Each stream writes through its captured <code>threadId</code> and <code>requestId</code>, so switching threads never touches it.</p>
+        <h3><code>apps/web/src/lib/threadStream.ts</code> <span class="pill">new</span></h3>
+        <pre><code>export async function sendMessage(threadId: string, text: string, mode: "build" | "plan") {
+  const store = getThreadStore(threadId);
   try {
-    const stream = await trpcClient.queryAI.query({ threadID: threadId, ... });
-    for await (const ev of stream) {
-      switch (ev.method) {
-        case "turn/started":   store.setTurnId(threadId, requestId, ev.params.turn.id); break;
-        case "item/agentMessage/delta":
-                               store.appendDelta(threadId, requestId, ev.params.delta); break;
-        case "turn/completed": outcome = ev.params.turn.status; break; // completed | interrupted | failed
+    await hydrate(threadId);
+  } catch (err) {
+    store.setState({ status: "failed", error: errorMessage(err) });
+    return;
+  }
+  // Interim guard; the same-thread overlap policy is still open.
+  if (store.getState().status === "streaming") return;
+
+  const { model, access } = useSession.getState(); // captured for this turn
+  const requestId = crypto.randomUUID();
+  beginTurn(threadId, requestId, text);
+
+  let status: SettledStatus = "failed";
+  let error: string | null = "Stream ended before turn/completed";
+  try {
+    const stream = await trpcClient.queryAI.query({ threadID: threadId, message: text, model, mode, access });
+    for await (const event of stream) {
+      if (event.method === "item/agentMessage/delta") {
+        appendDelta(threadId, requestId, event.params.delta);
+      } else if (event.method === "turn/completed") {
+        const { turn } = event.params;
+        status = turn.status === "inProgress" ? "failed" : turn.status;
+        error = turn.error?.message ?? null;
       }
     }
-    // EOF without turn/completed keeps outcome "failed" with a clear message
   } catch (err) {
-    outcome = "failed"; store.setError(threadId, requestId, err);   // startup or transport
+    status = "failed";
+    error = errorMessage(err);
   } finally {
-    store.settle(threadId, requestId, outcome);
+    settle(threadId, requestId, status, error);
   }
-}</code></pre>
+  // ... refresh the title, invalidate ["projects"]
+}
+
+// ... stopTurn(id): call trpcClient.stopTurn; status settles from turn/completed ("interrupted")</code></pre>
         <ul>
-          <li><code>settle</code> on <code>completed</code> appends the assistant message to history once and clears <code>live</code>. History changes only on a user message, completion or hydration, never on a delta.</li>
-          <li>On <code>interrupted</code> or <code>failed</code>, partial text is appended to <code>retained</code>, an immutable list of drafts. Drafts stay visible outside history, so the next query does not erase them. Render history, drafts and live text in send order using a per-turn sequence; the request ID serves as draft identity for now.</li>
-          <li>Every write checks <code>requestId</code>, so late events from an older request are dropped.</li>
-          <li>Title fetch and <code>["threads", projectId]</code> invalidation run after settle, keyed by the captured thread.</li>
-          <li><b>Hydration:</b> load history once per thread, deduped by an in-flight promise. If the entry already has <code>live</code>, <code>retained</code> or uncommitted messages, skip the overwrite. This avoids ID matching for now.</li>
+          <li>EOF without <code>turn/completed</code> settles as <code>failed</code> and keeps partial text.</li>
+          <li>Hydration runs before the first write, so server history can't overwrite local messages.</li>
         </ul>
+
       </div>
     </details>
 
     <details>
-      <summary><span class="n">3</span><span><span class="t">Hooks and consumers</span><span class="s">Split the context by change frequency</span></span><span class="chev">›</span></summary>
+      <summary><span class="n">3</span><span><span class="t">Session store and components</span><span class="s">Replace the context with a zustand hook</span></span><span class="chev">›</span></summary>
       <div class="body">
-        <div class="files" role="table" aria-label="Hooks">
-          <div class="k" role="cell">useProjects()</div><div class="v" role="cell">React Query: fetch, create, invalidate</div>
-          <div class="k" role="cell">useThreads(projectId)</div><div class="v" role="cell">Query key per project; create, delete, rename</div>
-          <div class="k" role="cell">useChatSession()</div><div class="v" role="cell">Selected thread ID, model, reasoning, access</div>
-          <div class="k" role="cell">useAIChat(threadId)</div><div class="v" role="cell">Snapshot subscription plus send and stop</div>
-        </div>
-        <ul style="margin-top:10px">
-          <li><code>useChatSession</code> holds only the selected thread ID. Title and project come from the thread query cache. It changes on user actions, never per token.</li>
-          <li><code>useAIChat(threadId)</code> passes stable callbacks <code>subscribe = listener =&gt; store.subscribe(threadId, listener)</code> and <code>getSnapshot = () =&gt; store.getSnapshot(threadId)</code> to <code>useSyncExternalStore</code> and exposes <code>send</code> and <code>stop</code> for that thread. Unmounting removes the listener; the stream continues.</li>
-          <li><code>ChatMessages.tsx</code> renders memoized history, retained drafts and one live block. Auto-scroll must also track <code>live</code> length.</li>
-          <li><code>AISidebar.tsx</code> switches to <code>useProjects</code> and a <code>useThreads</code> per project row. <code>ThreadItem.tsx</code> can show a streaming dot from a status-only subscription.</li>
-          <li><code>Composer.tsx</code>, <code>ModelPicker.tsx</code>, <code>AccessPicker.tsx</code> and <code>AIWindow.tsx</code> switch to the new hooks. <code>AiChatProvider</code> becomes the provider for the store, service and session.</li>
+
+        <p>Selection, model and access move to a plain zustand hook. They change only on user actions.</p>
+        <h3><code>apps/web/src/lib/sessionStore.ts</code> <span class="pill">new</span></h3>
+        <pre><code>export type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
+
+export const useSession = create&lt;SessionState&gt;()((set) =&gt; ({
+  currentThread: null,
+  model: { model: "gpt-5.6-luna", thinking: "low" },
+  access: "workspace-write",
+
+  selectThread: (thread) =&gt; {
+    set({ currentThread: thread });
+    // Never aborts or reloads a live thread; hydrate is a no-op after the first load.
+    hydrate(thread.id).catch(/* ... mark the thread failed */);
+  },
+  // ... setModel, setAccess, renameThread: plain setters
+}));</code></pre>
+        <h3><code>apps/web/src/components/ChatMessages.tsx</code> <span class="pill">edit</span></h3>
+        <pre><code>export type ChatMessage = { id: string; text: string; role: "user" | "assistant"; interrupted?: boolean };
+
+export default function ChatMessages({ bottomInset = 24 }: { bottomInset?: number }) {
+  const threadId = useSession((s) =&gt; s.currentThread?.id ?? null);
+  const history = useThread(threadId, (s) =&gt; s.history);        // changes on send/settle only
+  const live = useThread(threadId, (s) =&gt; s.live?.text ?? null); // changes per delta
+  // ... refs and effects unchanged; scroll effect deps become [history, live]
+
+  return (
+    // ... wrappers unchanged
+        &lt;MessageList messages={history} /&gt;
+        {live !== null &amp;&amp; &lt;MessageBubble message={{ id: "live", role: "assistant", text: live }} /&gt;}
+  );
+}
+
+// Same props between deltas, so the history list is skipped while streaming.
+const MessageList = memo(function MessageList({ messages }: { messages: readonly ChatMessage[] }) {
+  return messages.map((message) =&gt; &lt;MessageBubble key={message.id} message={message} /&gt;);
+});
+
+// ... MessageBubble: today's map callback, plus a muted "Stopped" note when message.interrupted</code></pre>
+        <h3><code>Composer, ThreadItem, ModelPicker, AccessPicker, AIWindow, AISidebar</code> <span class="pill">edit</span></h3>
+        <pre><code>// Composer.tsx
+const isTurning = useThread(currentThread?.id ?? null, (s) =&gt; s.status === "streaming");
+// ... handleSend: isTurning ? stopTurn(id) : sendMessage(id, value.trim(), mode)
+
+// ThreadItem.tsx
+const isStreaming = useThread(thread.id, (s) =&gt; s.status === "streaming"); // status only, not text
+
+// ... the rest read and write useSession through selectors</code></pre>
+        <ul>
+          <li>Delete <code>context/useAIChat.tsx</code> and <code>&lt;AiChatProvider&gt;</code>. Zustand needs no provider.</li>
+          <li>Move <code>createProject</code> to <code>lib/projects.ts</code>; swap <code>projectsQuery.refetch()</code> for <code>queryClient.invalidateQueries({ queryKey: ["projects"] })</code>.</li>
+          <li>The sidebar uses <code>selectThread</code> instead of <code>setCurrentThread</code>.</li>
         </ul>
+
       </div>
     </details>
 
     <details>
-      <summary><span class="n">4</span><span><span class="t">Cancellation and event types</span><span class="s">Make Stop work and type the events we read</span></span><span class="chev">›</span></summary>
+      <summary><span class="n">4</span><span><span class="t">Event types and Stop</span><span class="s">Type the fields we read; make the server track turnId</span></span><span class="chev">›</span></summary>
       <div class="body">
-        <p>Stop fails because <code>turnId</code> is never assigned. Server fix:</p>
-<pre><code>// apps/server/lightThread.ts, inside sendQueryStream
-for await (const event of this.codexInstance.streamTurn({...})) {
+
+        <h3><code>apps/web/src/utils/trpc.ts</code> <span class="pill">edit</span></h3>
+        <pre><code>type TurnStatus = "completed" | "interrupted" | "failed" | "inProgress";
+
+// Mirrors AgentMessageDeltaNotification and TurnCompletedNotification in packages/codex-protocol.
+type AIEvent =
+  | { method: "item/agentMessage/delta"; params: { threadId: string; turnId: string; itemId: string; delta: string } }
+  | { method: "turn/completed"; params: { threadId: string; turn: { id: string; status: TurnStatus; error: { message: string } | null } } };</code></pre>
+        <h3><code>apps/server/lightThread.ts</code> <span class="pill">edit</span></h3>
+        <p>Stop fails because <code>turnId</code> is never set. Inside <code>sendQueryStream</code>:</p>
+        <pre><code>for await (const event of this.codexInstance.streamTurn({ ... })) {
   if (event.method === "turn/started") this.turnId = event.params.turn.id;
   yield event;
-  if (event.method === "turn/completed"
-      &amp;&amp; event.params.turn.id === this.turnId) this.turnId = null;
-}
-// plus: clear in finally only if this.turnId still belongs to this call</code></pre>
-        <ul>
-          <li>The generated types in <code>packages/codex-protocol</code> already carry a <code>Turn</code> with <code>id</code>, <code>status</code> and <code>error</code> on start/complete, and <code>turnId</code> and <code>itemId</code> on deltas.</li>
-          <li>Widen <code>AIEvent</code> to those three events using the generated types. The store ignores other events.</li>
-          <li><code>stop(threadId)</code> calls <code>stopTurn</code>; status settles from the stream's <code>interrupted</code> event, not the stop response.</li>
-          <li>The server keeps one <code>turnId</code> per thread, so same-thread overlap also affects stop (see Unresolved).</li>
-        </ul>
+  if (event.method === "turn/completed") this.turnId = null;
+}</code></pre>
+        <p class="muted">One <code>turnId</code> per thread, so same-thread overlap also affects Stop (see Unresolved).</p>
+
       </div>
     </details>
 
     <details>
       <summary><span class="n">5</span><span><span class="t">Validation</span><span class="s">Store tests, typecheck, build</span></span><span class="chev">›</span></summary>
       <div class="body">
-        <h3>Store unit tests</h3>
+
+        <h3>Store tests (web needs a runner, such as vitest)</h3>
         <ul>
-          <li>Deltas on A notify only A; B's snapshot is unchanged.</li>
-          <li><code>getSnapshot</code> is stable between changes and new after; old snapshots stay frozen.</li>
-          <li>Interleaved A and B streams survive selection switches intact.</li>
-          <li>Hydration never overwrites a live stream and runs once per thread.</li>
-          <li>Completion commits exactly one assistant message.</li>
-          <li>Startup error, transport error, EOF without <code>turn/completed</code> and <code>interrupted</code> all keep partial text.</li>
-          <li>Stale <code>requestId</code>s cannot write; <code>stop</code> targets the right thread.</li>
-          <li>The delta path never maps history or copies the entries Map.</li>
+          <li>Deltas on A notify only A; B's state is unchanged.</li>
+          <li><code>appendDelta</code> keeps the <code>history</code> reference.</li>
+          <li>Interleaved A and B streams survive switching.</li>
+          <li>Hydration runs once per thread, before the first local write.</li>
+          <li>Completion adds exactly one assistant message.</li>
+          <li>Startup error, transport error, EOF and <code>interrupted</code> keep partial text, marked <code>interrupted: true</code>.</li>
+          <li>Stale <code>requestId</code>s can't write or settle.</li>
         </ul>
         <h3>Checks</h3>
         <ul>
-          <li>Frontend and server typecheck; frontend build.</li>
+          <li><code>npm run typecheck</code> and <code>npm run web:build</code>.</li>
           <li>Manual: stream two threads, switch both ways, stop each.</li>
         </ul>
+
       </div>
     </details>
   </div>
 </section>
 
+<!-- Review -->
+<section>
+  <h2>Review: DeepSeek V4.1 Flash <span class="pill open">fix before implementing</span></h2>
+  <p class="muted">Confirmed: store isolation, hydration order, concurrent A/B streaming and in-memory partial text.</p>
+  <ul>
+    <li><b>Stop race.</b> Stop before <code>turn/started</code> throws (<code>turnId</code> is null). Queue it on the server until the ID arrives.</li>
+    <li><b>Server cleanup.</b> In phase 4, clear <code>turnId</code> in a <code>finally</code> so errors and disconnects don't leave it stale.</li>
+    <li><b>Hook boundaries.</b> Keep <code>useProjects</code>, <code>useThreads</code>, <code>useChatSession</code> and <code>useAIChat(threadId)</code> as thin wrappers over the stores and React Query.</li>
+    <li><b>Message identity.</b> Joining all deltas ignores <code>itemId</code>, so commentary and the final answer merge, and live text can differ from saved history (only <code>final_answer</code> is saved). Key live text by <code>itemId</code>, or show only final answers.</li>
+    <li><b>Model picker.</b> <code>ModelPicker</code> has its own state. Read the model from <code>useSession</code> so the shown model is the one sent.</li>
+  </ul>
+</section>
+
 <!-- Files -->
 <section>
   <h2>Files</h2>
-  <p class="muted">Locations are tentative.</p>
   <div class="files">
-    <div class="k">apps/web/src/lib/threadChatStore.ts</div><div class="v">new: store and snapshots</div>
-    <div class="k">apps/web/src/lib/threadStreamService.ts</div><div class="v">new: lifecycle</div>
-    <div class="k">apps/web/src/hooks/useProjects.ts, useThreads.ts</div><div class="v">new: React Query</div>
-    <div class="k">apps/web/src/hooks/useChatSession.tsx, useAIChat.ts</div><div class="v">new: session and thread hooks</div>
-    <div class="k">apps/web/src/context/useAIChat.tsx</div><div class="v">becomes the provider only</div>
-    <div class="k">apps/web/src/components/ChatMessages.tsx</div><div class="v">history plus live block, scroll</div>
-    <div class="k">apps/web/src/components/sidebar/AISidebar.tsx, ThreadItem.tsx</div><div class="v">query hooks</div>
-    <div class="k">Composer, ModelPicker, AccessPicker, AIWindow</div><div class="v">rewire to hooks</div>
+    <div class="k">apps/web/package.json</div><div class="v">add zustand ^5</div>
+    <div class="k">apps/web/src/lib/threadStore.ts</div><div class="v">new: per-thread stores, actions, useThread</div>
+    <div class="k">apps/web/src/lib/threadStream.ts</div><div class="v">new: sendMessage, stopTurn</div>
+    <div class="k">apps/web/src/lib/sessionStore.ts</div><div class="v">new: selection, model, access</div>
+    <div class="k">apps/web/src/lib/projects.ts</div><div class="v">new: createProject</div>
+    <div class="k">apps/web/src/context/useAIChat.tsx</div><div class="v">delete</div>
+    <div class="k">apps/web/src/components/ChatMessages.tsx</div><div class="v">memoized history plus live bubble</div>
+    <div class="k">Composer, ThreadItem, ModelPicker, AccessPicker, AIWindow, AISidebar</div><div class="v">switch to zustand hooks</div>
     <div class="k">apps/web/src/utils/trpc.ts</div><div class="v">typed lifecycle events</div>
     <div class="k">apps/server/lightThread.ts</div><div class="v">capture and clear turnId</div>
   </div>
