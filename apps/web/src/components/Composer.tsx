@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowUpIcon, HammerIcon, ListTodoIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, BotIcon, ListTodoIcon, SquareIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
-import ModelPicker from "./ModelPicker";
+import ModelPicker, { ToolbarDivider } from "./ModelPicker";
 import AccessPicker from "./AccessPicker";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
@@ -152,7 +152,7 @@ export default function Composer() {
             onValueChange(e);
           }}
           aria-label="Message"
-          placeholder="Do anything"
+          placeholder="Ask for changes or send follow-ups"
           rows={3}
           onKeyDown={(e) => handleKeyDown(e)}
           className={cn(
@@ -161,52 +161,53 @@ export default function Composer() {
             aiThemeClassNames.placeholder,
           )}
         />
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pb-3 pt-1">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex items-end gap-3 px-3 pb-3 pt-1">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-y-1">
+            <ModelPicker />
+            <ToolbarDivider />
+            <AccessPicker />
+            <ToolbarDivider />
             <button
               type="button"
               onClick={toggleMode}
               aria-label={mode === "build" ? "Build mode, switch to Plan" : "Plan mode, switch to Build"}
               title={mode === "build" ? "Build mode — switch to Plan (Shift+Tab)" : "Plan mode — switch to Build (Shift+Tab)"}
               className={cn(
-                "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2",
+                "inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-2 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2",
                 aiThemeClassNames.focusRing,
+                aiThemeClassNames.surfaceHover,
                 mode === "plan"
                   ? aiThemeClassNames.textAccent
-                  : aiThemeClassNames.textPrimary,
+                  : cn(aiThemeClassNames.textSecondary, aiThemeClassNames.hoverTextPrimary),
               )}
             >
               {mode === "plan" ? (
-                <ListTodoIcon className="size-5" aria-hidden="true" />
+                <ListTodoIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
               ) : (
-                <HammerIcon className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                <BotIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
               )}
               <span>{mode === "plan" ? "Plan" : "Build"}</span>
             </button>
-            <AccessPicker />
           </div>
 
-          <div className="ml-auto flex min-w-0 max-w-full items-center justify-end gap-3">
-            <ModelPicker />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!isTurning && !canSend}
-              aria-label={isTurning ? "Stop response" : "Send message"}
-              title={isTurning ? "Stop response" : "Send message (Enter)"}
-              className={cn(
-                "inline-flex size-10 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] focus-visible:outline-none focus-visible:ring-2",
-                aiThemeClassNames.focusRing,
-                actionButtonThemeClassName,
-              )}
-            >
-              {isTurning ? (
-                <SquareIcon className="size-3.5" fill="currentColor" aria-hidden="true" />
-              ) : (
-                <ArrowUpIcon className="size-[18px]" strokeWidth={2} aria-hidden="true" />
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!isTurning && !canSend}
+            aria-label={isTurning ? "Stop response" : "Send message"}
+            title={isTurning ? "Stop response" : "Send message (Enter)"}
+            className={cn(
+              "inline-flex size-10 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] focus-visible:outline-none focus-visible:ring-2",
+              aiThemeClassNames.focusRing,
+              actionButtonThemeClassName,
+            )}
+          >
+            {isTurning ? (
+              <SquareIcon className="size-3.5" fill="currentColor" aria-hidden="true" />
+            ) : (
+              <ArrowUpIcon className="size-[18px]" strokeWidth={2} aria-hidden="true" />
+            )}
+          </button>
         </div>
       </div>
     </div>

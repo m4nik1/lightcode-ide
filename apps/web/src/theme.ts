@@ -61,6 +61,7 @@ export const aiThemeClassNames = {
   focusWithinDepth:
     "focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_20px_52px_rgba(0,0,0,0.5)]",
   textPrimary: "text-[#FCFCFC]",
+  textSecondary: "text-[#D4D4D4]",
   textMuted: "text-[#A1A1A1]",
   textDisabled: "text-[#6F6F6F]",
   hoverTextPrimary: "hover:text-[#FCFCFC]",

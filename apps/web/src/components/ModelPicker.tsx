@@ -1,15 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { BrainIcon, CheckIcon, ChevronDownIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import OpenAIIcon from "./icons/OpenAIIcon";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
@@ -73,17 +70,17 @@ export function PickerDropdown<TValue extends string>({
         <button
           type="button"
           className={cn(
-            "group/trigger inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-2",
+            "group/trigger inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-[15px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-2",
             aiThemeClassNames.focusRing,
             aiThemeClassNames.surfaceHover,
             aiThemeClassNames.dataOpenSurfaceHover,
             triggerClassName ??
-              cn(aiThemeClassNames.textMuted, aiThemeClassNames.hoverTextPrimary),
+              cn(aiThemeClassNames.textSecondary, aiThemeClassNames.hoverTextPrimary),
           )}
         >
           {triggerLeading}
           {selectedLabel}
-          {showChevron ? <ChevronDownIcon aria-hidden="true" className="size-3.5 opacity-50 transition-transform group-data-[state=open]/trigger:rotate-180" /> : null}
+          {showChevron ? <ChevronDownIcon aria-hidden="true" className="-ml-0.5 size-4 opacity-60 transition-transform group-data-[state=open]/trigger:rotate-180" /> : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -130,6 +127,15 @@ export function PickerDropdown<TValue extends string>({
   );
 }
 
+export function ToolbarDivider() {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("mx-1 h-5 w-px shrink-0", aiThemeClassNames.divider)}
+    />
+  );
+}
+
 export default function ModelPicker() {
   const { modelSet } = useAIChat();
   const [selectedModel, setSelectedModel] = useState(modelOptions[0].value);
@@ -146,45 +152,22 @@ export default function ModelPicker() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={`Model: ${selectedModel}, reasoning: ${thinkingLevel}`}
-          className={cn(
-            "group/trigger inline-flex h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-sm font-normal transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 data-[state=open]:bg-white/5",
-            aiThemeClassNames.textPrimary,
-            aiThemeClassNames.focusRing,
-          )}
-        >
-          <span className="truncate">{modelOptions.find((option) => option.value === selectedModel)?.label}</span>
-          <span className="shrink-0 text-[#8C8C8C]">{thinkingOptions.find((option) => option.value === thinkingLevel)?.label}</span>
-          <ChevronDownIcon aria-hidden="true" className="ml-0.5 size-4 shrink-0 text-[#8C8C8C] transition-transform group-data-[state=open]/trigger:rotate-180" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        side="top"
-        sideOffset={12}
-        className={cn("min-w-56 rounded-xl border p-1 ring-0", aiThemeClassNames.border, aiThemeClassNames.menuSurface)}
-      >
-        <DropdownMenuRadioGroup aria-label="Model" value={selectedModel} onValueChange={(model) => modelSelected(model as AIModelId)}>
-          {modelOptions.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value} className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator className={aiThemeClassNames.divider} />
-        <DropdownMenuLabel className={aiThemeClassNames.textMuted}>Reasoning</DropdownMenuLabel>
-        <DropdownMenuRadioGroup aria-label="Reasoning" value={thinkingLevel} onValueChange={(thinking) => thinkingSelected(thinking as AIReasoningEffort)}>
-          {thinkingOptions.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value} className={cn(aiThemeClassNames.textPrimary, aiThemeClassNames.menuItemFocus)}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <PickerDropdown
+        options={modelOptions}
+        value={selectedModel}
+        onSelect={modelSelected}
+        menuWidth="min-w-52"
+        triggerLeading={<OpenAIIcon className="size-[18px]" aria-hidden="true" />}
+      />
+      <ToolbarDivider />
+      <PickerDropdown
+        options={thinkingOptions}
+        value={thinkingLevel}
+        onSelect={thinkingSelected}
+        menuWidth="min-w-40"
+        triggerLeading={<BrainIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />}
+      />
+    </>
   );
 }
