@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>threadStore: the web thread cache</title>
+<style>
+:root{--bg:#fff;--fg:#0a0a0a;--muted:#737373;--border:#e5e5e5;--card:#fff;--badge:#f5f5f5;--code:#f5f5f5}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0a0a;--fg:#fafafa;--muted:#a3a3a3;--border:#262626;--card:#0a0a0a;--badge:#262626;--code:#262626}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;font-size:15px}
+main,header,footer{max-width:760px;margin:0 auto;padding:0 24px}
+header{padding-top:56px;padding-bottom:16px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+header p{color:var(--muted);margin:0}
+section{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:20px 24px;margin:20px 0}
+h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.badge{font-size:11px;font-weight:500;background:var(--badge);color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:0 8px}
+ul{margin:0;padding-left:20px}li{margin:4px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--code);border-radius:5px;padding:1px 5px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 0;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:13px}
+tr:last-child td{border-bottom:0}
+td:first-child,th:first-child{width:130px}
+footer{color:var(--muted);font-size:13px;padding-top:8px;padding-bottom:56px}
+</style>
+</head>
+<body>
+<header>
+<h1>threadStore: the web thread cache</h1>
+<p>There is no class named threadStore. It is the IndexedDB object store named "thread" behind the <code>EnvironmentCacheStore</code> service.</p>
+</header>
+<main>
+<section>
+<h2>Where it lives <span class="badge">IndexedDB</span></h2>
+<ul>
+<li><code>apps/web/src/connection/storage.ts:45</code> — <code>THREAD_STORE_NAME = "thread"</code></li>
+<li>Created in the <code>t3code:connection-runtime</code> database (version 4) in <code>openDatabase</code> (<code>storage.ts:130</code>).</li>
+<li>Holds the last-known <code>OrchestrationV2ThreadDetailSnapshot</code> per thread so a thread can show before the server responds.</li>
+</ul>
+</section>
+<section>
+<h2>Keys and values</h2>
+<ul>
+<li>Key: <code>environmentId:threadId</code> (<code>threadCacheKey</code>, <code>storage.ts:368</code>); the prefix lets <code>clear(environmentId)</code> delete one environment's threads by key range.</li>
+<li>Value: JSON of <code>StoredOrchestrationThreadSnapshot</code> <code>{environmentId, threadId, snapshot}</code>. On load, IDs are checked; corrupt or old-schema records are discarded.</li>
+</ul>
+</section>
+<section>
+<h2>Operations</h2>
+<table>
+<thead><tr><th>Method</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>loadThread</code></td><td>Reads key; discards bad records and returns none</td></tr>
+<tr><td><code>saveThread</code></td><td>Encodes and writes the snapshot</td></tr>
+<tr><td><code>removeThread</code></td><td>Deletes the key</td></tr>
+<tr><td><code>clear</code></td><td>Deletes all threads for an environment (with shell, server config, VCS refs)</td></tr>
+</tbody>
+</table>
+</section>
+<section>
+<h2>Callers <span class="badge">client-runtime</span></h2>
+<p style="margin:0 0 8px"><code>packages/client-runtime/src/state/threads.ts</code></p>
+<ul>
+<li><strong>Subscribe:</strong> <code>loadThread</code> runs only if there is no in-memory <code>resumeCache</code>; failures log a warning and act as a miss.</li>
+<li><strong>Commit:</strong> <code>saveThread</code> after the snapshot commits, skipped if committed state no longer matches.</li>
+<li><strong>Delete:</strong> <code>removeThread</code>, only if this subscription still owns the resume cache.</li>
+</ul>
+</section>
+<section>
+<h2>Implementations</h2>
+<ul>
+<li>Interface: <code>EnvironmentCacheStore</code> in <code>packages/client-runtime/src/platform/persistence.ts:81</code></li>
+<li>Web: <code>apps/web/src/connection/storage.ts</code></li>
+<li>Mobile: <code>apps/mobile/src/connection/environment-cache-store.ts</code> (same interface, separate store)</li>
+</ul>
+</section>
+</main>
+<footer>Source: <code>apps/web/src/connection/storage.ts</code>, <code>packages/client-runtime/src/state/threads.ts</code></footer>
+</body>
+</html>
