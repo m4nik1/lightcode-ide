@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { BrainIcon, CheckIcon, ChevronDownIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,14 +24,10 @@ const modelOptions: PickerOption<AIModelId>[] = [
     value: 'gpt-6-astra',
   },
   {
-    label: "GPT-5.6 Sol",
-    value: "gpt-5.6-sol",
+    label: "GPT-6.1 Sol",
+    value: "gpt-6.1-sol",
   },
-  {
-    label: "GPT-5.6 Terra",
-    value: "gpt-5.6-terra",
-  },
-  { label: "GPT-5.6 Luna", value: "gpt-5.6-luna" },
+  { label: "GPT-6 Luna", value: "gpt-6-luna" },
 ];
 
 const thinkingOptions: PickerOption<AIReasoningEffort>[] = [
@@ -137,17 +133,15 @@ export function ToolbarDivider() {
 }
 
 export default function ModelPicker() {
-  const { modelSet } = useAIChat();
-  const [selectedModel, setSelectedModel] = useState(modelOptions[0].value);
-  const [thinkingLevel, setThinking] = useState(thinkingOptions[0].value);
+  const { model, modelSet } = useAIChat();
+  const selectedModel = model.model;
+  const thinkingLevel = model.thinking;
 
   function modelSelected(model: AIModelId) {
-    setSelectedModel(model);
     modelSet(model, thinkingLevel);
   }
 
   function thinkingSelected(thinking: AIReasoningEffort) {
-    setThinking(thinking);
     modelSet(selectedModel, thinking);
   }
 

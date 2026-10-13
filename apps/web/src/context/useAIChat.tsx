@@ -10,6 +10,7 @@ type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 type AIContext = {
   messages: ChatMessage[];
   messageSend: (value: string, mode: "build" | "plan") => Promise<void>;
+  model: AIModel;
   modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   access: AccessMode;
   accessSet: (access: AccessMode) => void;
@@ -35,7 +36,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const [isTurning, setTurn] = useState<boolean>(false);
 
   const [model, setModel] = useState<AIModel>({
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     thinking: "low",
   });
   const [access, setAccess] = useState<AccessMode>("workspace-write");
@@ -195,6 +196,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       value={{
         messages,
         messageSend,
+        model,
         modelSet,
         access,
         accessSet,
