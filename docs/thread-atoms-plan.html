@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One atom per thread</title>
+<style>
+  /* Standalone defaults (neutral, shadcn-like). Dark mode follows the OS. */
+  :root {
+    color-scheme: light dark;
+    --background: #ffffff; --foreground: #0a0a0a; --muted: #f4f4f5; --muted-foreground: #71717a;
+    --card: #ffffff; --border: #e4e4e7; --ring: #a1a1aa; --code-background: #fafafa; --code-foreground: #18181b;
+    --success: #16a34a; --destructive: #dc2626; --warning: #d97706; --radius: 8px;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #0a0a0a; --foreground: #fafafa; --muted: #18181b; --muted-foreground: #a1a1aa;
+      --card: #0f0f10; --border: #27272a; --ring: #52525b; --code-background: #101012; --code-foreground: #e4e4e7;
+    }
+  }
+  body { margin: 0; padding: 32px 20px 64px; background: var(--background); font-family: var(--font-sans); color: var(--foreground); font-size: 14.5px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 728px; margin: 0 auto; }
+  h1 { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 20px 0 6px; }
+  p { margin: 0 0 10px; max-width: 68ch; }
+  .lede { color: var(--muted-foreground); font-size: 15px; }
+  code { font-family: var(--font-mono); font-size: 0.86em; background: var(--muted); padding: 1px 5px; border-radius: 4px; }
+  section { padding: 28px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: 0; padding-top: 20px; }
+  ul { margin: 0 0 10px; padding-left: 18px; }
+  li { margin: 3px 0; max-width: 66ch; }
+  li::marker { color: var(--muted-foreground); }
+  .muted { color: var(--muted-foreground); }
+
+  .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 0; margin: 18px 0 6px; }
+  .node { border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px); padding: 14px; background: var(--card); }
+  .node.key { border-color: var(--foreground); }
+  .node b { display: block; font-family: var(--font-mono); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .node span { display: block; color: var(--muted-foreground); font-size: 13px; line-height: 1.45; }
+  .edge { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 8px; color: var(--muted-foreground); font-size: 11.5px; font-family: var(--font-mono); text-align: center; }
+  .edge svg { width: 36px; height: 10px; display: block; margin-top: 4px; }
+  @media (max-width: 560px) {
+    .flow { grid-template-columns: 1fr; }
+    .edge { padding: 6px 0; }
+    .edge svg { transform: rotate(90deg); width: 22px; margin: 6px 0 0; }
+  }
+
+  .table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 12px; vertical-align: top; }
+  th { font-weight: 500; color: var(--muted-foreground); background: var(--muted); }
+  tr + tr td { border-top: 1px solid var(--border); }
+  td:first-child { white-space: nowrap; }
+
+  .callout { border: 1px solid var(--border); border-left: 3px solid var(--warning); border-radius: var(--radius); padding: 12px 14px; margin: 12px 0; font-size: 14px; }
+  .callout p:last-child { margin: 0; }
+
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 22px 0 4px; }
+  .step + .step { border-top: 1px dashed var(--border); }
+  .num { width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 1px; }
+  .step-body { min-width: 0; }
+  .file { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted-foreground); margin: 0 0 8px; }
+  .tag { display: inline-block; font-family: var(--font-sans); font-size: 11.5px; border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; margin-left: 6px; color: var(--muted-foreground); }
+
+  .code { border: 1px solid var(--border); border-radius: var(--radius); background: var(--code-background); margin: 10px 0 14px; overflow: hidden; }
+  .code-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 12px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 12px; color: var(--muted-foreground); }
+  .copy { font-family: var(--font-sans); font-size: 12px; color: var(--muted-foreground); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+  .copy:hover { border-color: var(--border); color: var(--foreground); }
+  .copy:focus-visible, summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  pre { margin: 0; padding: 12px 0; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; color: var(--code-foreground); }
+  pre .ln { display: block; padding: 0 14px; white-space: pre; min-height: 1.6em; }
+  pre .add { background: color-mix(in srgb, var(--success) 13%, transparent); }
+  pre .add::before { content: "+"; }
+  pre .del { background: color-mix(in srgb, var(--destructive) 12%, transparent); }
+  pre .del::before { content: "−"; }
+  pre .add::before, pre .del::before, pre .ctx::before { display: inline-block; width: 14px; margin-left: -2px; color: var(--muted-foreground); }
+  pre .ctx::before { content: " "; }
+  pre .gap, pre .com { color: var(--muted-foreground); }
+
+  details { margin: 10px 0 14px; }
+  details > .code { margin-top: 8px; }
+  summary { cursor: pointer; font-size: 13.5px; color: var(--muted-foreground); width: fit-content; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; display: inline-block; width: 14px; transition: transform .15s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  summary:hover { color: var(--foreground); }
+  @media (prefers-reduced-motion: reduce) { summary::before { transition: none; } }
+
+  .checks { list-style: none; padding: 0; }
+  .checks li { padding-left: 24px; position: relative; }
+  .checks li::before { content: ""; position: absolute; left: 2px; top: 6px; width: 12px; height: 12px; border: 1px solid var(--muted-foreground); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<section>
+  <h1>One atom per thread</h1>
+  <p class="lede">Each thread gets its own Jotai atom holding its <code>messages</code> and <code>isStreaming</code>. <code>useThreads</code> decides which thread is open; the atom holds what’s in it.</p>
+
+  <div class="flow" role="img" aria-label="useThreads provides currentThread.id, which selects threadAtom(id), which ChatView and Composer read through useChatSession">
+    <div class="node"><b>useThreads()</b><span>Which thread is open. Creates new threads.</span></div>
+    <div class="edge">currentThread.id<svg viewBox="0 0 36 10" fill="none" stroke="currentColor"><path d="M0 5h33M29 1l4 4-4 4"/></svg></div>
+    <div class="node key"><b>threadAtom(id)</b><span>{ messages, isStreaming, loaded } for that one thread.</span></div>
+    <div class="edge">useChatSession()<svg viewBox="0 0 36 10" fill="none" stroke="currentColor"><path d="M0 5h33M29 1l4 4-4 4"/></svg></div>
+    <div class="node"><b>ChatView, Composer</b><span>Render messages, send, stop.</span></div>
+  </div>
+  <p class="muted" style="font-size:13px">If you switch threads mid-reply, the stream keeps writing into the original thread’s atom, so text can never leak into the thread you switched to.</p>
+</section>
+
+<section>
+  <h2>The problem to fix first</h2>
+  <p>The app currently has two separate “current thread” values that don’t stay in sync:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Where</th><th>Written by</th><th>Read by</th></tr></thead>
+      <tbody>
+        <tr><td><code>useThreads</code></td><td><code>newThread()</code> only</td><td><code>useChatSession</code></td></tr>
+        <tr><td><code>useAIChat</code></td><td>Clicking a thread, <code>AISidebar</code></td><td>Top bar, Composer, sidebar</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Clicking an existing thread only updates the <code>useAIChat</code> copy, so <code>useChatSession</code> would show the wrong thread. The plan makes <code>useThreads</code> the only owner of selection. <strong>useThreads.tsx itself doesn’t change.</strong></p>
+  <div class="callout"><p>The code doesn’t compile right now: <code>useChatSession.tsx:18</code> has a syntax error, and <code>Composer</code> calls <code>messageSend</code>, which <code>useAIChat</code> no longer has. These changes fix both.</p></div>
+</section>
+
+<section>
+  <h2>Changes</h2>
+  <p class="muted">In order. Nothing has been applied yet.</p>
+
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <h3 style="margin-top:0">Install Jotai</h3>
+      <p><code>jotai-family</code> replaces the deprecated <code>atomFamily</code> from <code>jotai/utils</code>.</p>
+      <div class="code" data-src="install" data-title="apps/novus"></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <h3 style="margin-top:0">Define the atom <span class="tag">new file</span></h3>
+      <p class="file">src/context/threadAtoms.ts</p>
+      <p><code>loaded</code> tells an empty thread apart from one whose messages haven’t been fetched yet.</p>
+      <div class="code" data-src="atoms" data-title="threadAtoms.ts"></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <h3 style="margin-top:0">Read and write the atom in useChatSession <span class="tag">rewrite</span></h3>
+      <p class="file">src/context/useChatSession.tsx</p>
+      <ul>
+        <li><strong>Reading:</strong> <code>useAtomValue(threadAtom(currentThread.id))</code> gives the open thread’s state.</li>
+        <li><strong>Loading:</strong> an effect fetches saved messages the first time a thread is opened.</li>
+        <li><strong>Streaming:</strong> <code>sendQuery</code> captures the thread’s atom up front and writes every chunk with <code>store.set</code>.</li>
+        <li><strong>Cleanup:</strong> <code>finally</code> clears <code>isStreaming</code>, even if the stream throws or is stopped.</li>
+      </ul>
+      <div class="code" data-src="sessionCore" data-title="the key part"></div>
+      <details>
+        <summary>Show the full file</summary>
+        <div class="code" data-src="sessionFull" data-title="useChatSession.tsx"></div>
+      </details>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">4</div>
+    <div class="step-body">
+      <h3 style="margin-top:0">Remove the duplicate state from useAIChat</h3>
+      <p class="file">src/context/useAIChat.tsx</p>
+      <p>Messages, <code>isTurning</code> and <code>currentThread</code> now live in the atom or <code>useThreads</code>. This file goes back to model and access settings plus <code>stopTurn</code>. <code>stopTurn</code> doesn’t reset any flag: once the server stops the turn, the stream ends and <code>sendQuery</code>’s <code>finally</code> handles it.</p>
+      <div class="code" data-src="aichat" data-title="useAIChat.tsx" data-diff></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">5</div>
+    <div class="step-body">
+      <h3 style="margin-top:0">Point components at the new hooks</h3>
+      <p>Selection comes from <code>useThreads</code>; messages and streaming come from <code>useChatSession</code>.</p>
+
+      <p class="file">src/components/sidebar/ThreadItem.tsx</p>
+      <div class="code" data-src="threadItem" data-title="ThreadItem.tsx" data-diff></div>
+
+      <p class="file">src/components/sidebar/AISidebar.tsx</p>
+      <p><code>newThread()</code> already selects the thread it creates, so the extra call goes away.</p>
+      <div class="code" data-src="sidebar" data-title="AISidebar.tsx" data-diff></div>
+
+      <p class="file">src/AIWindow.tsx <span class="muted">(ChatTopBar)</span></p>
+      <p>No provider changes needed: <code>ChatTopBar</code> already renders inside <code>&lt;ThreadProvider&gt;</code>.</p>
+      <div class="code" data-src="window" data-title="AIWindow.tsx" data-diff></div>
+
+      <p class="file">src/components/ChatView.tsx</p>
+      <div class="code" data-src="chatview" data-title="ChatView.tsx" data-diff></div>
+
+      <p class="file">src/components/Composer.tsx</p>
+      <p>Aliased so the rest of the file stays untouched.</p>
+      <div class="code" data-src="composer" data-title="Composer.tsx" data-diff></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Left out on purpose</h2>
+  <ul>
+    <li><strong><code>currentThread</code> stays in React context.</strong> Moving it to an atom works too, but fixes nothing today.</li>
+    <li><strong>The top bar title doesn’t update after a reply.</strong> Already true now. Fix with one <code>setThread({ ...currentThread, title })</code> in <code>sendQuery</code>.</li>
+    <li><strong>Deleted threads keep their atom.</strong> Call <code>threadAtom.remove(id)</code> in ThreadItem’s delete handler to clean up.</li>
+    <li><strong>Loaded threads don’t refetch.</strong> Fine while this window is the only writer. Set <code>loaded: false</code> to force a reload.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>How to check it works</h2>
+  <ul class="checks">
+    <li><code>npx tsc --noEmit -p apps/novus</code> passes.</li>
+    <li>Clicking a thread in the sidebar loads its messages.</li>
+    <li>Sending a message streams the reply into the chat.</li>
+    <li>Switching threads mid-reply leaves the other thread untouched.</li>
+    <li>Stopping a turn turns the stop button back into send.</li>
+  </ul>
+</section>
+
+</div>
+
+<script type="text/plain" id="install">npm i jotai jotai-family -w @novus/app</script>
+
+<script type="text/plain" id="atoms">import { atom } from "jotai";
+import { atomFamily } from "jotai-family";
+import type { ChatMessage } from "../components/ChatView";
+
+export type ThreadState = {
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  loaded: boolean;
+};
+
+// One atom per thread id
+export const threadAtom = atomFamily((_threadId: string) =>
+  atom<ThreadState>({ messages: [], isStreaming: false, loaded: false }),
+);</script>
+
+<script type="text/plain" id="sessionCore">const { currentThread } = useThreads();
+const store = useStore();
+const { messages, isStreaming, loaded } = useAtomValue(
+  threadAtom(currentThread?.id ?? ""),
+);
+
+async function sendQuery(value: string, mode: "build" | "plan") {
+  // ...
+  const threadAtomForID = threadAtom(threadID); // captured up front
+
+  store.set(threadAtomForID, (s) => ({ ...s, isStreaming: true, messages: [...] }));
+
+  try {
+    for await (const chunk of streamChat) {
+      // append chunk.params.delta to the assistant message
+      store.set(threadAtomForID, (s) => ({ ...s, messages: ... }));
+    }
+  } finally {
+    store.set(threadAtomForID, (s) => ({ ...s, isStreaming: false }));
+  }
+}</script>
+
+<script type="text/plain" id="sessionFull">/*
+  Manages the chat sessions for the selected thread
+  Also passes thinking traces to the chatView/messages
+*/
+
+import { useEffect } from "react";
+import { useAtomValue, useStore } from "jotai";
+import { useAIChat } from "./useAIChat";
+import { useThreads } from "./useThreads";
+import { threadAtom } from "./threadAtoms";
+import { trpcClient, queryClient } from "@/utils/trpc";
+
+export function useChatSession() {
+  const { model, access } = useAIChat();
+  const { currentThread } = useThreads();
+  const store = useStore();
+  const { messages, isStreaming, loaded } = useAtomValue(
+    threadAtom(currentThread?.id ?? ""),
+  );
+
+  // Load saved messages the first time a thread is opened
+  useEffect(() => {
+    if (!currentThread || loaded) return;
+    const threadAtomForID = threadAtom(currentThread.id);
+
+    trpcClient.loadMessages
+      .query({ threadID: currentThread.id })
+      .then((messages) =>
+        store.set(threadAtomForID, (s) => ({ ...s, messages, loaded: true })),
+      );
+  }, [currentThread, loaded, store]);
+
+  async function sendQuery(value: string, mode: "build" | "plan") {
+    const text = value.trim();
+    if (!text || !currentThread) return;
+
+    const threadID = currentThread.id;
+    // Captured so chunks land in this thread even if the user switches away
+    const threadAtomForID = threadAtom(threadID);
+    const assistantMessageID = crypto.randomUUID();
+
+    store.set(threadAtomForID, (s) => ({
+      ...s,
+      isStreaming: true,
+      messages: [
+        ...s.messages,
+        { id: crypto.randomUUID(), text, role: "user" },
+        { id: assistantMessageID, text: "", role: "assistant" },
+      ],
+    }));
+
+    try {
+      const streamChat = await trpcClient.queryAI.query({
+        threadID,
+        message: text,
+        model,
+        mode,
+        access,
+      });
+
+      for await (const chunk of streamChat) {
+        if (chunk.method == "item/agentMessage/delta") {
+          const delta = chunk.params.delta;
+          store.set(threadAtomForID, (s) => ({
+            ...s,
+            messages: s.messages.map((message) =>
+              message.id === assistantMessageID
+                ? { ...message, text: message.text + delta }
+                : message,
+            ),
+          }));
+        }
+      }
+    } finally {
+      store.set(threadAtomForID, (s) => ({ ...s, isStreaming: false }));
+    }
+
+    await trpcClient.getThreadTitle.mutate({ threadID });
+
+    // Lets the thread/project list know its out of date
+    await queryClient.invalidateQueries({
+      queryKey: ["threads", currentThread.projectId],
+    });
+  }
+
+  return { messages, isStreaming, sendQuery };
+}</script>
+
+<script type="text/plain" id="aichat">-import { useQuery, useQueryClient } from "@tanstack/react-query";
+-import type { ChatMessage } from "../components/ChatView";
+-import type { thread } from "../components/sidebar/types";
++import { useThreads } from "./useThreads";
+
+ type AIContext = {
+-  messages: ChatMessage[];
+   model: AIModel;
+   ...
+-  currentThread: thread | null;
+-  setCurrentThread: (thread: thread) => void;
+-  isTurning: boolean;
+   stopTurn: () => void;
+ };
+
+ export function AiChatProvider({ children }: { children: ReactNode }) {
+-  const [messagesByThread, setMessagesByThread] = useState<...>({});
+-  const [currentThread, setThread] = useState<thread | null>(null);
+-  const [isTurning, setTurn] = useState<boolean>(false);
++  const { currentThread } = useThreads();
+   ...
+-  const messages = currentThread ? (messagesByThread[currentThread.id] ?? []) : [];
+
+   function stopTurn() {
+     ...
+     trpcClient.stopTurn
+       .query({ threadID: currentThread.id })
+-      .then(() => setTurn(false))
+       .catch(...)
+   }
+
+-  async function loadThreadMessages(threadID: string) { ... }
+-  async function setCurrentThread(thread: thread) { ... }
+
+   value={{
+-    messages,
+     model, modelSet, access, accessSet,
+-    currentThread, setCurrentThread, isTurning,
+     stopTurn,
+   }}</script>
+
+<script type="text/plain" id="threadItem">-import { useAIChat } from "../../context/useAIChat";
++import { useThreads } from "../../context/useThreads";
+
+-  const { currentThread, setCurrentThread } = useAIChat();
++  const { currentThread, setThread } = useThreads();
+
+-  onClick={() => setCurrentThread(thread)}
++  onClick={() => setThread(thread)}</script>
+
+<script type="text/plain" id="sidebar">-import { useAIChat } from "../../context/useAIChat";
+
+-  const { newThread } = useThreads();
+-  const { currentThread, setCurrentThread } = useAIChat();
++  const { currentThread, newThread } = useThreads();
+
+-  const createdThread = await newThread(project.id, project.path);
+-  await setCurrentThread(createdThread);
++  await newThread(project.id, project.path);</script>
+
+<script type="text/plain" id="window">-import { AiChatProvider, useAIChat } from "./context/useAIChat";
+-import { ThreadProvider } from "./context/useThreads";
++import { AiChatProvider } from "./context/useAIChat";
++import { ThreadProvider, useThreads } from "./context/useThreads";
+
+ function ChatTopBar() {
+-  const { currentThread } = useAIChat();
++  const { currentThread } = useThreads();</script>
+
+<script type="text/plain" id="chatview">-import { useAIChat } from "../context/useAIChat";
++import { useChatSession } from "../context/useChatSession";
+
+-  const { messages } = useAIChat();
++  const { messages } = useChatSession();</script>
+
+<script type="text/plain" id="composer"> import { useAIChat } from "../context/useAIChat";
++import { useThreads } from "../context/useThreads";
++import { useChatSession } from "../context/useChatSession";
+
+-  const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
++  const { stopTurn } = useAIChat();
++  const { currentThread } = useThreads();
++  const { sendQuery: messageSend, isStreaming: isTurning } = useChatSession();</script>
+
+<script>
+  document.querySelectorAll(".code[data-src]").forEach((box) => {
+    const raw = document.getElementById(box.dataset.src).textContent;
+    const isDiff = box.hasAttribute("data-diff");
+    const head = document.createElement("div");
+    head.className = "code-head";
+    const title = document.createElement("span");
+    title.textContent = box.dataset.title;
+    const btn = document.createElement("button");
+    btn.className = "copy"; btn.type = "button"; btn.textContent = "Copy";
+    head.append(title, btn);
+
+    const pre = document.createElement("pre");
+    const copyLines = [];
+    raw.split("\n").forEach((line) => {
+      const el = document.createElement("span");
+      el.className = "ln";
+      let text = line;
+      if (isDiff) {
+        const c = line[0];
+        text = line.slice(1);
+        if (c === "+") el.classList.add("add");
+        else if (c === "-") el.classList.add("del");
+        else el.classList.add("ctx");
+        if (text.trim() === "...") el.classList.add("gap");
+        if (c !== "-") copyLines.push(text);
+      } else {
+        copyLines.push(text);
+        if (/^\s*(\/\/|\/\*|\*)/.test(line)) el.classList.add("com");
+      }
+      el.textContent = text;
+      pre.appendChild(el);
+    });
+    btn.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(copyLines.join("\n")); btn.textContent = "Copied"; }
+      catch { btn.textContent = "Copy failed"; }
+      setTimeout(() => (btn.textContent = "Copy"), 1400);
+    });
+    box.append(head, pre);
+  });
+</script>
+</body>
+</html>
