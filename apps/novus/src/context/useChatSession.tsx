@@ -11,7 +11,7 @@ import { queryClient } from '../utils/trpc'
 
 export function useChatSession() {
   const { model, access } = useAIChat();
-  const { currentThread, setThread } = useThreads()
+  const { currentThread } = useThreads()
 
   const { data: messages = [] } = useQuery({
     queryKey: [currentThread],

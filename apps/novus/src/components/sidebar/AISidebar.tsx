@@ -4,15 +4,13 @@ import { aiThemeClassNames } from "../../theme";
 import { cn } from "../../lib/utils";
 import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
-import { useAIChat } from "../../context/useAIChat";
 import { useProjects } from "../../context/useProjects";
 import { useThreads } from "../../context/useThreads";
 
 export default function AISidebar() {
   const { getProjects, createProject } = useProjects();
   const projects = getProjects.data ?? [];
-  const { newThread } = useThreads();
-  const { currentThread, setCurrentThread } = useAIChat();
+  const { newThread, setThread, currentThread } = useThreads();
 
   async function handleNewChat(projectId = currentThread?.projectId) {
     const project = projects.find(({ id }) => id === projectId);
@@ -20,7 +18,7 @@ export default function AISidebar() {
 
     try {
       const createdThread = await newThread(project.id, project.path);
-      await setCurrentThread(createdThread);
+      await setThread(createdThread);
     } catch (error) {
       console.error("Failed to create chat", error);
     }

@@ -9,6 +9,7 @@ import { useAIChat } from "../context/useAIChat";
 import { useFileSearch } from "../context/useFileSearch";
 import type { FileSearchResult } from "@/utils/trpc";
 import FileMentionMenu, { entryPath } from "./FileMentionMenu";
+import { useThreads } from "@/context/useThreads";
 
 type CollaborationMode = "build" | "plan";
 
@@ -18,9 +19,9 @@ export default function Composer() {
   const [mode, setMode] = useState<CollaborationMode>("build");
   const [search, setSearch] = useState(false);
   const [activeIndex, setIndex] = useState(0);
-  const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
-  const { setQuery, setCurrentProjectPath, searchResults } =
-    useFileSearch();
+  const { isTurning, stopTurn } = useAIChat();
+  const { currentThread, sendMessage } = useThreads();
+  const { setQuery, setCurrentProjectPath, searchResults } = useFileSearch();
 
   useEffect(() => {
     setIndex((currentIndex) =>
@@ -40,7 +41,7 @@ export default function Composer() {
       stopTurn();
     } else {
       if (!canSend) return;
-      void messageSend(value, mode);
+      void sendMessage(value, mode);
     }
     setValue("");
   }

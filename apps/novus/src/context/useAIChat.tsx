@@ -1,9 +1,8 @@
 import { createContext, useState, useContext, type ReactNode } from "react";
 import { trpcClient } from "../utils/trpc";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChatMessage } from "../components/ChatView";
-import type { thread } from "../components/sidebar/types";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
+import { useThreads } from "./useThreads";
 
 type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 
@@ -13,8 +12,6 @@ type AIContext = {
   modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   access: AccessMode;
   accessSet: (access: AccessMode) => void;
-  currentThread: thread | null;
-  setCurrentThread: (thread: thread) => void;
   isTurning: boolean;
   stopTurn: () => void;
 };
@@ -30,7 +27,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const [messagesByThread, setMessagesByThread] = useState<
     Record<string, ChatMessage[]>
   >({});
-  const [currentThread, setThread] = useState<thread | null>(null);
+  const { currentThread } = useThreads();
   const [isTurning, setTurn] = useState<boolean>(false);
 
   const [model, setModel] = useState<AIModel>({
@@ -72,18 +69,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     return messages;
   }
 
-  async function setCurrentThread(thread: thread) {
-    if (thread.id === currentThread?.id) return;
-
-    setThread(thread);
-    const threadMessages = await loadThreadMessages(thread.id);
-
-    setMessagesByThread((current) => ({
-      ...current,
-      [thread.id]: threadMessages,
-    }));
-  }
-
   return (
     <aiContext.Provider
       value={{
@@ -92,8 +77,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         modelSet,
         access,
         accessSet,
-        currentThread,
-        setCurrentThread,
         isTurning,
         stopTurn,
       }}

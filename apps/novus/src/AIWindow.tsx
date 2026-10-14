@@ -5,11 +5,11 @@ import ChatMessages from "./components/ChatView";
 import { aiTheme } from "./theme";
 import { AiChatProvider, useAIChat } from "./context/useAIChat";
 import { Folder } from "lucide-react";
-import { ThreadProvider } from "./context/useThreads";
+import { ThreadProvider, useThreads } from "./context/useThreads";
 import { FileSearchProvider } from "./context/useFileSearch";
 
 function ChatTopBar() {
-  const { currentThread } = useAIChat();
+  const { currentThread } = useThreads();
   const projectName = currentThread
     ? currentThread.projectPath.split(/[\\/]/).filter(Boolean).at(-1)
     : null;

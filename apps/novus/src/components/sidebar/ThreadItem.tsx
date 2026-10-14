@@ -2,8 +2,8 @@ import { Trash2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { thread } from "./types";
 import { aiThemeClassNames } from "../../theme";
-import { useAIChat } from "../../context/useAIChat";
 import { trpcClient } from "../../utils/trpc";
+import { useThreads } from "@/context/useThreads";
 
 type ThreadItemProps = {
   thread: thread;
@@ -11,7 +11,7 @@ type ThreadItemProps = {
 };
 
 export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
-  const { currentThread, setCurrentThread } = useAIChat();
+  const { currentThread, setThread } = useThreads();
   const isSelected = currentThread?.id === thread.id;
 
   async function handleDeleteThread() {
@@ -50,7 +50,7 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
         <button
           type="button"
           aria-current={isSelected ? "true" : undefined}
-          onClick={() => setCurrentThread(thread)}
+          onClick={() => setThread(thread)}
           className={cn(
             "flex h-full min-w-0 flex-1 items-center rounded-lg pl-2.5 pr-1 text-left focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
             aiThemeClassNames.borderFocus,
