@@ -1,13 +1,11 @@
 import { createContext, useState, useContext, type ReactNode } from "react";
 import { trpcClient } from "../utils/trpc";
-import type { ChatMessage } from "../components/ChatView";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
 import { useThreads } from "./useThreads";
 
 type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 
 type AIContext = {
-  messages: ChatMessage[];
   model: AIModel;
   modelSet: (model: AIModelId, thinking: AIReasoningEffort) => void;
   access: AccessMode;
@@ -24,9 +22,6 @@ type AIModel = {
 const aiContext = createContext<AIContext | undefined>(undefined);
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
-  const [messagesByThread, setMessagesByThread] = useState<
-    Record<string, ChatMessage[]>
-  >({});
   const { currentThread } = useThreads();
   const [isTurning, setTurn] = useState<boolean>(false);
 
@@ -35,9 +30,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     thinking: "low",
   });
   const [access, setAccess] = useState<AccessMode>("workspace-write");
-  const messages = currentThread
-    ? (messagesByThread[currentThread.id] ?? [])
-    : [];
 
   function stopTurn() {
     if (!currentThread) return;
@@ -63,16 +55,9 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     setAccess(access);
   }
 
-  async function loadThreadMessages(threadID: string) {
-    const messages = await trpcClient.loadMessages.query({ threadID });
-
-    return messages;
-  }
-
   return (
     <aiContext.Provider
       value={{
-        messages,
         model,
         modelSet,
         access,

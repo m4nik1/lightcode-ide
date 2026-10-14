@@ -6,17 +6,18 @@
 import { useAIChat } from "./useAIChat";
 import { trpcClient } from "@/utils/trpc";
 import { useThreads } from "./useThreads";
-import { useQuery } from "@tanstack/react-query";
 import { queryClient } from '../utils/trpc'
+import { noThreadAtom, threadAtom } from "@/lib/threadAtoms";
+import { useAtomValue } from "jotai";
 
 export function useChatSession() {
   const { model, access } = useAIChat();
-  const { currentThread } = useThreads()
+  const { currentThread } = useThreads();
 
-  const { data: messages = [] } = useQuery({
-    queryKey: [currentThread],
-    queryFn: () => trpcClient.loadMessages.query({ currentThread.id })
-  });
+  const threadID = currentThread?.id;
+  const { messages, isStreaming } = useAtomValue(
+    threadID ? threadAtom(threadID) : noThreadAtom,
+  );
 
   async function sendQuery(value: string, mode: "build" | "plan") {
     const text = value.trim();

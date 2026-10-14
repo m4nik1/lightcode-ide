@@ -5,6 +5,7 @@ import { aiThemeClassNames } from "../theme";
 import { Shimmer } from "./ai-elements/shimmer";
 import { cn } from "../lib/utils";
 import { useAIChat } from "../context/useAIChat";
+import { useChatSession } from "@/context/useChatSession";
 
 const markdownComponents: Components = {
   a: ({ children }) => (
@@ -25,7 +26,7 @@ export default function ChatMessages({
 }: {
   bottomInset?: number;
 }) {
-  const { messages } = useAIChat();
+  const { messages } = useChatSession();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
