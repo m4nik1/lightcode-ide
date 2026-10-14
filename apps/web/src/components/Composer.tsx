@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowUpIcon, BotIcon, ListTodoIcon, SquareIcon } from "lucide-react";
+import { SquareIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import ModelPicker, { ToolbarDivider } from "./ModelPicker";
 import AccessPicker from "./AccessPicker";
+import SendArrowIcon from "./icons/SendArrowIcon";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
@@ -10,12 +11,9 @@ import { useFileSearch } from "../context/useFileSearch";
 import type { FileSearchResult } from "@/utils/trpc";
 import FileMentionMenu, { entryPath } from "./FileMentionMenu";
 
-type CollaborationMode = "build" | "plan";
-
 export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
-  const [mode, setMode] = useState<CollaborationMode>("build");
   const [search, setSearch] = useState(false);
   const [activeIndex, setIndex] = useState(0);
   const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
@@ -40,13 +38,9 @@ export default function Composer() {
       stopTurn();
     } else {
       if (!canSend) return;
-      void messageSend(value, mode);
+      void messageSend(value, "build");
     }
     setValue("");
-  }
-
-  function toggleMode() {
-    setMode((current) => (current === "build" ? "plan" : "build"));
   }
 
   function handleFileSelect(entry: FileSearchResult) {
@@ -117,12 +111,6 @@ export default function Composer() {
         setSearch(false);
       }
     }
-    if (event.key === "Tab" && event.shiftKey && !search) {
-      event.preventDefault();
-      toggleMode();
-      return;
-    }
-
     if (event.key === "Enter" && !event.shiftKey && !search) {
       event.preventDefault();
       handleSend();
@@ -166,28 +154,6 @@ export default function Composer() {
             <ModelPicker />
             <ToolbarDivider />
             <AccessPicker />
-            <ToolbarDivider />
-            <button
-              type="button"
-              onClick={toggleMode}
-              aria-label={mode === "build" ? "Build mode, switch to Plan" : "Plan mode, switch to Build"}
-              title={mode === "build" ? "Build mode — switch to Plan (Shift+Tab)" : "Plan mode — switch to Build (Shift+Tab)"}
-              className={cn(
-                "inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-2 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2",
-                aiThemeClassNames.focusRing,
-                aiThemeClassNames.surfaceHover,
-                mode === "plan"
-                  ? aiThemeClassNames.textAccent
-                  : cn(aiThemeClassNames.textSecondary, aiThemeClassNames.hoverTextPrimary),
-              )}
-            >
-              {mode === "plan" ? (
-                <ListTodoIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
-              ) : (
-                <BotIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
-              )}
-              <span>{mode === "plan" ? "Plan" : "Build"}</span>
-            </button>
           </div>
 
           <button
@@ -205,7 +171,7 @@ export default function Composer() {
             {isTurning ? (
               <SquareIcon className="size-3.5" fill="currentColor" aria-hidden="true" />
             ) : (
-              <ArrowUpIcon className="size-[18px]" strokeWidth={2} aria-hidden="true" />
+              <SendArrowIcon className="size-5" aria-hidden="true" />
             )}
           </button>
         </div>
