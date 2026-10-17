@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Streaming plan vs ai-feedback</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #09090b; --muted: #f4f4f5; --muted-fg: #71717a;
+    --line: #e4e4e7; --r: 0.5rem;
+    --ok: #15803d; --part: #b45309; --no: #b91c1c;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #09090b; --fg: #fafafa; --muted: #18181b; --muted-fg: #a1a1aa; --line: #27272a;
+            --ok: #4ade80; --part: #fbbf24; --no: #f87171; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  main { max-width: 820px; margin: 0 auto; padding: 48px 20px 64px; }
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 10px; }
+  .lede { color: var(--muted-fg); margin: 6px 0 0; max-width: 64ch; }
+  section { margin-top: 32px; }
+  .card { border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; }
+  code { font-family: var(--mono); font-size: 12.5px; background: var(--muted); padding: 1px 5px; border-radius: 4px; }
+  table { width: 100%; border-collapse: collapse; }
+  .table { border: 1px solid var(--line); border-radius: var(--r); overflow-x: auto; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 500; color: var(--muted-fg); font-size: 12.5px; background: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 500; white-space: nowrap; }
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+  .ok { color: var(--ok); } .part { color: var(--part); } .no { color: var(--no); }
+  ul { margin: 0; padding-left: 18px; } li { margin: 4px 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } td:first-child { white-space: normal; } }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .muted { color: var(--muted-fg); font-size: 12.5px; }
+  .steps { list-style: none; counter-reset: s; padding: 0; border: 1px solid var(--line); border-radius: var(--r); }
+  .steps li { counter-increment: s; position: relative; margin: 0; padding: 12px 16px 12px 52px; border-bottom: 1px solid var(--line); }
+  .steps li:last-child { border-bottom: 0; }
+  .steps li::before { content: counter(s); position: absolute; left: 16px; top: 12px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 999px; background: var(--muted); font-size: 12px; font-weight: 500; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Streaming plan vs <code>ai-feedback</code></h1>
+  <p class="lede">The branch starts the hook refactor but not the streaming design.</p>
+  <div class="meta">
+    <span class="badge">origin/ai-feedback @ e874c55</span>
+    <span class="badge">plan: docs/thread-streaming-plan.html</span>
+  </div>
+</header>
+
+<section>
+  <h2>Status by area</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th>Area</th><th>Status</th><th>On ai-feedback</th></tr></thead>
+      <tbody>
+        <tr><td><code>useProjects</code></td><td><span class="badge ok">Done</span></td><td>The sidebar uses React Query directly.</td></tr>
+        <tr><td>Thread metadata</td><td><span class="badge ok">Done</span></td><td>Keyed by <code>["threads", projectId]</code>; create and delete invalidate correctly.</td></tr>
+        <tr><td><code>useThreads</code></td><td><span class="badge part">Partial</span></td><td>Added, but selection is also kept in <code>AiChatProvider</code>.</td></tr>
+        <tr><td><code>useChatSession</code></td><td><span class="badge part">Partial</span></td><td>Started; optimistic, streaming and status updates are commented out.</td></tr>
+        <tr><td>Per-thread zustand stores</td><td><span class="badge no">Missing</span></td><td>Not present.</td></tr>
+        <tr><td>Concurrent A/B streaming, partial text</td><td><span class="badge no">Missing</span></td><td>Not implemented.</td></tr>
+        <tr><td>Stop fixes</td><td><span class="badge no">Missing</span></td><td>The server still never assigns <code>turnId</code>.</td></tr>
+        <tr><td>Typed event IDs and outcomes</td><td><span class="badge no">Missing</span></td><td>Not present.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="grid">
+  <section class="card">
+    <h2>Breaks today</h2>
+    <ul>
+      <li><code>Composer</code> calls <code>messageSend</code>, which was removed from <code>useAIChat</code>.</li>
+      <li><code>useChatSession</code> has invalid syntax: <code>loadMessages.query({ currentThread.id })</code>.</li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Adapting the plan</h2>
+    <ul>
+      <li>Target <code>apps/novus</code> (<code>@novus/app</code>) and <code>ChatView.tsx</code>, not <code>apps/web</code>.</li>
+      <li>Reuse the branch's project and thread queries.</li>
+      <li>Keep thread selection in one zustand session store.</li>
+      <li>Put the per-thread stores and stream lifecycle behind the four hooks.</li>
+      <li>After a title change, invalidate <code>["threads", projectId]</code>, not <code>["projects"]</code>.</li>
+    </ul>
+  </section>
+</div>
+
+<section>
+  <h2>Changes I would make on <code>ai-feedback</code></h2>
+  <p class="muted" style="margin:-4px 0 12px">In order; each step leaves the app building.</p>
+  <ol class="steps">
+    <li><b>Fix the build.</b> <code>Composer</code> calls <code>useChatSession().sendQuery</code> instead of <code>messageSend</code>. Drop the broken <code>loadMessages</code> query; step 4 replaces it.</li>
+    <li><b>Add zustand.</b> <code>npm install zustand@^5 -w @novus/app</code>.</li>
+    <li><b>One session store.</b> <code>lib/sessionStore.ts</code> (plan phase 3). Remove the duplicate state from <code>AiChatProvider</code> and <code>ThreadProvider</code>. <code>useThreads</code> keeps <code>newThread</code> and its invalidation but selects through the store.</li>
+    <li><b>Per-thread stores.</b> <code>lib/threadStore.ts</code> (plan phase 1), replacing <code>messagesByThread</code>.</li>
+    <li><b>Stream lifecycle.</b> <code>lib/threadStream.ts</code> (plan phase 2). <code>sendMessage</code> takes the thread object so it can invalidate <code>["threads", thread.projectId]</code> after settle.</li>
+    <li><b>Thin hooks.</b> <code>useChatSession()</code> reads the session store. <code>useAIChat(threadId)</code> returns that thread's <code>history</code>, <code>live</code>, <code>status</code>, <code>send</code> and <code>stop</code>. <code>useProjects</code> stays.</li>
+    <li><b>Components.</b> As in plan phase 3, with <code>ChatView.tsx</code> in place of <code>ChatMessages.tsx</code>. <code>AIWindow</code> drops the old providers.</li>
+    <li><b>Events and Stop.</b> Plan phase 4, plus the review's Stop race and cleanup fixes.</li>
+    <li><b>Verify.</b> <code>npm run typecheck</code>, <code>npm run novus:build</code>, then the manual check from plan phase 5.</li>
+  </ol>
+  <p class="muted" style="margin-top:10px">Still open: same-thread overlap policy, and whether live text is keyed by <code>itemId</code> or shows only final answers.</p>
+</section>
+
+<p class="muted" style="margin-top:24px">This compares source code only. The branch was not run.</p>
+
+</main>
+</body>
+</html>

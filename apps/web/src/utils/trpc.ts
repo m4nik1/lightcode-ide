@@ -75,5 +75,7 @@ export const queryClient = new QueryClient({
 });
 
 export const trpcClient = createTRPCClient({
-  links: [httpBatchStreamLink({ url: 'http://localhost:2024' })],
+  links: [httpBatchStreamLink({
+    url: import.meta.env.VITE_API_URL || (window.electronAPI ? 'http://localhost:2024' : '/trpc'),
+  })],
 }) as unknown as Router;

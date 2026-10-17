@@ -9,6 +9,7 @@
     "apps/desktop",
     "apps/server",
     "apps/novus",
+    "apps/web",
     "packages/*"
   ],
   "repository": {
@@ -23,7 +24,10 @@
     "novus:build": "npm run build -w @novus/app",
     "novus:dmg": "npm run build-dmg -w @novus/app",
     "server": "npm run dev -w @lightcode/server",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "web": "npm run dev -w @novus/web",
+    "web:build": "npm run build -w @novus/web",
+    "web:preview": "npm run preview -w @novus/web"
   },
   "allowScripts": {
     "electron@41.1.1": true,

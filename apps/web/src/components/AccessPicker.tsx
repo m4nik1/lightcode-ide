@@ -1,4 +1,4 @@
-import { ShieldAlertIcon } from "lucide-react";
+import { LockIcon, LockOpenIcon } from "lucide-react";
 import { PickerDropdown, type PickerOption } from "./ModelPicker";
 import { useAIChat } from "../context/useAIChat";
 
@@ -25,9 +25,12 @@ export default function AccessPicker() {
       value={access}
       onSelect={accessSet}
       menuWidth="min-w-64"
-      showChevron={false}
       triggerLeading={
-        isFullAccess ? <ShieldAlertIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" /> : null
+        isFullAccess ? (
+          <LockOpenIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+        ) : (
+          <LockIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+        )
       }
       triggerClassName={
         isFullAccess

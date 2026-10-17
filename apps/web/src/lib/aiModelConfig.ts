@@ -1,8 +1,7 @@
 export const AI_MODEL_IDS = [
   'gpt-6-astra',
-  "gpt-5.6-sol",
-  "gpt-5.6-terra",
-  "gpt-5.6-luna",
+  "gpt-6.1-sol",
+  "gpt-6-luna",
 ] as const;
 
 export type AIModelId = (typeof AI_MODEL_IDS)[number];
