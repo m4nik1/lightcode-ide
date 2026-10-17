@@ -2,24 +2,33 @@ import { useState } from "react";
 import { Folder, SquarePen } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ChevronIcon } from "./icons";
-import type { thread } from "./types";
-import type { Project } from "./AISidebar";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient, type ProjectRow } from "../../utils/trpc";
 import { aiThemeClassNames } from "../../theme";
 import { ThreadItem } from "./ThreadItem";
 
 type ProjectDropdownProps = {
-  project: Project;
+  project: ProjectRow;
   onCreateThread: () => void;
-  onDeleteThread: (threadID: string) => void;
 };
 
 export function ProjectDropdown({
   project,
   onCreateThread,
-  onDeleteThread,
 }: ProjectDropdownProps) {
   const [expanded, setExpanded] = useState(true);
-  const threadCount = project.threads.length;
+  const queryClient = useQueryClient();
+  const { data: threads = [], isPending, isError } = useQuery({
+    queryKey: ["threads", project.id],
+    queryFn: () => trpcClient.getThreads.query({ projectID: project.id }),
+  });
+  const threadCount = threads.length;
+
+  function handleThreadDeleted() {
+    void queryClient.invalidateQueries({
+      queryKey: ["threads", project.id],
+    });
+  }
   const listId = `project-${project.id}-threads`;
 
   return (
@@ -76,7 +85,7 @@ export function ProjectDropdown({
 
       {expanded && (
         <ul id={listId} className="m-0 list-none p-0">
-          {threadCount === 0 ? (
+          {isPending || isError || threadCount === 0 ? (
             <li
               className={cn(
                 "relative flex h-8 items-center pl-8 text-[12px] before:absolute before:top-0 before:bottom-0 before:left-[17px] before:w-px",
@@ -84,14 +93,23 @@ export function ProjectDropdown({
                 aiThemeClassNames.textDisabled,
               )}
             >
-              No chats yet
+              {isPending
+                ? "Loading chats…"
+                : isError
+                  ? "Could not load chats."
+                  : "No chats yet"}
             </li>
           ) : (
-            project.threads.map((t: thread) => (
+            threads.map((row) => (
               <ThreadItem
-                key={t.id}
-                thread={t}
-                onDeleteThread={onDeleteThread}
+                key={row.id}
+                thread={{
+                  id: row.id,
+                  title: row.name,
+                  projectId: row.project_id,
+                  projectPath: project.path,
+                }}
+                onDeleteThread={handleThreadDeleted}
               />
             ))
           )}

@@ -5,6 +5,7 @@ import { aiThemeClassNames } from "../theme";
 import { Shimmer } from "./ai-elements/shimmer";
 import { cn } from "../lib/utils";
 import { useAIChat } from "../context/useAIChat";
+import { useChatSession } from "@/context/useChatSession";
 
 const markdownComponents: Components = {
   a: ({ children }) => (
@@ -25,9 +26,8 @@ export default function ChatMessages({
 }: {
   bottomInset?: number;
 }) {
-  const { messages } = useAIChat();
+  const { messages } = useChatSession();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const hasScrolledRef = useRef(false);
 
   useLayoutEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -40,7 +40,6 @@ export default function ChatMessages({
       2;
     // Measure the old scroll range before applying space for the resized composer.
     scrollContainer.style.paddingBottom = `${bottomInset}px`;
-    scrollContainer.style.scrollPaddingBottom = `${bottomInset}px`;
     if (atBottom) scrollContainer.scrollTop = scrollContainer.scrollHeight;
   }, [bottomInset]);
 
@@ -48,11 +47,7 @@ export default function ChatMessages({
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTo({
-      top: scrollContainer.scrollHeight,
-      behavior: hasScrolledRef.current ? "smooth" : "auto",
-    });
-    hasScrolledRef.current = true;
+    scrollContainer.scrollTop = scrollContainer.scrollHeight;
   }, [messages]);
 
   return (
