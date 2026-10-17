@@ -3,14 +3,17 @@
   Also passes thinking traces to the chatView/messages
 */
 
+
 import { useAIChat } from "./useAIChat";
 import { trpcClient } from "@/utils/trpc";
 import { useThreads } from "./useThreads";
 import { queryClient } from '../utils/trpc'
 import { noThreadAtom, threadAtom } from "@/lib/threadAtoms";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useStore } from "jotai";
 
 export function useChatSession() {
+  
+  const store = useStore();
   const { model, access } = useAIChat();
   const { currentThread } = useThreads();
 
@@ -32,6 +35,12 @@ export function useChatSession() {
       `Sending message to ${model.model} with ${model.thinking} thinking in the ${mode} mode `,
     );
 
+    const update = (state: ThreadState) => {
+      console.log("Updating thread state")
+
+      store.set(threadAtom(threadID), )
+
+    }      
     // TODO: Remove this
     // setMessagesByThread((current) => ({
     //   ...current,
