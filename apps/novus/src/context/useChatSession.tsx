@@ -35,29 +35,10 @@ export function useChatSession() {
       `Sending message to ${model.model} with ${model.thinking} thinking in the ${mode} mode `,
     );
 
-    const update = (state: ThreadState) => {
-      console.log("Updating thread state")
-
-      store.set(threadAtom(threadID), )
-
-    }      
-    // TODO: Remove this
-    // setMessagesByThread((current) => ({
-    //   ...current,
-    //   [threadID]: [
-    //     ...(current[threadID] ?? []),
-    //     {
-    //       id: userMessageID,
-    //       text,
-    //       role: "user",
-    //     },
-    //     {
-    //       id: assistantMessageID,
-    //       text: "",
-    //       role: "assistant",
-    //     },
-    //   ],
-    // }));
+    store.set(threadAtom(threadID), (s) => {
+      console.log(s)
+      return { ...s, messages: [...s.messages, { id: userMessageID, text, role: 'user' }, { id: assistantMessageID, text: '', role: 'assistant' }] }
+    });
 
     const streamChat = await trpcClient.queryAI.query({
       threadID,
@@ -67,23 +48,19 @@ export function useChatSession() {
       access,
     });
 
-    // setTurn(true);
-
     for await (const chunk of streamChat) {
       if (chunk.method == "item/agentMessage/delta") {
         const responseText = chunk.params.delta;
 
-        // setMessagesByThread((current) => ({
-        //   ...current,
-        //   [threadID]: (current[threadID] ?? []).map((message) =>
-        //     message.id === assistantMessageID
-        //       ? {
-        //           ...message,
-        //           text: message.text + responseText,
-        //         }
-        //       : message,
-        //   ),
-        // }));
+        store.set(threadAtom(threadID), (s) => {
+          return {
+            ...s,
+            isStreaming: true,
+            messages: s.messages.map((m) =>
+              m.id == assistantMessageID ? { ...m, text: m.text + responseText } : m,
+            ),
+          };
+        });
       }
 
       // if (chunk.method === "turn/completed") {
