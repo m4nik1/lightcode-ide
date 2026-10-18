@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Per-thread streaming plan</title>
+<style>
+  :root {
+    --fg: var(--foreground, #09090b);
+    --muted-fg: var(--muted-foreground, #71717a);
+    --line: var(--border, #e4e4e7);
+    --surface: var(--card, #ffffff);
+    --muted-bg: var(--muted, #f4f4f5);
+    --accent-c: var(--primary, #18181b);
+    --accent-fg: var(--primary-foreground, #fafafa);
+    --r: var(--radius, 0.5rem);
+    --thread-a: var(--chart-1, #2563eb);
+    --thread-b: var(--chart-2, #0d9488);
+    --warn: #b45309;
+    --sans: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+    --mono: var(--font-mono, ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: var(--foreground, #fafafa);
+      --muted-fg: var(--muted-foreground, #a1a1aa);
+      --line: var(--border, #27272a);
+      --surface: var(--card, #09090b);
+      --muted-bg: var(--muted, #18181b);
+      --accent-c: var(--primary, #fafafa);
+      --accent-fg: var(--primary-foreground, #18181b);
+      --thread-a: var(--chart-1, #60a5fa);
+      --thread-b: var(--chart-2, #2dd4bf);
+      --warn: #fbbf24;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body {
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .doc > * { min-width: 0; }
+  .doc { display: grid; gap: 28px; padding: 4px 0 24px; }
+  h1 { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.005em; }
+  h3 { font-size: 14px; font-weight: 600; margin: 16px 0 4px; }
+  p { margin: 0 0 8px; max-width: 72ch; }
+  .lede { color: var(--muted-fg); max-width: 68ch; margin-top: 6px; }
+  code { font-family: var(--mono); font-size: 12.5px; background: var(--muted-bg); padding: 1px 5px; border-radius: calc(var(--r) - 4px); }
+  pre {
+    max-width: 100%;
+    margin: 8px 0 12px; padding: 12px 14px; overflow-x: auto;
+    font-family: var(--mono); font-size: 12px; line-height: 1.55;
+    background: var(--muted-bg); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  ul, ol { margin: 4px 0 10px; padding-left: 20px; max-width: 72ch; }
+  li { margin: 3px 0; }
+  .muted { color: var(--muted-fg); }
+
+  /* Stage */
+  .stage { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 10px 12px; border-bottom: 1px solid var(--line);
+  }
+  .toolbar .spacer { flex: 1; }
+  .tabs { display: inline-flex; padding: 3px; gap: 2px; background: var(--muted-bg); border-radius: var(--r); }
+  .tab {
+    font: 500 13px/1 var(--sans); color: var(--muted-fg); background: transparent;
+    border: 0; border-radius: calc(var(--r) - 2px); padding: 7px 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.a { background: var(--thread-a); } .dot.b { background: var(--thread-b); }
+  .btn {
+    font: 500 13px/1 var(--sans); height: 32px; padding: 0 12px; cursor: pointer;
+    border-radius: calc(var(--r) - 2px); border: 1px solid var(--line);
+    background: var(--surface); color: var(--fg); white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) { background: var(--muted-bg); }
+  .btn.primary { background: var(--accent-c); color: var(--accent-fg); border-color: transparent; }
+  .btn.primary:hover:not(:disabled) { opacity: .9; background: var(--accent-c); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  :is(.btn, .tab, summary):focus-visible { outline: 2px solid var(--accent-c); outline-offset: 2px; }
+
+  .canvas-wrap { position: relative; height: 240px; }
+  .loading { position: absolute; inset: 0; display: grid; place-content: center; color: var(--muted-fg); font-size: 13px; }
+  .stage.ready .loading, .stage.no-gl .loading { display: none; }
+  .canvas-wrap canvas { display: block; width: 100%; height: 240px; }
+  .overlay { position: absolute; inset: 0; pointer-events: none; font-size: 11.5px; }
+  .lbl { position: absolute; transform: translate(-50%, 0); color: var(--muted-fg); white-space: nowrap; }
+  .lbl.strong { color: var(--fg); font-weight: 500; }
+  .fallback {
+    position: absolute; inset: 0; display: none; place-content: center; text-align: center;
+    padding: 16px; color: var(--muted-fg); font-size: 13px;
+  }
+  .stage.no-gl .fallback { display: grid; }
+  .stage.no-gl canvas, .stage.no-gl .overlay { display: none; }
+
+  .readout { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+  .col { padding: 10px 12px; min-width: 0; }
+  .col + .col { border-left: 1px solid var(--line); }
+  .col.sel { background: color-mix(in srgb, var(--muted-bg) 60%, transparent); }
+  .col-head { display: flex; align-items: center; gap: 6px; font-weight: 500; margin-bottom: 4px; }
+  .badge { margin-left: auto; font-size: 11.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted-fg); }
+  .badge[data-s="streaming"] { color: var(--fg); }
+  .badge[data-s="interrupted"], .badge[data-s="failed"] { color: var(--warn); }
+  dl.stats { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; margin: 0; font-size: 12.5px; }
+  dl.stats dt { color: var(--muted-fg); } dl.stats dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+  .live {
+    border-top: 1px solid var(--line); padding: 10px 12px; font-size: 13px; min-height: 64px; max-height: 96px; overflow: hidden;
+    display: flex; flex-direction: column-reverse;
+  }
+  .live-text { color: var(--fg); }
+  .live-text .hist { color: var(--muted-fg); }
+  .caption { max-width: none; margin: 0; font-size: 12.5px; color: var(--muted-fg); padding: 8px 12px 10px; border-top: 1px solid var(--line); }
+
+  /* Decisions table */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .grid3 > section { padding: 12px 14px; min-width: 0; }
+  .grid3 > section + section { border-left: 1px solid var(--line); }
+  .grid3 h2 { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .grid3 ul { padding-left: 16px; font-size: 13px; }
+  .pill { font-size: 11px; font-weight: 500; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted-fg); }
+  .pill.open { color: var(--warn); border-color: currentColor; }
+
+  /* Phases */
+  .phases { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  details + details { border-top: 1px solid var(--line); }
+  summary {
+    list-style: none; cursor: pointer; padding: 12px 14px; display: grid;
+    grid-template-columns: 24px 1fr auto; gap: 10px; align-items: baseline;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary .n { font-variant-numeric: tabular-nums; color: var(--muted-fg); font-weight: 500; }
+  summary .t { font-weight: 600; }
+  summary .s { display: block; font-weight: 400; color: var(--muted-fg); font-size: 13px; }
+  summary .chev { color: var(--muted-fg); transition: transform .15s; }
+  details[open] summary .chev { transform: rotate(90deg); }
+  .body { padding: 0 14px 14px 48px; }
+  .files { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0; border: 1px solid var(--line); border-radius: var(--r); font-size: 13px; overflow: hidden; }
+  .files > div { padding: 7px 12px; border-top: 1px solid var(--line); min-width: 0; overflow-wrap: anywhere; }
+  .files > div:nth-child(-n+2) { border-top: 0; }
+  .files .k { font-family: var(--mono); font-size: 12px; }
+  .files .v { color: var(--muted-fg); text-align: right; white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .grid3 { grid-template-columns: 1fr; }
+    .grid3 > section + section { border-left: 0; border-top: 1px solid var(--line); }
+    .body { padding-left: 14px; }
+    .toolbar .spacer { display: none; }
+    .readout { grid-template-columns: 1fr; }
+    .col + .col { border-left: 0; border-top: 1px solid var(--line); }
+    .files { grid-template-columns: 1fr; }
+    .files > div.v { border-top: 0; text-align: left; padding-top: 0; white-space: normal; }
+    .files > div:nth-child(2) { border-top: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { summary .chev { transition: none; } }
+</style>
+</head>
+<body>
+<main class="doc">
+
+<header>
+  <h1>Per-thread streaming plan</h1>
+  <p class="lede">Move streamed text out of the shared chat context into one zustand store per thread. A keeps streaming while you view B, and each view re-renders only for its own thread. Proposal only; no app code has changed.</p>
+</header>
+
+<!-- Interactive model of the proposed store -->
+<section class="stage" id="stage" aria-labelledby="demo-title">
+  <h2 id="demo-title" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Two threads streaming into one store</h2>
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="Selected thread">
+      <button class="tab" role="tab" id="tab-A" aria-selected="true" aria-controls="readout"><span class="dot a"></span>Thread A</button>
+      <button class="tab" role="tab" id="tab-B" aria-selected="false" aria-controls="readout"><span class="dot b"></span>Thread B</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn primary" id="send">Send in A</button>
+    <button class="btn" id="stop">Stop A</button>
+    <button class="btn" id="pause" aria-pressed="false">Pause</button>
+    <button class="btn" id="reset">Reset</button>
+  </div>
+  <div class="canvas-wrap" aria-hidden="true">
+    <canvas id="gl"></canvas>
+    <div class="loading">Loading stream diagram…</div>
+    <div class="overlay" id="overlay"></div>
+    <div class="fallback">The 3D view needs WebGL and the Three.js CDN. The readout below runs the same model without it.</div>
+  </div>
+  <div class="readout" id="readout" role="tabpanel" aria-labelledby="tab-A">
+    <div class="col" id="col-A"></div>
+    <div class="col" id="col-B"></div>
+  </div>
+  <div class="live" aria-label="Selected thread view"><div class="live-text" id="live"></div></div>
+  <p class="caption" id="status-line" role="status" aria-live="polite">Send in A, switch to B, send there too. Both keep streaming; only the selected thread reaches the view.</p>
+</section>
+<p class="muted" style="margin-top:-18px;font-size:12.5px">Left to right: server stream, store, view. Dots into a store are chunks; dots into the view come from the selected thread only. The demo blocks a second send per thread; the real policy is open.</p>
+
+<!-- Today -->
+<section>
+  <h2>What happens today</h2>
+  <ul>
+    <li><code>context/useAIChat.tsx</code> holds <code>Record&lt;string, ChatMessage[]&gt;</code>. Each delta copies it, maps the thread's history and re-renders every consumer.</li>
+    <li><code>isTurning</code> is global, so threads can't show their own status.</li>
+    <li><code>setCurrentThread</code> always reloads, so switching back mid-stream can replace live text with stale history.</li>
+    <li><code>lightThread.ts</code> never sets <code>turnId</code>, so <code>stopTurn()</code> always throws.</li>
+    <li>The server saves only <code>final_answer</code> messages. The frontend <code>AIEvent</code> type knows only the delta and <code>turn/completed</code>, with no IDs or outcome.</li>
+    <li><code>AISidebar.tsx</code> keeps its own project state beside React Query.</li>
+  </ul>
+</section>
+
+<!-- Decisions -->
+<div class="grid3">
+  <section>
+    <h2>Decided <span class="pill">approved</span></h2>
+    <ul>
+      <li>No <code>.map</code>, history scan or record copy per chunk.</li>
+      <li>A keeps streaming while B is selected; B can start while A runs.</li>
+      <li>Partial text stays in memory after error, stop and thread switches.</li>
+      <li>One zustand store per thread, read with selectors.</li>
+      <li>Switching or unmounting a view never stops a stream.</li>
+      <li>No token text in shared context.</li>
+      <li>Status is per thread; no global <code>isTurning</code>.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Unresolved <span class="pill open">needs a call</span></h2>
+    <ul>
+      <li>Second send on a streaming thread: block, queue, steer or run both? Not chosen yet.</li>
+      <li>How tool calls and reasoning group under a turn. For now all <code>agentMessage</code> deltas join into one reply.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Deferred <span class="pill">later</span></h2>
+    <ul>
+      <li>Keeping partial text across reloads.</li>
+      <li>Matching server message IDs with local IDs.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- Phases -->
+<section>
+  <h2>Implementation phases</h2>
+  <p class="muted">Each phase leaves the app building. Code is a sketch.</p>
+  <div class="phases">
+
+    <details open>
+      <summary><span class="n">1</span><span><span class="t">Per-thread zustand stores</span><span class="s">One vanilla store per thread, read with selectors</span></span><span class="chev">›</span></summary>
+      <div class="body">
+
+        <p>Install: <code>npm install zustand@^5 -w @novus/web</code> (desktop already uses 5.0.14).</p>
+        <p>Each thread gets its own store in a Map. A delta updates only that store, so other threads' subscribers never run. One global store would copy the record and run every selector per chunk.</p>
+        <h3><code>apps/web/src/lib/threadStore.ts</code> <span class="pill">new</span></h3>
+        <pre><code>export type ThreadStatus = "idle" | "streaming" | "completed" | "interrupted" | "failed";
+export type SettledStatus = Exclude&lt;ThreadStatus, "idle" | "streaming"&gt;;
+
+export type ThreadState = {
+  history: readonly ChatMessage[]; // replaced only on send, settle and hydrate
+  live: { requestId: string; text: string } | null;
+  status: ThreadStatus;
+  error: string | null;
+  hydrated: boolean;
+};
+
+const stores = new Map&lt;string, StoreApi&lt;ThreadState&gt;&gt;();
+
+// ... getThreadStore(id): get or create the store
+// ... useThread(id, selector): useStore on that store
+// ... hydrate(id): load history once; shares an in-flight request
+// ... beginTurn(id, requestId, text): add the user message, live = "", status "streaming"
+
+export function appendDelta(threadId: string, requestId: string, delta: string) {
+  const store = getThreadStore(threadId);
+  const { live } = store.getState();
+  if (live?.requestId !== requestId) return; // stale stream
+  store.setState({ live: { requestId, text: live.text + delta } }); // history untouched
+}
+
+export function settle(threadId: string, requestId: string, status: SettledStatus, error: string | null) {
+  getThreadStore(threadId).setState((s) =&gt; {
+    if (s.live?.requestId !== requestId) return s; // same object: no notify
+    const reply: ChatMessage = {
+      id: requestId,
+      role: "assistant",
+      text: s.live.text,
+      interrupted: status !== "completed",
+    };
+    const keep = status === "completed" || reply.text.length &gt; 0;
+    return { history: keep ? [...s.history, reply] : s.history, live: null, status, error };
+  });
+}</code></pre>
+        <ul>
+          <li>Per chunk: one Map lookup, one string join, one small object. <code>history</code> keeps its reference.</li>
+          <li>On stop or failure, partial text joins history once, marked <code>interrupted</code>.</li>
+          <li>Returning <code>s</code> skips the notify, so stale settles do nothing.</li>
+        </ul>
+
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="n">2</span><span><span class="t">Stream lifecycle</span><span class="s">Plain functions that own a stream from send to settle</span></span><span class="chev">›</span></summary>
+      <div class="body">
+
+        <p>Each stream writes through its captured <code>threadId</code> and <code>requestId</code>, so switching threads never touches it.</p>
+        <h3><code>apps/web/src/lib/threadStream.ts</code> <span class="pill">new</span></h3>
+        <pre><code>export async function sendMessage(threadId: string, text: string, mode: "build" | "plan") {
+  const store = getThreadStore(threadId);
+  try {
+    await hydrate(threadId);
+  } catch (err) {
+    store.setState({ status: "failed", error: errorMessage(err) });
+    return;
+  }
+  // Interim guard; the same-thread overlap policy is still open.
+  if (store.getState().status === "streaming") return;
+
+  const { model, access } = useSession.getState(); // captured for this turn
+  const requestId = crypto.randomUUID();
+  beginTurn(threadId, requestId, text);
+
+  let status: SettledStatus = "failed";
+  let error: string | null = "Stream ended before turn/completed";
+  try {
+    const stream = await trpcClient.queryAI.query({ threadID: threadId, message: text, model, mode, access });
+    for await (const event of stream) {
+      if (event.method === "item/agentMessage/delta") {
+        appendDelta(threadId, requestId, event.params.delta);
+      } else if (event.method === "turn/completed") {
+        const { turn } = event.params;
+        status = turn.status === "inProgress" ? "failed" : turn.status;
+        error = turn.error?.message ?? null;
+      }
+    }
+  } catch (err) {
+    status = "failed";
+    error = errorMessage(err);
+  } finally {
+    settle(threadId, requestId, status, error);
+  }
+  // ... refresh the title, invalidate ["projects"]
+}
+
+// ... stopTurn(id): call trpcClient.stopTurn; status settles from turn/completed ("interrupted")</code></pre>
+        <ul>
+          <li>EOF without <code>turn/completed</code> settles as <code>failed</code> and keeps partial text.</li>
+          <li>Hydration runs before the first write, so server history can't overwrite local messages.</li>
+        </ul>
+
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="n">3</span><span><span class="t">Session store and components</span><span class="s">Replace the context with a zustand hook</span></span><span class="chev">›</span></summary>
+      <div class="body">
+
+        <p>Selection, model and access move to a plain zustand hook. They change only on user actions.</p>
+        <h3><code>apps/web/src/lib/sessionStore.ts</code> <span class="pill">new</span></h3>
+        <pre><code>export type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
+
+export const useSession = create&lt;SessionState&gt;()((set) =&gt; ({
+  currentThread: null,
+  model: { model: "gpt-5.6-luna", thinking: "low" },
+  access: "workspace-write",
+
+  selectThread: (thread) =&gt; {
+    set({ currentThread: thread });
+    // Never aborts or reloads a live thread; hydrate is a no-op after the first load.
+    hydrate(thread.id).catch(/* ... mark the thread failed */);
+  },
+  // ... setModel, setAccess, renameThread: plain setters
+}));</code></pre>
+        <h3><code>apps/web/src/components/ChatMessages.tsx</code> <span class="pill">edit</span></h3>
+        <pre><code>export type ChatMessage = { id: string; text: string; role: "user" | "assistant"; interrupted?: boolean };
+
+export default function ChatMessages({ bottomInset = 24 }: { bottomInset?: number }) {
+  const threadId = useSession((s) =&gt; s.currentThread?.id ?? null);
+  const history = useThread(threadId, (s) =&gt; s.history);        // changes on send/settle only
+  const live = useThread(threadId, (s) =&gt; s.live?.text ?? null); // changes per delta
+  // ... refs and effects unchanged; scroll effect deps become [history, live]
+
+  return (
+    // ... wrappers unchanged
+        &lt;MessageList messages={history} /&gt;
+        {live !== null &amp;&amp; &lt;MessageBubble message={{ id: "live", role: "assistant", text: live }} /&gt;}
+  );
+}
+
+// Same props between deltas, so the history list is skipped while streaming.
+const MessageList = memo(function MessageList({ messages }: { messages: readonly ChatMessage[] }) {
+  return messages.map((message) =&gt; &lt;MessageBubble key={message.id} message={message} /&gt;);
+});
+
+// ... MessageBubble: today's map callback, plus a muted "Stopped" note when message.interrupted</code></pre>
+        <h3><code>Composer, ThreadItem, ModelPicker, AccessPicker, AIWindow, AISidebar</code> <span class="pill">edit</span></h3>
+        <pre><code>// Composer.tsx
+const isTurning = useThread(currentThread?.id ?? null, (s) =&gt; s.status === "streaming");
+// ... handleSend: isTurning ? stopTurn(id) : sendMessage(id, value.trim(), mode)
+
+// ThreadItem.tsx
+const isStreaming = useThread(thread.id, (s) =&gt; s.status === "streaming"); // status only, not text
+
+// ... the rest read and write useSession through selectors</code></pre>
+        <ul>
+          <li>Delete <code>context/useAIChat.tsx</code> and <code>&lt;AiChatProvider&gt;</code>. Zustand needs no provider.</li>
+          <li>Move <code>createProject</code> to <code>lib/projects.ts</code>; swap <code>projectsQuery.refetch()</code> for <code>queryClient.invalidateQueries({ queryKey: ["projects"] })</code>.</li>
+          <li>The sidebar uses <code>selectThread</code> instead of <code>setCurrentThread</code>.</li>
+        </ul>
+
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="n">4</span><span><span class="t">Event types and Stop</span><span class="s">Type the fields we read; make the server track turnId</span></span><span class="chev">›</span></summary>
+      <div class="body">
+
+        <h3><code>apps/web/src/utils/trpc.ts</code> <span class="pill">edit</span></h3>
+        <pre><code>type TurnStatus = "completed" | "interrupted" | "failed" | "inProgress";
+
+// Mirrors AgentMessageDeltaNotification and TurnCompletedNotification in packages/codex-protocol.
+type AIEvent =
+  | { method: "item/agentMessage/delta"; params: { threadId: string; turnId: string; itemId: string; delta: string } }
+  | { method: "turn/completed"; params: { threadId: string; turn: { id: string; status: TurnStatus; error: { message: string } | null } } };</code></pre>
+        <h3><code>apps/server/lightThread.ts</code> <span class="pill">edit</span></h3>
+        <p>Stop fails because <code>turnId</code> is never set. Inside <code>sendQueryStream</code>:</p>
+        <pre><code>for await (const event of this.codexInstance.streamTurn({ ... })) {
+  if (event.method === "turn/started") this.turnId = event.params.turn.id;
+  yield event;
+  if (event.method === "turn/completed") this.turnId = null;
+}</code></pre>
+        <p class="muted">One <code>turnId</code> per thread, so same-thread overlap also affects Stop (see Unresolved).</p>
+
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="n">5</span><span><span class="t">Validation</span><span class="s">Store tests, typecheck, build</span></span><span class="chev">›</span></summary>
+      <div class="body">
+
+        <h3>Store tests (web needs a runner, such as vitest)</h3>
+        <ul>
+          <li>Deltas on A notify only A; B's state is unchanged.</li>
+          <li><code>appendDelta</code> keeps the <code>history</code> reference.</li>
+          <li>Interleaved A and B streams survive switching.</li>
+          <li>Hydration runs once per thread, before the first local write.</li>
+          <li>Completion adds exactly one assistant message.</li>
+          <li>Startup error, transport error, EOF and <code>interrupted</code> keep partial text, marked <code>interrupted: true</code>.</li>
+          <li>Stale <code>requestId</code>s can't write or settle.</li>
+        </ul>
+        <h3>Checks</h3>
+        <ul>
+          <li><code>npm run typecheck</code> and <code>npm run web:build</code>.</li>
+          <li>Manual: stream two threads, switch both ways, stop each.</li>
+        </ul>
+
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- Review -->
+<section>
+  <h2>Review: DeepSeek V4.1 Flash <span class="pill open">fix before implementing</span></h2>
+  <p class="muted">Confirmed: store isolation, hydration order, concurrent A/B streaming and in-memory partial text.</p>
+  <ul>
+    <li><b>Stop race.</b> Stop before <code>turn/started</code> throws (<code>turnId</code> is null). Queue it on the server until the ID arrives.</li>
+    <li><b>Server cleanup.</b> In phase 4, clear <code>turnId</code> in a <code>finally</code> so errors and disconnects don't leave it stale.</li>
+    <li><b>Hook boundaries.</b> Keep <code>useProjects</code>, <code>useThreads</code>, <code>useChatSession</code> and <code>useAIChat(threadId)</code> as thin wrappers over the stores and React Query.</li>
+    <li><b>Message identity.</b> Joining all deltas ignores <code>itemId</code>, so commentary and the final answer merge, and live text can differ from saved history (only <code>final_answer</code> is saved). Key live text by <code>itemId</code>, or show only final answers.</li>
+    <li><b>Model picker.</b> <code>ModelPicker</code> has its own state. Read the model from <code>useSession</code> so the shown model is the one sent.</li>
+  </ul>
+</section>
+
+<!-- Files -->
+<section>
+  <h2>Files</h2>
+  <div class="files">
+    <div class="k">apps/web/package.json</div><div class="v">add zustand ^5</div>
+    <div class="k">apps/web/src/lib/threadStore.ts</div><div class="v">new: per-thread stores, actions, useThread</div>
+    <div class="k">apps/web/src/lib/threadStream.ts</div><div class="v">new: sendMessage, stopTurn</div>
+    <div class="k">apps/web/src/lib/sessionStore.ts</div><div class="v">new: selection, model, access</div>
+    <div class="k">apps/web/src/lib/projects.ts</div><div class="v">new: createProject</div>
+    <div class="k">apps/web/src/context/useAIChat.tsx</div><div class="v">delete</div>
+    <div class="k">apps/web/src/components/ChatMessages.tsx</div><div class="v">memoized history plus live bubble</div>
+    <div class="k">Composer, ThreadItem, ModelPicker, AccessPicker, AIWindow, AISidebar</div><div class="v">switch to zustand hooks</div>
+    <div class="k">apps/web/src/utils/trpc.ts</div><div class="v">typed lifecycle events</div>
+    <div class="k">apps/server/lightThread.ts</div><div class="v">capture and clear turnId</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+(() => {
+  // ---- Mini model of the proposed store (runs with or without WebGL) ----
+  const WORDS = {
+    A: "Reading the sidebar component. The thread list is fetched in an effect, so I will move it to a query keyed by project and drop the duplicated state. ".split(" "),
+    B: "Checking lightThread.ts. turnId is declared but never assigned, which is why interrupt fails. Capturing it from turn/started fixes stop. ".split(" "),
+  };
+  const RATE = { A: 110, B: 170 };
+  const LIMIT = 46;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const entries = new Map();
+  const listeners = new Map();
+  function fresh() { return { history: 0, live: null, retained: Object.freeze([]), status: "idle", chunks: 0, notified: 0, snaps: 0, snapshot: null, word: 0, acc: 0 }; }
+  function resetStore() { entries.set("A", fresh()); entries.set("B", fresh()); }
+  function emit(id) { const s = listeners.get(id); if (s) s.forEach(fn => fn(id)); }
+  function subscribe(id, fn) {
+    if (!listeners.has(id)) listeners.set(id, new Set());
+    listeners.get(id).add(fn);
+    return () => { const s = listeners.get(id); s.delete(fn); if (!s.size) listeners.delete(id); };
+  }
+  function getSnapshot(id) {
+    const e = entries.get(id);
+    if (!e.snapshot) { e.snaps++; e.snapshot = Object.freeze({ live: e.live, retained: e.retained, status: e.status, history: e.history }); }
+    return e.snapshot;
+  }
+  function change(id) { entries.get(id).snapshot = null; emit(id); }
+
+  let selected = "A", paused = false, unsubscribe = null;
+  const $ = s => document.getElementById(s);
+  const statusLine = $("status-line");
+  function announce(msg) { statusLine.textContent = msg; }
+
+  function onViewNotify(id) { entries.get(id).notified++; viz.toView(id); renderLive(); }
+  function select(id) {
+    if (unsubscribe) unsubscribe();
+    selected = id;
+    unsubscribe = subscribe(id, onViewNotify);
+    for (const t of ["A", "B"]) $("tab-" + t).setAttribute("aria-selected", String(t === id));
+    $("readout").setAttribute("aria-labelledby", "tab-" + id);
+    viz.select(id); render(); renderLive();
+  }
+
+  function send(id) {
+    const e = entries.get(id);
+    if (e.status === "streaming") return;
+        e.live = ""; e.status = "streaming"; e.history += 1; e.word = 0; e.acc = 0;
+    change(id); render(); announce(`Thread ${id} started streaming.`);
+  }
+  function settle(id, outcome) {
+    const e = entries.get(id);
+    if (e.status !== "streaming") return;
+    e.status = outcome;
+    if (outcome === "completed") { e.history += 1; e.live = null; }
+    else { if (e.live) e.retained = Object.freeze([...e.retained, e.live]); e.live = null; }
+    change(id); render(); renderLive();
+    announce(outcome === "completed" ? `Thread ${id} completed and committed to history once.` : `Thread ${id} interrupted. Its partial text stays visible.`);
+  }
+  function stop(id) { settle(id, "interrupted"); }
+
+  function tick(dt) {
+    if (paused) return;
+    for (const id of ["A", "B"]) {
+      const e = entries.get(id);
+      if (e.status !== "streaming") continue;
+      e.acc += dt;
+      while (e.acc >= RATE[id] && e.status === "streaming") {
+        e.acc -= RATE[id];
+        const w = WORDS[id];
+        e.live += (e.live ? " " : "") + w[e.word % w.length];
+        e.word++; e.chunks++;
+        viz.toStore(id);
+        change(id);
+        if (e.word >= LIMIT) settle(id, "completed");
+      }
+    }
+    render();
+  }
+
+  const LABEL = { idle: "Idle", streaming: "Streaming", completed: "Completed", interrupted: "Interrupted" };
+  function render() {
+    for (const id of ["A", "B"]) {
+      const e = entries.get(id);
+      const col = $("col-" + id);
+      col.classList.toggle("sel", id === selected);
+      col.innerHTML = `<div class="col-head"><span class="dot ${id.toLowerCase()}"></span>Thread ${id}${id === selected ? ' <span class="muted" style="font-weight:400">(selected)</span>' : ""}<span class="badge" data-s="${e.status}">${LABEL[e.status]}</span></div>
+      <dl class="stats"><dt>Chunks into store</dt><dd>${e.chunks}</dd><dt>Messages in history</dt><dd>${e.history}</dd><dt>Notifications to view</dt><dd>${e.notified}</dd></dl>`;
+      viz.status(id, e);
+    }
+    const s = entries.get(selected);
+    $("send").textContent = "Send in " + selected;
+    $("send").disabled = s.status === "streaming";
+    $("stop").textContent = "Stop " + selected;
+    $("stop").disabled = s.status !== "streaming";
+  }
+  let lastLive = null;
+  function renderLive() {
+    const snap = getSnapshot(selected);
+    if (snap === lastLive) return;
+    lastLive = snap;
+    const parts = [];
+    for (const draft of snap.retained) parts.push(`<span class="hist">${draft} [stopped]</span>`);
+    if (snap.live) parts.push(snap.live);
+    if (!parts.length) parts.push(`<span class="hist">${snap.status === "completed" ? "Response committed to history." : "No live response in Thread " + selected + "."}</span>`);
+    $("live").innerHTML = parts.join("<br>");
+  }
+
+  // ---- Visualization (Three.js, optional) ----
+  const viz = { toStore() {}, toView() {}, select() {}, status() {}, frame() {} };
+
+  $("tab-A").onclick = () => select("A");
+  $("tab-B").onclick = () => select("B");
+  document.querySelector('[role="tablist"]').addEventListener("keydown", ev => {
+    if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") { const n = selected === "A" ? "B" : "A"; select(n); $("tab-" + n).focus(); }
+  });
+  $("send").onclick = () => send(selected);
+  $("stop").onclick = () => stop(selected);
+  $("pause").onclick = () => { paused = !paused; $("pause").textContent = paused ? "Resume" : "Pause"; $("pause").setAttribute("aria-pressed", String(paused)); announce(paused ? "Paused." : "Resumed."); };
+  $("reset").onclick = () => { resetStore(); lastLive = null; viz.clear && viz.clear(); select(selected); announce("Reset both threads."); };
+
+  resetStore();
+  select("A");
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(100, now - last); last = now;
+    tick(dt);
+    viz.frame(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---- Load Three.js ----
+  const stage = $("stage");
+  const canvas = $("gl");
+  const testCtx = (() => { try { return canvas.getContext("webgl2") || canvas.getContext("webgl"); } catch { return null; } })();
+  if (!testCtx) { stage.classList.add("no-gl"); return; }
+
+  import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then(THREE => setupViz(THREE)).catch(() => stage.classList.add("no-gl"));
+
+  function cssColor(name, fallback) {
+    const probe = document.createElement("span");
+    probe.style.color = `var(${name}, ${fallback})`;
+    document.body.appendChild(probe);
+    const v = getComputedStyle(probe).color; probe.remove();
+    const c = document.createElement("canvas").getContext("2d");
+    c.fillStyle = "#000"; c.fillStyle = v; c.fillRect(0, 0, 1, 1);
+    const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
+    return (r << 16) | (g << 8) | b;
+  }
+
+  function setupViz(THREE) {
+    stage.classList.add("ready");
+    const H = 240;
+    const renderer = new THREE.WebGLRenderer({ canvas, context: testCtx, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+    const scene = new THREE.Scene();
+    const cam = new THREE.OrthographicCamera(0, 1, 0, -H, -10, 10);
+    const overlay = $("overlay");
+    let W = 0;
+    let col = {};
+    function readColors() {
+      col = { A: cssColor("--thread-a", "#2563eb"), B: cssColor("--thread-b", "#0d9488"), line: cssColor("--line", "#e4e4e7"),
+              muted: cssColor("--muted-fg", "#71717a"), fg: cssColor("--fg", "#09090b"), bg: cssColor("--muted-bg", "#f4f4f5") };
+    }
+    readColors();
+
+    const mat = c => new THREE.MeshBasicMaterial({ color: c, transparent: true });
+    const lineMat = c => new THREE.LineBasicMaterial({ color: c, transparent: true });
+    const lane = { A: 0.3, B: 0.72 };
+    const X = { src: 0.1, store: 0.5, view: 0.88 };
+    const BAR = () => Math.min(150, W * 0.26);
+
+    const g = {};
+    for (const id of ["A", "B"]) {
+      const src = new THREE.Mesh(new THREE.CircleGeometry(6, 32), mat(col[id]));
+      const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)]), lineMat(col.muted));
+      const box = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat(col.bg));
+      const frame = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-.5,-.5,0),new THREE.Vector3(.5,-.5,0),new THREE.Vector3(.5,.5,0),new THREE.Vector3(-.5,.5,0)]), lineMat(col.line));
+      const fill = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat(col[id]));
+      const keep = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat(col.muted));
+      fill.material.opacity = .85; keep.material.opacity = .35; path.material.opacity = .3;
+      scene.add(path, src, box, frame, keep, fill);
+      g[id] = { src, path, box, frame, fill, keep, fillW: 0, targetW: 0, keepW: 0 };
+    }
+    const viewNode = new THREE.Mesh(new THREE.CircleGeometry(9, 32), mat(col.fg));
+    const viewRing = new THREE.Mesh(new THREE.RingGeometry(12, 13.5, 40), mat(col.line));
+    const sub = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), lineMat(col.fg));
+    scene.add(sub, viewRing, viewNode);
+    let subY = lane.A, subYTarget = lane.A;
+
+    const dots = [];
+    const dotGeo = new THREE.CircleGeometry(3, 16);
+    function spawn(id, from, to) {
+      if (reduced) return;
+      let d = dots.find(d => !d.alive);
+      if (!d) { d = { mesh: new THREE.Mesh(dotGeo, mat(0)) }; scene.add(d.mesh); dots.push(d); }
+      d.alive = true; d.t = 0; d.from = from; d.to = to; d.mesh.visible = true;
+      d.mesh.material.color.setHex(col[id]);
+    }
+
+    function labels() {
+      overlay.innerHTML = "";
+      const add = (text, x, y, strong) => { const el = document.createElement("div"); el.className = "lbl" + (strong ? " strong" : ""); el.textContent = text; el.style.left = x + "px"; el.style.top = y + "px"; overlay.appendChild(el); };
+      const small = W < 480;
+      add(small ? "Stream" : "Server stream", W * X.src, 10);
+      add(small ? "Entry" : "Store entry", W * X.store, 10);
+      add(small ? "View" : "Mounted view", W * X.view, 10);
+      for (const id of ["A", "B"]) add("Thread " + id, W * X.src, lane[id] * H + 12, true);
+      add(small ? "" : "subscribed", W * X.view, H * 0.5 + 18);
+    }
+
+    function layout() {
+      W = canvas.clientWidth || 600;
+      renderer.setSize(W, H, false);
+      cam.right = W; cam.updateProjectionMatrix();
+      const bw = BAR();
+      for (const id of ["A", "B"]) {
+        const y = -lane[id] * H, o = g[id];
+        o.src.position.set(W * X.src, y, 1);
+        o.path.geometry.setFromPoints([new THREE.Vector3(W * X.src, y, 0), new THREE.Vector3(W * X.store - bw / 2, y, 0)]);
+        o.box.position.set(W * X.store, y, 0); o.box.scale.set(bw, 22, 1);
+        o.frame.position.copy(o.box.position); o.frame.scale.set(bw, 22, 1);
+      }
+      viewNode.position.set(W * X.view, -H * 0.5, 2);
+      viewRing.position.copy(viewNode.position);
+      labels();
+    }
+    new ResizeObserver(layout).observe(canvas);
+    layout();
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      readColors();
+      for (const id of ["A","B"]) { g[id].src.material.color.setHex(col[id]); g[id].fill.material.color.setHex(col[id]); g[id].box.material.color.setHex(col.bg); g[id].keep.material.color.setHex(col.muted); g[id].path.material.color.setHex(col.muted); }
+      viewNode.material.color.setHex(col.fg); viewRing.material.color.setHex(col.line); sub.material.color.setHex(col.fg);
+    });
+
+    Object.assign(viz, {
+      toStore(id) {
+        const y = -lane[id] * H;
+        spawn(id, [W * X.src, y], [W * X.store - BAR() / 2, y]);
+      },
+      toView(id) {
+        const y = -lane[id] * H;
+        spawn(id, [W * X.store + BAR() / 2, y], [W * X.view, -H * 0.5]);
+      },
+      select(id) { subYTarget = lane[id]; if (reduced) subY = subYTarget; },
+      status(id, e) {
+        const o = g[id];
+        o.targetW = e.live ? Math.min(1, e.live.length / 320) : 0;
+        o.keepW = e.retained.length ? Math.min(1, e.retained.join(" ").length / 320) : 0;
+        o.src.material.opacity = e.status === "streaming" ? 1 : 0.35;
+      },
+      clear() { dots.forEach(d => { d.alive = false; d.mesh.visible = false; }); },
+      frame(dt) {
+        const bw = BAR(), k = reduced ? 1 : Math.min(1, dt / 120);
+        for (const id of ["A", "B"]) {
+          const o = g[id], y = -lane[id] * H, x0 = W * X.store - bw / 2;
+          o.fillW += (o.targetW - o.fillW) * k;
+          const fw = Math.max(0.001, o.fillW * bw);
+          o.fill.scale.set(fw, 10, 1); o.fill.position.set(x0 + fw / 2, y + 3, 1);
+          o.fill.visible = o.fillW > 0.002;
+          const kw = Math.max(0.001, o.keepW * bw);
+          o.keep.scale.set(kw, 4, 1); o.keep.position.set(x0 + kw / 2, y - 6, 1);
+          o.keep.visible = o.keepW > 0;
+          o.frame.material.color.setHex(id === selected ? col.fg : col.muted);
+          o.frame.material.opacity = id === selected ? 1 : 0.4;
+        }
+        subY += (subYTarget - subY) * (reduced ? 1 : Math.min(1, dt / 90));
+        sub.geometry.setFromPoints([new THREE.Vector3(W * X.store + bw / 2, -subY * H, 0), new THREE.Vector3(W * X.view - 12, -H * 0.5, 0)]);
+        for (const d of dots) {
+          if (!d.alive) continue;
+          d.t += dt / 420;
+          if (d.t >= 1) { d.alive = false; d.mesh.visible = false; continue; }
+          const t = 1 - Math.pow(1 - d.t, 2);
+          d.mesh.position.set(d.from[0] + (d.to[0] - d.from[0]) * t, d.from[1] + (d.to[1] - d.from[1]) * t, 3);
+          d.mesh.material.opacity = d.t > 0.8 ? (1 - d.t) * 5 : 1;
+        }
+        renderer.render(scene, cam);
+      },
+    });
+    viz.select(selected);
+    for (const id of ["A", "B"]) viz.status(id, entries.get(id));
+  }
+})();
+</script>
+</body>
+</html>

@@ -10,14 +10,15 @@ export function useProjects() {
   });
 
   async function createProject() {
-    const projectFolder = await window.electronAPI.openFolder();
-    const projectFolderPath = projectFolder.filePaths[0];
+    const projectFolderPath = window.electronAPI
+      ? (await window.electronAPI.openFolder()).filePaths[0]
+      : window.prompt("Enter the absolute project folder path on the machine running the Novus server:")?.trim();
 
     if (!projectFolderPath) {
       return;
     }
 
-    const folderName = projectFolderPath.split("/")?.at(-1);
+    const folderName = projectFolderPath.split(/[\\/]/).filter(Boolean).at(-1);
 
     if (!folderName) {
       return;
