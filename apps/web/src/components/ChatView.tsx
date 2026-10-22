@@ -19,6 +19,7 @@ export type ChatMessage = {
   id: string;
   text: string;
   role: "user" | "assistant";
+  reasoning?: string;
 };
 
 export default function ChatMessages({
@@ -26,7 +27,7 @@ export default function ChatMessages({
 }: {
   bottomInset?: number;
 }) {
-  const { messages } = useChatSession();
+  const { messages, thinking } = useChatSession();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -82,6 +83,16 @@ export default function ChatMessages({
                     aiThemeClassNames.textPrimary,
                   )}
                 >
+                  {message.reasoning?.trim() ? (
+                    <details className="mb-2" open={thinking && !message.text}>
+                      <summary className={cn("cursor-pointer text-sm", aiThemeClassNames.shimmer)}>
+                        {thinking && !message.text ? "Thinking" : "Thought"}
+                      </summary>
+                      <div className="mt-1 whitespace-pre-wrap border-l-2 border-[#2A2A2A] pl-3 text-[#A1A1A1]">
+                        {message.reasoning.trim()}
+                      </div>
+                    </details>
+                  ) : null}
                   {message.text ? (
                     <ReactMarkdown
                       components={markdownComponents}
@@ -90,7 +101,7 @@ export default function ChatMessages({
                     >
                       {message.text}
                     </ReactMarkdown>
-                  ) : (
+                  ) : thinking && !message.reasoning?.trim() ? (
                     <Shimmer
                       as="span"
                       className={cn("text-sm", aiThemeClassNames.shimmer)}
@@ -99,7 +110,7 @@ export default function ChatMessages({
                     >
                       Thinking
                     </Shimmer>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>

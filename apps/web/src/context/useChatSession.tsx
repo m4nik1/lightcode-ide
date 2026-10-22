@@ -18,7 +18,7 @@ export function useChatSession() {
   const { currentThread } = useThreads();
 
   const threadID = currentThread?.id;
-  const { messages, isStreaming } = useAtomValue(
+  const { messages, isStreaming, thinking } = useAtomValue(
     threadID ? threadAtom(threadID) : noThreadAtom,
   );
 
@@ -56,13 +56,45 @@ export function useChatSession() {
           return {
             ...s,
             isStreaming: true,
+            thinking: false,
             messages: s.messages.map((m) =>
               m.id == assistantMessageID ? { ...m, text: m.text + responseText } : m,
             ),
           };
         });
+      } else if (
+        chunk.method == "item/reasoning/summaryTextDelta" ||
+        chunk.method == "item/reasoning/summaryPartAdded"
+      ) {
+        // A new summary part starts a new paragraph
+        const reasoningText =
+          chunk.method == "item/reasoning/summaryTextDelta" ? chunk.params.delta : "\n\n";
+
+        store.set(threadAtom(threadID), (s) => {
+          return {
+            ...s,
+            thinking: true,
+            isStreaming: true,
+            messages: s.messages.map((m) =>
+              m.id == assistantMessageID
+                ? { ...m, reasoning: (m.reasoning ?? "") + reasoningText }
+                : m,
+            ),
+          };
+        });
+      } else if(chunk.method != "turn/completed"){
+        store.set(threadAtom(threadID), (s) => {
+          return {
+            ...s,
+            thinking: true,
+            isStreaming: true,
+          };
+        });
       }
     }
+
+    // Turn is over, whether or not the agent sent any text
+    store.set(threadAtom(threadID), (s) => ({ ...s, thinking: false, isStreaming: false }));
 
     // Get the new thread title
     const threadTitle = await trpcClient.getThreadTitle.mutate({
@@ -82,5 +114,5 @@ export function useChatSession() {
     });     
   }
 
-  return { sendQuery, messages }
+  return { sendQuery, messages, thinking, isStreaming };
 }

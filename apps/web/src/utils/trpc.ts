@@ -27,6 +27,8 @@ export type FileSearchResult = {
 
 type AIEvent =
   | { method: "item/agentMessage/delta"; params: { delta: string } }
+  | { method: "item/reasoning/summaryTextDelta"; params: { delta: string } }
+  | { method: "item/reasoning/summaryPartAdded" }
   | { method: "turn/completed" };
 
 type Router = {
