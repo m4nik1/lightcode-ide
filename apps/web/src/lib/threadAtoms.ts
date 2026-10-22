@@ -5,12 +5,10 @@ import { trpcClient } from '@/utils/trpc';
 
 export type ThreadState = {
     messages: ChatMessage[];
-    isStreaming: boolean;
-    loaded: boolean;
     thinking: boolean;
 }
 
-const initialThreadState: ThreadState = { messages: [], isStreaming: false, loaded: false, thinking: false }
+const initialThreadState: ThreadState = { messages: [], thinking: false }
 
 // Every Thread will start with this
 export const threadAtom = atomFamily((threadID : string) => {

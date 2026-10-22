@@ -66,8 +66,6 @@ export default class lightThread {
       threadId: this.id,
       model: model,
       effort: thinking,
-      // Codex only streams reasoning text when a summary mode is set
-      summary: "auto",
       input: [
         {
           type: "text",

@@ -2,9 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { aiThemeClassNames } from "../theme";
-import { Shimmer } from "./ai-elements/shimmer";
 import { cn } from "../lib/utils";
-import { useAIChat } from "../context/useAIChat";
 import { useChatSession } from "@/context/useChatSession";
 
 const markdownComponents: Components = {
@@ -19,7 +17,6 @@ export type ChatMessage = {
   id: string;
   text: string;
   role: "user" | "assistant";
-  reasoning?: string;
 };
 
 export default function ChatMessages({
@@ -57,8 +54,9 @@ export default function ChatMessages({
       className="chat-messages-viewport chat-messages-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-6"
     >
       <div className="flex w-full max-w-[1080px] flex-col gap-3 self-center sm:w-[75%]">
-        {messages.map((message) => {
+        {messages.map((message, index) => {
           const isUser = message.role === "user";
+          const isLast = index === messages.length - 1;
 
           return (
             <div
@@ -83,17 +81,7 @@ export default function ChatMessages({
                     aiThemeClassNames.textPrimary,
                   )}
                 >
-                  {message.reasoning?.trim() ? (
-                    <details className="mb-2" open={thinking && !message.text}>
-                      <summary className={cn("cursor-pointer text-sm", aiThemeClassNames.shimmer)}>
-                        {thinking && !message.text ? "Thinking" : "Thought"}
-                      </summary>
-                      <div className="mt-1 whitespace-pre-wrap border-l-2 border-[#2A2A2A] pl-3 text-[#A1A1A1]">
-                        {message.reasoning.trim()}
-                      </div>
-                    </details>
-                  ) : null}
-                  {message.text ? (
+                  {message.text && (
                     <ReactMarkdown
                       components={markdownComponents}
                       remarkPlugins={[remarkGfm]}
@@ -101,16 +89,19 @@ export default function ChatMessages({
                     >
                       {message.text}
                     </ReactMarkdown>
-                  ) : thinking && !message.reasoning?.trim() ? (
-                    <Shimmer
-                      as="span"
-                      className={cn("text-sm", aiThemeClassNames.shimmer)}
-                      duration={1}
-                      spread={4}
-                    >
-                      Thinking
-                    </Shimmer>
-                  ) : null}
+                  )}
+                  {thinking && isLast && (
+                    <span className="flex items-center gap-1 text-sm text-[#A1A1A1]">
+                      Working
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="size-1 animate-pulse rounded-full bg-current"
+                          style={{ animationDelay: `${i * 300}ms` }}
+                        />
+                      ))}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
