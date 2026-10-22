@@ -62,12 +62,6 @@ export function useChatSession() {
           };
         });
       }
-
-      // if (chunk.method === "turn/completed") {
-      //   setTurn(false);
-      // } else {
-      //   setTurn(true);
-      // }
     }
 
     // Get the new thread title
