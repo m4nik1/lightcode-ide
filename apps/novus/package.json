@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@lightcode/server": "1.0.0",
-    "@openai/codex": "0.153.2",
+    "@openai/codex": "0.163.0",
     "electron-squirrel-startup": "^1.0.1"
   }
 }

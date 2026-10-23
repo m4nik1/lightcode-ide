@@ -10,15 +10,20 @@ import { useAIChat } from "../context/useAIChat";
 import { useFileSearch } from "../context/useFileSearch";
 import type { FileSearchResult } from "@/utils/trpc";
 import FileMentionMenu, { entryPath } from "./FileMentionMenu";
+import { useThreads } from "@/context/useThreads";
+import { useChatSession } from "@/context/useChatSession";
 
 export default function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
   const [search, setSearch] = useState(false);
   const [activeIndex, setIndex] = useState(0);
-  const { messageSend, isTurning, stopTurn, currentThread } = useAIChat();
-  const { setQuery, setCurrentProjectPath, searchResults } =
-    useFileSearch();
+
+  // Hooks and context
+  const { isTurning, stopTurn } = useAIChat();
+  const { currentThread } = useThreads();
+  const { sendQuery } = useChatSession();
+  const { setQuery, setCurrentProjectPath, searchResults } = useFileSearch();
 
   useEffect(() => {
     setIndex((currentIndex) =>
@@ -38,7 +43,7 @@ export default function Composer() {
       stopTurn();
     } else {
       if (!canSend) return;
-      void messageSend(value, "build");
+      void sendQuery(value, "build");
     }
     setValue("");
   }

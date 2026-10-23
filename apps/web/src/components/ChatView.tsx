@@ -2,9 +2,8 @@ import { useLayoutEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { aiThemeClassNames } from "../theme";
-import { Shimmer } from "./ai-elements/shimmer";
 import { cn } from "../lib/utils";
-import { useAIChat } from "../context/useAIChat";
+import { useChatSession } from "@/context/useChatSession";
 
 const markdownComponents: Components = {
   a: ({ children }) => (
@@ -25,9 +24,8 @@ export default function ChatMessages({
 }: {
   bottomInset?: number;
 }) {
-  const { messages } = useAIChat();
+  const { messages, thinking } = useChatSession();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const hasScrolledRef = useRef(false);
 
   useLayoutEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -40,7 +38,6 @@ export default function ChatMessages({
       2;
     // Measure the old scroll range before applying space for the resized composer.
     scrollContainer.style.paddingBottom = `${bottomInset}px`;
-    scrollContainer.style.scrollPaddingBottom = `${bottomInset}px`;
     if (atBottom) scrollContainer.scrollTop = scrollContainer.scrollHeight;
   }, [bottomInset]);
 
@@ -48,11 +45,7 @@ export default function ChatMessages({
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    scrollContainer.scrollTo({
-      top: scrollContainer.scrollHeight,
-      behavior: hasScrolledRef.current ? "smooth" : "auto",
-    });
-    hasScrolledRef.current = true;
+    scrollContainer.scrollTop = scrollContainer.scrollHeight;
   }, [messages]);
 
   return (
@@ -61,8 +54,9 @@ export default function ChatMessages({
       className="chat-messages-viewport chat-messages-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-6"
     >
       <div className="flex w-full max-w-[1080px] flex-col gap-3 self-center sm:w-[75%]">
-        {messages.map((message) => {
+        {messages.map((message, index) => {
           const isUser = message.role === "user";
+          const isLast = index === messages.length - 1;
 
           return (
             <div
@@ -87,7 +81,7 @@ export default function ChatMessages({
                     aiThemeClassNames.textPrimary,
                   )}
                 >
-                  {message.text ? (
+                  {message.text && (
                     <ReactMarkdown
                       components={markdownComponents}
                       remarkPlugins={[remarkGfm]}
@@ -95,15 +89,18 @@ export default function ChatMessages({
                     >
                       {message.text}
                     </ReactMarkdown>
-                  ) : (
-                    <Shimmer
-                      as="span"
-                      className={cn("text-sm", aiThemeClassNames.shimmer)}
-                      duration={1}
-                      spread={4}
-                    >
-                      Thinking
-                    </Shimmer>
+                  )}
+                  {thinking && isLast && (
+                    <span className="flex items-center gap-1 text-sm text-[#A1A1A1]">
+                      Working
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="size-1 animate-pulse rounded-full bg-current"
+                          style={{ animationDelay: `${i * 300}ms` }}
+                        />
+                      ))}
+                    </span>
                   )}
                 </div>
               )}
