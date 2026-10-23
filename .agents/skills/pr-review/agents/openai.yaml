@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR review"
+  short_description: "Review PRs with Opus, Sol, and DeepSeek"
+  default_prompt: "Use $pr-review to review the current pull request and summarize confirmed bugs concisely."
