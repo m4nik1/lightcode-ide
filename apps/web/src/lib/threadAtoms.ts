@@ -11,14 +11,25 @@ export type ThreadState = {
 const initialThreadState: ThreadState = { messages: [], thinking: false }
 
 // Every Thread will start with this
+// This is instiated when a existing thread is opened or created
+// Local variables persist as long as the same threadID is looked up
 export const threadAtom = atomFamily((threadID : string) => {
   // atom is type threadState with the following fields as default 
   const threadState = atom<ThreadState>(initialThreadState)
 
+  let isLoaded = false;
+
   threadState.onMount = (set) => {
-    trpcClient.loadMessages.query({ threadID }).then((savedMessages) => {
-      set((s) => ({ ...s, messages: savedMessages }))
-    })
+    if(isLoaded) return;
+    isLoaded = true;
+    try {
+      trpcClient.loadMessages.query({ threadID }).then((savedMessages) => {
+        set((s) => ({ ...s, messages: savedMessages }))
+      })
+    } catch(e) {
+      isLoaded = false;
+      console.error("There was an error loading the thread")
+    }
   }
 
   return threadState;
