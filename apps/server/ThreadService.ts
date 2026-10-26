@@ -10,7 +10,7 @@ import {
 } from "./lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import type { ServerNotification } from "@lightcode/codex-protocol";
-import type { AIModelId, AIReasoningEffort } from "./aiModelConfig.ts";
+import { TITLE_MODEL_ID, type AIModelId, type AIReasoningEffort } from "./aiModelConfig.ts";
 
 type AIMessage = {
   threadID: string;
@@ -133,11 +133,11 @@ export class ThreadService {
 
     let title = "";
 
-    const runningThread = await this.codexInstance.startThread({});
+    const runningThread = await this.codexInstance.startThread({ ephemeral: true });
 
     for await (const event of this.codexInstance.streamTurn({
       threadId: runningThread.thread.id,
-      model: "gpt-5.4-mini",
+      model: TITLE_MODEL_ID,
       effort: "low",
       input: [
         {

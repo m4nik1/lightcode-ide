@@ -9,3 +9,5 @@ export type AIModelId = (typeof AI_MODEL_IDS)[number];
 export const REASONING_EFFORTS = ["low", "medium", "high"] as const;
 
 export type AIReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
+export const TITLE_MODEL_ID: AIModelId = "gpt-6-luna";

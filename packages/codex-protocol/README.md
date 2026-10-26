@@ -197,6 +197,20 @@ to the matching, locally spawned CLI version.
 
 ## Regenerate after a Codex upgrade
 
+The current generated schema targets Codex `0.163.0`.
+The stable schema no longer includes `thread/rollback` or its parameter and
+response types. Personality selection is deprecated upstream.
+
+The handwritten client continues to expose its existing six RPC methods.
+Additional generated request types are available from the protocol subpaths;
+they do not automatically add client methods. New notifications can be observed
+with `onNotification()`. Thread attachment updates have no turn ID, so they are
+not yielded by `streamTurn()`.
+
+The private workspace package version is independent of the upstream schema
+version. Use `CODEX_PROTOCOL_VERSION` to identify the supported Codex version,
+and keep any packaged executable or `codexPathOverride` compatible with it.
+
 Update the exact `@openai/codex` dependency, then run:
 
 ```bash

@@ -539,6 +539,9 @@ export type { ThreadProjectUpdatedNotification } from "./ThreadProjectUpdatedNot
 export type { ThreadQueueChangedNotification } from "./ThreadQueueChangedNotification.js";
 export type { ThreadReadParams } from "./ThreadReadParams.js";
 export type { ThreadReadResponse } from "./ThreadReadResponse.js";
+export type { ThreadReadState } from "./ThreadReadState.js";
+export type { ThreadReadStateChangedNotification } from "./ThreadReadStateChangedNotification.js";
+export type { ThreadReadStateOperation } from "./ThreadReadStateOperation.js";
 export type { ThreadRealtimeAudioChunk } from "./ThreadRealtimeAudioChunk.js";
 export type { ThreadRealtimeBemItemPresentation } from "./ThreadRealtimeBemItemPresentation.js";
 export type { ThreadRealtimeClosedNotification } from "./ThreadRealtimeClosedNotification.js";
@@ -600,6 +603,7 @@ export type { ThreadTurnsListResponse } from "./ThreadTurnsListResponse.js";
 export type { ThreadUnarchiveParams } from "./ThreadUnarchiveParams.js";
 export type { ThreadUnarchiveResponse } from "./ThreadUnarchiveResponse.js";
 export type { ThreadUnarchivedNotification } from "./ThreadUnarchivedNotification.js";
+export type { ThreadUnreadPosition } from "./ThreadUnreadPosition.js";
 export type { ThreadUnsubscribeParams } from "./ThreadUnsubscribeParams.js";
 export type { ThreadUnsubscribeResponse } from "./ThreadUnsubscribeResponse.js";
 export type { ThreadUnsubscribeStatus } from "./ThreadUnsubscribeStatus.js";
