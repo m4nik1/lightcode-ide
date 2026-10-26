@@ -18,6 +18,9 @@ export function ThreadItem({ thread, onDeleteThread }: ThreadItemProps) {
     try {
       await trpcClient.deleteThread.mutate({ threadID: thread.id });
       onDeleteThread(thread.id);
+
+      // Stop showing the chat if it was the one open
+      setThread((current) => (current?.id == thread.id ? null : current));
     } catch (error) {
       console.error("Failed to delete thread", error);
     }

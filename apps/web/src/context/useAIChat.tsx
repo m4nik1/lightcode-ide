@@ -11,6 +11,7 @@ type AIContext = {
   access: AccessMode;
   accessSet: (access: AccessMode) => void;
   isTurning: boolean;
+  setTurn: (isTurning: boolean) => void;
   stopTurn: () => void;
 };
 
@@ -63,6 +64,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         access,
         accessSet,
         isTurning,
+        setTurn,
         stopTurn,
       }}
     >

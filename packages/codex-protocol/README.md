@@ -197,9 +197,7 @@ to the matching, locally spawned CLI version.
 
 ## Regenerate after a Codex upgrade
 
-The current generated schema targets Codex `0.160.0`. Compared with `0.153.2`,
-it adds thread attachment requests and notifications, `Thread.originator`,
-`Model.availableAccessPrograms`, and `TurnStartParams.disabledPluginIds`.
+The current generated schema targets Codex `0.163.0`.
 The stable schema no longer includes `thread/rollback` or its parameter and
 response types. Personality selection is deprecated upstream.
 

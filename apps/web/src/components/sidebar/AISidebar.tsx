@@ -10,15 +10,14 @@ import { useThreads } from "../../context/useThreads";
 export default function AISidebar() {
   const { getProjects, createProject } = useProjects();
   const projects = getProjects.data ?? [];
-  const { newThread, setThread, currentThread } = useThreads();
+  const { newThread, currentThread } = useThreads();
 
   async function handleNewChat(projectId = currentThread?.projectId) {
     const project = projects.find(({ id }) => id === projectId);
     if (!project) return;
 
     try {
-      const createdThread = await newThread(project.id, project.path);
-      await setThread(createdThread);
+      await newThread(project.id, project.path);
     } catch (error) {
       console.error("Failed to create chat", error);
     }

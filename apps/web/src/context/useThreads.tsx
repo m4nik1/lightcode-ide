@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useState } from "react";
+import { createContext, type Dispatch, type ReactNode, type SetStateAction, useContext, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { thread } from "../components/sidebar/types";
 import { trpcClient } from "../utils/trpc";
@@ -6,7 +6,7 @@ import { trpcClient } from "../utils/trpc";
 interface ThreadContext {
   currentThread: thread | null;
   newThread: (projectId: string, projectPath: string) => Promise<thread>;
-  setThread: (thread: thread) => void;
+  setThread: Dispatch<SetStateAction<thread | null>>;
 }
 
 const threadContext = createContext<ThreadContext | undefined>(undefined);
