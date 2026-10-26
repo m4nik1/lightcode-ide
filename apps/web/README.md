@@ -3,16 +3,17 @@
 The shared Novus React UI lives here. `apps/novus` contains the Electron shell
 and builds this same frontend with its Forge renderer configuration.
 
-From the repository root, run these in separate terminals:
+From the repository root:
 
 ```sh
-npm run server
 npm run web
 ```
 
-Open http://127.0.0.1:5175. The local server is required for projects, files,
-and AI chat. In a browser, **Add project** asks for an absolute folder path on
-the server's machine; Electron uses its native folder picker.
+This starts the local server (port 2024) alongside Vite. Open
+http://127.0.0.1:5175. The server is required for projects, files, and AI
+chat. Set `NOVUS_WEB_NO_SERVER=1` to reuse a server you started yourself with
+`npm run server`. In a browser, **Add project** opens a folder browser for the
+server's machine; Electron uses its native folder picker.
 
 ```sh
 npm run web:build

@@ -13,6 +13,9 @@ import {
 } from "./lightQueries.ts";
 import lightSpeedSearch from "./lightspeedSearch.ts";
 import { FileFinder } from "@ff-labs/fff-node";
+import { readdir } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 export const createAppRouter = (threadService: ThreadService, lightSearch : lightSpeedSearch) => router({
   greeting: publicProcedure
@@ -108,6 +111,27 @@ export const createAppRouter = (threadService: ThreadService, lightSearch : ligh
             ? ("user" as const)
             : ("assistant" as const),
       }));
+    }),
+
+  listDirectories: publicProcedure
+    .input(z.object({ path: z.string().nullish() }).nullish())
+    .query(async ({ input }) => {
+      // Lets browser clients pick a project folder on the server's machine.
+      const directory = path.resolve(input?.path || os.homedir());
+      const entries = await readdir(directory, { withFileTypes: true });
+      const parent = path.dirname(directory);
+
+      return {
+        path: directory,
+        parent: parent === directory ? null : parent,
+        directories: entries
+          .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+          .map((entry) => ({
+            name: entry.name,
+            path: path.join(directory, entry.name),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      };
     }),
 
   addProject: publicProcedure

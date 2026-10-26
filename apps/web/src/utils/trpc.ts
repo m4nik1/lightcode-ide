@@ -25,6 +25,12 @@ export type FileSearchResult = {
   fileName: string;
 };
 
+export type DirectoryListing = {
+  path: string;
+  parent: string | null;
+  directories: { name: string; path: string }[];
+};
+
 type AIEvent =
   | { method: "item/agentMessage/delta"; params: { delta: string } }
   | { method: "turn/completed" };
@@ -33,6 +39,9 @@ type Router = {
   getProjects: { query: () => Promise<ProjectRow[]> };
   getThreads: {
     query: (input: { projectID: string }) => Promise<ThreadRow[]>;
+  };
+  listDirectories: {
+    query: (input: { path?: string | null }) => Promise<DirectoryListing>;
   };
   addProject: {
     mutate: (input: { projectName: string; path: string }) => Promise<unknown>;

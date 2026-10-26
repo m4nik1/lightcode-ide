@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ChatMessage } from "../components/ChatMessages";
 import type { thread } from "../components/sidebar/types";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
+import { FolderPickerDialog } from "../components/FolderPickerDialog";
 
 type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
 
@@ -34,6 +35,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   >({});
   const [currentThread, setThread] = useState<thread | null>(null);
   const [isTurning, setTurn] = useState<boolean>(false);
+  const [isFolderPickerOpen, setFolderPickerOpen] = useState(false);
 
   const [model, setModel] = useState<AIModel>({
     model: "gpt-6-luna",
@@ -142,14 +144,20 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   }
 
   async function createProject() {
-    const projectFolderPath = window.electronAPI
-      ? (await window.electronAPI.openFolder()).filePaths[0]
-      : window.prompt("Enter the absolute project folder path on the machine running the Novus server:")?.trim();
-
-    if (!projectFolderPath) {
+    if (!window.electronAPI) {
+      // Browsers can't expose absolute paths, so browse the server's folders.
+      setFolderPickerOpen(true);
       return;
     }
 
+    const projectFolderPath = (await window.electronAPI.openFolder()).filePaths[0];
+
+    if (projectFolderPath) {
+      await addProjectFromPath(projectFolderPath);
+    }
+  }
+
+  async function addProjectFromPath(projectFolderPath: string) {
     const folderName = projectFolderPath.split(/[\\/]/).filter(Boolean).at(-1);
 
     if (!folderName) {
@@ -208,6 +216,15 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {isFolderPickerOpen && (
+        <FolderPickerDialog
+          onCancel={() => setFolderPickerOpen(false)}
+          onSelect={(projectFolderPath) => {
+            setFolderPickerOpen(false);
+            void addProjectFromPath(projectFolderPath);
+          }}
+        />
+      )}
     </aiContext.Provider>
   );
 }
