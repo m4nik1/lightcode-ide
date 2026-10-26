@@ -1,7 +1,7 @@
 {
   "name": "@novus/app",
   "productName": "novus",
-  "version": "1.0.0-alpha-3",
+  "version": "1.0.0-alpha-4",
   "description": "AI window for Lightcode",
   "main": ".vite/build/main.js",
   "private": true,
