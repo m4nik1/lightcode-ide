@@ -4,9 +4,34 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
+/* T3 Code's default dark palette. The single source of truth for colors:
+   theme.ts maps these to utilities (bg-canvas, text-fg, ...). `static` keeps
+   every variable emitted so inline styles can reference them too. */
+@theme static {
+  --color-canvas: #0a0a0a;
+  --color-surface: #111111;
+  --color-surface-hover: #141414;
+  --color-surface-active: #1b1b1b;
+  --color-line: rgb(255 255 255 / 8%);
+  --color-scrollbar: rgb(255 255 255 / 8%);
+  --color-scrollbar-hover: rgb(255 255 255 / 12%);
+  --color-fg: #f5f5f5;
+  --color-fg-secondary: #d4d4d4;
+  --color-fg-muted: #a1a1a1;
+  --color-fg-disabled: #737373;
+  --color-primary: #346bf1;
+  --color-primary-hover: #3061da;
+  --color-accent-text: #51a2ff;
+  --color-danger: #fb414a;
+  --color-danger-hover: #fc5a62;
+  --color-warning: #ffb900;
+  --color-warning-hover: #ffd230;
+}
+
 :root {
-  color: #fcfcfc;
-  background: #0a0a0a;
+  color: var(--color-fg);
+  color-scheme: dark;
+  background: var(--color-canvas);
   font-family: var(--font-sans);
   font-size: 13px;
 }
@@ -19,7 +44,7 @@ body,
 
 body {
   margin: 0;
-  background: #0a0a0a;
+  background: var(--color-canvas);
   overflow: hidden;
 }
 
@@ -34,8 +59,16 @@ select {
   font: inherit;
 }
 
+/* Tailwind v4 resets buttons to the default cursor; restore the pointer. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
 .chat-messages-scrollbar {
-  scrollbar-color: #555555 transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
   scrollbar-width: thin;
 }
 
@@ -48,14 +81,14 @@ select {
 }
 
 .chat-messages-scrollbar::-webkit-scrollbar-thumb {
-  background: #555555;
+  background: var(--color-scrollbar);
   background-clip: content-box;
   border: 2px solid transparent;
   border-radius: 9999px;
 }
 
 .chat-messages-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #6f6f6f;
+  background: var(--color-scrollbar-hover);
   background-clip: content-box;
 }
 
@@ -64,7 +97,7 @@ select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--color-line);
   border-radius: 28px;
   background: transparent;
   transition: border-color 200ms ease;
@@ -122,7 +155,7 @@ select {
   border-radius: inherit;
   background: transparent;
   scrollbar-width: thin;
-  scrollbar-color: #555555 transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 .file-mention-scroll::-webkit-scrollbar {
@@ -135,11 +168,11 @@ select {
 
 .file-mention-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #555555;
+  background: var(--color-scrollbar);
 }
 
 .file-mention-scroll::-webkit-scrollbar-thumb:hover {
-  background: #6f6f6f;
+  background: var(--color-scrollbar-hover);
 }
 
 .file-mention-rows[data-more-below="true"] {
@@ -165,7 +198,8 @@ select {
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #fcfcfc;
+  color: var(--color-fg);
+  color-scheme: dark;
   font: 400 13px/20px var(--font-sans);
   text-align: left;
   cursor: pointer;
@@ -238,7 +272,7 @@ select {
 
 .file-mention-directory {
   flex: 0 9999 auto;
-  color: #a1a1a1;
+  color: var(--color-fg-muted);
 }
 
 @keyframes shimmer-slide {
@@ -261,7 +295,7 @@ select {
 }
 
 .shimmer-text-muted {
-  color: var(--color-muted-foreground, #6f6f6f);
+  color: var(--color-muted-foreground, #737373);
 }
 
 .shimmer-overlay {
@@ -301,7 +335,7 @@ select {
 
 .shimmer-overlay > .shimmer-text {
   display: block;
-  color: var(--color-background, #fcfcfc);
+  color: var(--color-background, #f5f5f5);
 }
 
 @media (prefers-reduced-motion: reduce) {

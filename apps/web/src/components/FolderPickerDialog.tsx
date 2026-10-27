@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Folder, House, Loader2 } from "lucide-react";
 import { trpcClient } from "../utils/trpc";
@@ -15,6 +16,8 @@ type FolderPickerDialogProps = {
 export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogProps) {
   // null means the server's home directory.
   const [currentPath, setCurrentPath] = useState<string | null>(null);
+  // Last folder that listed successfully, so a failed open can step back.
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
   const listing = useQuery({
     queryKey: ["listDirectories", currentPath],
     queryFn: () => trpcClient.listDirectories.query({ path: currentPath }),
@@ -31,6 +34,15 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
   }, [onCancel]);
 
   const data = listing.data;
+  // While a new path loads, `data` is the previous folder's placeholder; acting
+  // on it would open or navigate from the wrong folder.
+  const isCurrent = Boolean(data) && !listing.isPlaceholderData && !listing.isError;
+
+  function navigate(path: string | null) {
+    if (isCurrent && data) setPreviousPath(data.path);
+    setCurrentPath(path);
+  }
+
   const iconButton = cn(
     "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
     aiThemeClassNames.textMuted,
@@ -39,7 +51,9 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
     aiThemeClassNames.borderFocus,
   );
 
-  return (
+  // Portaled to <body>: inside the sidebar's stacking layer the main column
+  // would paint over it.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
       onMouseDown={(event) => {
@@ -62,8 +76,8 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
             type="button"
             aria-label="Parent folder"
             className={iconButton}
-            disabled={!data?.parent}
-            onClick={() => data?.parent && setCurrentPath(data.parent)}
+            disabled={!isCurrent || !data?.parent}
+            onClick={() => isCurrent && data?.parent && navigate(data.parent)}
           >
             <ArrowUp className="size-3.5" />
           </button>
@@ -71,17 +85,17 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
             type="button"
             aria-label="Home folder"
             className={iconButton}
-            onClick={() => setCurrentPath(null)}
+            onClick={() => navigate(null)}
           >
             <House className="size-3.5" />
           </button>
           <p
             className={cn("m-0 min-w-0 flex-1 truncate pl-1 text-[12px]", aiThemeClassNames.textMuted)}
-            title={data?.path}
+            title={listing.isError ? (currentPath ?? undefined) : data?.path}
             dir="rtl"
           >
             {/* rtl keeps the deepest folder visible when the path truncates */}
-            <bdi>{data?.path ?? "Loading…"}</bdi>
+            <bdi>{listing.isError ? (currentPath ?? "Home folder") : (data?.path ?? "Loading…")}</bdi>
           </p>
           {listing.isFetching && (
             <Loader2 className={cn("size-3.5 animate-spin", aiThemeClassNames.textMuted)} />
@@ -90,26 +104,47 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
 
         <div className="chat-messages-scrollbar min-h-0 flex-1 overflow-y-auto p-1.5">
           {listing.isError ? (
-            <p className="m-0 px-3 py-2 text-[12px] text-[#E5484D]">
-              Couldn't open this folder. Is the Novus server running?
-            </p>
+            <div className="px-3 py-2 text-[12px]">
+              <p className="m-0 text-danger">
+                Couldn't open this folder. Is the Novus server running?
+              </p>
+              <div className={cn("mt-2 flex gap-3", aiThemeClassNames.textMuted)}>
+                <button
+                  type="button"
+                  className={cn("cursor-pointer underline", aiThemeClassNames.hoverTextPrimary)}
+                  onClick={() => void listing.refetch()}
+                >
+                  Retry
+                </button>
+                {previousPath !== null && previousPath !== currentPath && (
+                  <button
+                    type="button"
+                    className={cn("cursor-pointer underline", aiThemeClassNames.hoverTextPrimary)}
+                    onClick={() => setCurrentPath(previousPath)}
+                  >
+                    Go back
+                  </button>
+                )}
+              </div>
+            </div>
           ) : data && data.directories.length === 0 ? (
             <p className={cn("m-0 px-3 py-2 text-[12px]", aiThemeClassNames.textMuted)}>
               No subfolders.
             </p>
           ) : (
-            <ul className="m-0 list-none p-0">
+            <ul className={cn("m-0 list-none p-0", !isCurrent && "opacity-50")}>
               {data?.directories.map((directory) => (
                 <li key={directory.path}>
                   <button
                     type="button"
                     className={cn(
-                      "flex h-8 w-full cursor-pointer items-center gap-2 rounded-md px-2.5 text-left text-[13px] transition-colors focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
+                      "flex h-8 w-full cursor-pointer items-center gap-2 rounded-md px-2.5 text-left text-[13px] transition-colors disabled:cursor-not-allowed focus-visible:outline-1 focus-visible:outline-offset-[-1px]",
                       aiThemeClassNames.surfaceHover,
                       aiThemeClassNames.focusVisibleSurfaceHover,
                       aiThemeClassNames.borderFocus,
                     )}
-                    onClick={() => setCurrentPath(directory.path)}
+                    disabled={!isCurrent}
+                    onClick={() => isCurrent && navigate(directory.path)}
                   >
                     <Folder className={cn("size-3.5 shrink-0", aiThemeClassNames.textMuted)} />
                     <span className="truncate">{directory.name}</span>
@@ -135,17 +170,18 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
           </button>
           <button
             type="button"
-            disabled={!data}
-            onClick={() => data && onSelect(data.path)}
+            disabled={!isCurrent}
+            onClick={() => isCurrent && data && onSelect(data.path)}
             className={cn(
               "inline-flex h-7 cursor-pointer items-center rounded-md px-2.5 text-[12px] font-medium transition-colors",
-              data ? aiThemeClassNames.accentAction : aiThemeClassNames.accentActionDisabled,
+              isCurrent ? aiThemeClassNames.accentAction : aiThemeClassNames.accentActionDisabled,
             )}
           >
             Open folder
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

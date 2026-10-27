@@ -7,6 +7,7 @@ interface ThreadContext {
   currentThread: thread | null;
   newThread: (projectId: string, projectPath: string) => Promise<thread>;
   setThread: Dispatch<SetStateAction<thread | null>>;
+  deleteThread: (threadId: string) => Promise<void>;
 }
 
 const threadContext = createContext<ThreadContext | undefined>(undefined);
@@ -29,10 +30,20 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     };
 
     await queryClient.invalidateQueries({
-      queryKey: ["threads", projectId],
+      queryKey: ["threads"],
     });
     setThread(createdThread);
     return createdThread;
+  }
+
+  async function deleteThread(threadId: string) {
+    await trpcClient.deleteThread.mutate({ threadID: threadId });
+
+    // Leave the chat view if the open thread was the one removed
+    setThread((current) => (current?.id === threadId ? null : current));
+    await queryClient.invalidateQueries({
+      queryKey: ["threads"],
+    });
   }
 
   return (
@@ -41,6 +52,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
         currentThread,
         setThread,
         newThread,
+        deleteThread,
       }}
     >
       {children}

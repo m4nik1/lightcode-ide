@@ -8,10 +8,15 @@ export type ProjectRow = {
   path: string;
 };
 
-export type ThreadRow = {
+export type ThreadListRow = {
   id: string;
   project_id: string;
   name: string;
+  created_at: number;
+  project_name: string;
+  project_path: string;
+  model: string | null;
+  running: boolean;
 };
 
 export type MessageRow = {
@@ -37,9 +42,7 @@ type AIEvent =
 
 type Router = {
   getProjects: { query: () => Promise<ProjectRow[]> };
-  getThreads: {
-    query: (input: { projectID: string }) => Promise<ThreadRow[]>;
-  };
+  getAllThreads: { query: () => Promise<ThreadListRow[]> };
   listDirectories: {
     query: (input: { path?: string | null }) => Promise<DirectoryListing>;
   };

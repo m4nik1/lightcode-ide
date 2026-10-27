@@ -27,10 +27,13 @@ type AIMessage = {
 export class ThreadService {
   recentThreads: lightThread[];
   threads: Map<string, lightThread>;
+  // Threads with a turn currently streaming
+  runningThreadIDs: Set<string>;
   codexInstance: CodexAppServerClient;
   constructor(AIDriver: CodexAppServerClient) {
     this.recentThreads = [];
     this.threads = new Map();
+    this.runningThreadIDs = new Set();
     this.codexInstance = AIDriver;
   }
 
@@ -55,57 +58,69 @@ export class ThreadService {
   }
 
   async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification> {
-    let findThread = this.threads.get(input.threadID);
-
-    // Making new thread...
-    if (!findThread) {
-      console.log("A thread does not exist making a new one...")
-      const project = getProjectByThreadID(input.threadID);
-
-      if (!project) {
-        throw new Error(`No project found for thread ${input.threadID}`);
-      }
-
-      findThread = new lightThread(this.codexInstance)
-      
-      findThread = await findThread.createThread(
-        project.path,
-        input.access,
-      );
-
-      this.threads.set(input.threadID, findThread);
-      this.recentThreads.push(findThread);
+    // One turn per thread; claim it before any async work so overlapping
+    // requests can't store a message or clear another turn's running state
+    if (this.runningThreadIDs.has(input.threadID)) {
+      throw new Error(`Thread ${input.threadID} already has a turn running`);
     }
 
-    // A thread already exists
-    storeMessage.get(
-      crypto.randomUUID(),
-      input.threadID,
-      input.message,
-      input.model.model,
-      input.model.thinking,
-      "user",
-      nextMessageSequence(input.threadID),
-    );
+    this.runningThreadIDs.add(input.threadID);
 
-    console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
+    try {
+      let findThread = this.threads.get(input.threadID);
 
-    for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking, input.mode, input.message)) {
-      console.log("Event received: ", event);
-      if(event.method == 'item/completed'
-        && event.params.item.type === 'agentMessage'
-        && event.params.item.phase == 'final_answer') {
-        storeMessage.get(
-          crypto.randomUUID(),
-          input.threadID,
-          event.params.item.text,
-          input.model.model,
-          input.model.thinking,
-          "assistant",
-          nextMessageSequence(input.threadID),
+      // Making new thread...
+      if (!findThread) {
+        console.log("A thread does not exist making a new one...")
+        const project = getProjectByThreadID(input.threadID);
+
+        if (!project) {
+          throw new Error(`No project found for thread ${input.threadID}`);
+        }
+
+        findThread = new lightThread(this.codexInstance)
+      
+        findThread = await findThread.createThread(
+          project.path,
+          input.access,
         );
+
+        this.threads.set(input.threadID, findThread);
+        this.recentThreads.push(findThread);
       }
-      yield event;
+
+      // A thread already exists
+      storeMessage.get(
+        crypto.randomUUID(),
+        input.threadID,
+        input.message,
+        input.model.model,
+        input.model.thinking,
+        "user",
+        nextMessageSequence(input.threadID),
+      );
+
+      console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
+
+      for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking, input.mode, input.message)) {
+        console.log("Event received: ", event);
+        if(event.method == 'item/completed'
+          && event.params.item.type === 'agentMessage'
+          && event.params.item.phase == 'final_answer') {
+          storeMessage.get(
+            crypto.randomUUID(),
+            input.threadID,
+            event.params.item.text,
+            input.model.model,
+            input.model.thinking,
+            "assistant",
+            nextMessageSequence(input.threadID),
+          );
+        }
+        yield event;
+      }
+    } finally {
+      this.runningThreadIDs.delete(input.threadID);
     }
   }
 

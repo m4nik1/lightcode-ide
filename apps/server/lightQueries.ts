@@ -14,6 +14,16 @@ export type ThreadRecord = {
   updated_at: number;
 };
 
+export type ThreadListRecord = {
+  id: string;
+  project_id: string;
+  name: string;
+  created_at: number;
+  project_name: string;
+  project_path: string;
+  model: string | null;
+};
+
 export type MessageRecord = {
   id: string;
   thread_id: string;
@@ -36,11 +46,22 @@ const createThread = database.prepare(`
   RETURNING id, name
 `);
 
-const getThreads = database.prepare(
-  `SELECT *
+// Every thread across projects, with its project and the model of its latest message
+const getAllThreads = database.prepare(
+  `SELECT threads.id,
+          threads.project_id,
+          threads.name,
+          threads.created_at,
+          projects.project_name AS project_name,
+          projects.path AS project_path,
+          (SELECT messages.model
+           FROM messages
+           WHERE messages.thread_id = threads.id
+           ORDER BY messages.SEQ DESC, messages.rowid DESC
+           LIMIT 1) AS model
    FROM threads
-   WHERE project_id = ?
-   ORDER BY created_at DESC, rowid DESC`,
+   INNER JOIN projects ON projects.id = threads.project_id
+   ORDER BY threads.created_at DESC, threads.rowid DESC`,
 );
 
 const getThreadByIDStatement = database.prepare(
@@ -128,7 +149,7 @@ export function nextMessageSequence(threadID: string) {
 export {
   getProjects,
   createThread,
-  getThreads,
+  getAllThreads,
   storeMessage,
   renameThread,
   deleteThread

@@ -35,7 +35,7 @@ export function entryIcon(entry: FileSearchResult): {
   // }
 
   if (entry.fileName === "package.json") {
-    return { Icon: FileJsonIcon, colorClassName: "text-[#E5484D]" };
+    return { Icon: FileJsonIcon, colorClassName: "text-danger" };
   }
 
   const extension = entry.fileName.slice(entry.fileName.lastIndexOf(".") + 1);
