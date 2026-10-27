@@ -10,7 +10,7 @@ import OpenAIIcon from "./icons/OpenAIIcon";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
-import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
+import { AI_MODEL_IDS, type AIModelId, type AIReasoningEffort } from "../lib/aiModelConfig";
 
 export type PickerOption<TValue extends string> = {
   label: string;
@@ -18,17 +18,16 @@ export type PickerOption<TValue extends string> = {
   description?: string;
 };
 
-const modelOptions: PickerOption<AIModelId>[] = [
-  {
-    label: "GPT-6 Astra",
-    value: 'gpt-6-astra',
-  },
-  {
-    label: "GPT-6.1 Sol",
-    value: "gpt-6.1-sol",
-  },
-  { label: "GPT-6 Luna", value: "gpt-6-luna" },
-];
+const modelLabels: Record<AIModelId, string> = {
+  "gpt-6-astra": "GPT-6 Astra",
+  "gpt-6.1-sol": "GPT-6.1 Sol",
+  "gpt-6-luna": "GPT-6 Luna",
+};
+
+const modelOptions: PickerOption<AIModelId>[] = AI_MODEL_IDS.map((value) => ({
+  label: modelLabels[value],
+  value,
+}));
 
 const thinkingOptions: PickerOption<AIReasoningEffort>[] = [
   { label: "Low", value: "low" },

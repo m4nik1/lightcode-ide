@@ -62,20 +62,28 @@ export default class lightThread {
       ? PLAN_MODE_INSTRUCTIONS
       : "Previous Plan-mode instructions no longer apply. Continue in Build mode.";
 
-    for await (const event of this.codexInstance.streamTurn({
-      threadId: this.id,
-      model: model,
-      effort: thinking,
-      input: [
-        {
-          type: "text",
-          text: `${modeInstructions}\n\n${query}`,
-          text_elements: [],
-        },
-      ],
-    })) {
-      console.log(event)
-      yield event;
+    try {
+      for await (const event of this.codexInstance.streamTurn({
+        threadId: this.id,
+        model: model,
+        effort: thinking,
+        input: [
+          {
+            type: "text",
+            text: `${modeInstructions}\n\n${query}`,
+            text_elements: [],
+          },
+        ],
+      })) {
+        // Remember the turn so stopTurn can interrupt it
+        if (event.method == "turn/started") {
+          this.turnId = event.params.turn.id;
+        }
+        console.log(event)
+        yield event;
+      }
+    } finally {
+      this.turnId = null;
     }
   }
 
