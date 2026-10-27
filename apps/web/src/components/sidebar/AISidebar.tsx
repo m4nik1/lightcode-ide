@@ -6,9 +6,16 @@ import { FolderPlus } from "lucide-react";
 import { ProjectDropdown } from "./ProjectDropdown";
 import { useProjects } from "../../context/useProjects";
 import { useThreads } from "../../context/useThreads";
+import { FolderPickerDialog } from "../FolderPickerDialog";
 
 export default function AISidebar() {
-  const { getProjects, createProject } = useProjects();
+  const {
+    getProjects,
+    createProject,
+    addProjectFromPath,
+    isFolderPickerOpen,
+    setFolderPickerOpen,
+  } = useProjects();
   const projects = getProjects.data ?? [];
   const { newThread, currentThread } = useThreads();
 
@@ -120,6 +127,15 @@ export default function AISidebar() {
           </ul>
         )}
       </div>
+      {isFolderPickerOpen && (
+        <FolderPickerDialog
+          onCancel={() => setFolderPickerOpen(false)}
+          onSelect={(projectFolderPath) => {
+            setFolderPickerOpen(false);
+            void addProjectFromPath(projectFolderPath);
+          }}
+        />
+      )}
     </nav>
   );
 }

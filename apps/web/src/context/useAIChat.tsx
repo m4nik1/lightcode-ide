@@ -1,7 +1,6 @@
 import { createContext, useState, useContext, type ReactNode } from "react";
 import { trpcClient } from "../utils/trpc";
 import type { AIModelId, AIReasoningEffort } from "../lib/aiModelConfig";
-import { FolderPickerDialog } from "../components/FolderPickerDialog";
 import { useThreads } from "./useThreads";
 
 type AccessMode = "read-only" | "workspace-write" | "danger-full-access";
@@ -26,7 +25,6 @@ const aiContext = createContext<AIContext | undefined>(undefined);
 export function AiChatProvider({ children }: { children: ReactNode }) {
   const { currentThread } = useThreads();
   const [isTurning, setTurn] = useState<boolean>(false);
-  const [isFolderPickerOpen, setFolderPickerOpen] = useState(false);
 
   const [model, setModel] = useState<AIModel>({
     model: "gpt-6-luna",
@@ -47,21 +45,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       .catch((error: unknown) => {
         console.error("Error something went wrong", error);
       });
-  }
-
-  async function addProjectFromPath(projectFolderPath: string) {
-    const folderName = projectFolderPath.split(/[\\/]/).filter(Boolean).at(-1);
-
-    if (!folderName) {
-      return;
-    }
-
-    await trpcClient.addProject.mutate({
-      projectName: folderName,
-      path: projectFolderPath,
-    });
-
-    await projectsQuery.refetch();
   }
 
   function modelSet(model: AIModelId, thinking: AIReasoningEffort) {
@@ -86,15 +69,6 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {isFolderPickerOpen && (
-        <FolderPickerDialog
-          onCancel={() => setFolderPickerOpen(false)}
-          onSelect={(projectFolderPath) => {
-            setFolderPickerOpen(false);
-            void addProjectFromPath(projectFolderPath);
-          }}
-        />
-      )}
     </aiContext.Provider>
   );
 }
