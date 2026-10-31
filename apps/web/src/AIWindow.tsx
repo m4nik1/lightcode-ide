@@ -82,7 +82,7 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     background: "transparent",
     color: aiTheme.textPrimary,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+    fontFamily: "var(--font-sans)",
     fontSize: 13,
     overflow: "hidden",
     isolation: "isolate",
@@ -92,8 +92,7 @@ const styles: Record<string, CSSProperties> = {
     inset: 0,
     zIndex: 0,
     pointerEvents: "none",
-    background:
-      `linear-gradient(135deg, ${aiTheme.surface} 0%, ${aiTheme.sidebar} 36%, ${aiTheme.background} 72%)`,
+    background: aiTheme.background,
   },
   sidebarLayer: {
     position: "relative",
