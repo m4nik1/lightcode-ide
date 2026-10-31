@@ -1,9 +1,12 @@
 import { DatabaseSync } from 'node:sqlite'
+import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// TODO: create a handling function create the .lightcode directory
-const database = new DatabaseSync(path.join(os.homedir(), '.lightcode') + '/state.db')
+const dataDir = path.join(os.homedir(), '.lightcode')
+fs.mkdirSync(dataDir, { recursive: true })
+
+const database = new DatabaseSync(path.join(dataDir, 'state.db'))
 
 const initDatabase = `
     CREATE TABLE IF NOT EXISTS projects (

@@ -8,10 +8,15 @@ export type ProjectRow = {
   path: string;
 };
 
-export type ThreadRow = {
+export type ThreadListRow = {
   id: string;
   project_id: string;
   name: string;
+  created_at: number;
+  project_name: string;
+  project_path: string;
+  model: string | null;
+  running: boolean;
 };
 
 export type MessageRow = {
@@ -25,14 +30,21 @@ export type FileSearchResult = {
   fileName: string;
 };
 
+export type DirectoryListing = {
+  path: string;
+  parent: string | null;
+  directories: { name: string; path: string }[];
+};
+
 type AIEvent =
   | { method: "item/agentMessage/delta"; params: { delta: string } }
   | { method: "turn/completed" };
 
 type Router = {
   getProjects: { query: () => Promise<ProjectRow[]> };
-  getThreads: {
-    query: (input: { projectID: string }) => Promise<ThreadRow[]>;
+  getAllThreads: { query: () => Promise<ThreadListRow[]> };
+  listDirectories: {
+    query: (input: { path?: string | null }) => Promise<DirectoryListing>;
   };
   addProject: {
     mutate: (input: { projectName: string; path: string }) => Promise<unknown>;

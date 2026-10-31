@@ -7,12 +7,15 @@ import {
   getProjects,
   createThread,
   type ProjectRecord,
-  type ThreadRecord,
-  getThreads,
+  getAllThreads,
+  type ThreadListRecord,
   loadMessagesFromThread,
 } from "./lightQueries.ts";
 import lightSpeedSearch from "./lightspeedSearch.ts";
 import { FileFinder } from "@ff-labs/fff-node";
+import { readdir, stat } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 export const createAppRouter = (threadService: ThreadService, lightSearch : lightSpeedSearch) => router({
   greeting: publicProcedure
@@ -110,6 +113,34 @@ export const createAppRouter = (threadService: ThreadService, lightSearch : ligh
       }));
     }),
 
+  listDirectories: publicProcedure
+    .input(z.object({ path: z.string().nullish() }).nullish())
+    .query(async ({ input }) => {
+      // Lets browser clients pick a project folder on the server's machine.
+      const directory = path.resolve(input?.path || os.homedir());
+      const entries = await readdir(directory, { withFileTypes: true });
+      const parent = path.dirname(directory);
+      const directories = await Promise.all(
+        entries.map(async (entry) => {
+          const entryPath = path.join(directory, entry.name);
+          if (entry.isDirectory()) return { name: entry.name, path: entryPath };
+          if (!entry.isSymbolicLink()) return null;
+
+          // Follow symlinks so linked project folders stay selectable; skip broken links.
+          const target = await stat(entryPath).catch(() => null);
+          return target?.isDirectory() ? { name: entry.name, path: entryPath } : null;
+        }),
+      );
+
+      return {
+        path: directory,
+        parent: parent === directory ? null : parent,
+        directories: directories
+          .filter((entry) => entry !== null)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      };
+    }),
+
   addProject: publicProcedure
     .input(z.object({ projectName: z.string(), path: z.string() }))
     .mutation(({ input }) => {
@@ -140,12 +171,14 @@ export const createAppRouter = (threadService: ThreadService, lightSearch : ligh
       return threadService.deleteThread(input.threadID)
     }),
 
-  getThreads: publicProcedure
-    .input(z.object({ projectID: z.string() }))
-    .query(({ input }) => {
-      const threads = getThreads.all(input.projectID) as ThreadRecord[];
+  getAllThreads: publicProcedure
+    .query(() => {
+      const threads = getAllThreads.all() as ThreadListRecord[];
 
-      return threads
+      return threads.map((thread) => ({
+        ...thread,
+        running: threadService.runningThreadIDs.has(thread.id),
+      }));
     }),
 
   getProjects: publicProcedure

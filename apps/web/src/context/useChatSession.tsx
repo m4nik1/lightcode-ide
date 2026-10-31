@@ -46,7 +46,15 @@ export function useChatSession() {
         access,
       });
 
+      let markedRunning = false;
+
       for await (const chunk of streamChat) {
+        // The server has marked the thread running by the first event
+        if (!markedRunning) {
+          markedRunning = true;
+          void queryClient.invalidateQueries({ queryKey: ["threads"] });
+        }
+
         if (chunk.method == "item/agentMessage/delta") {
           const responseText = chunk.params.delta;
 
@@ -72,24 +80,27 @@ export function useChatSession() {
       // Turn is over, whether or not the agent sent any text
       store.set(threadAtom(threadID), (s) => ({ ...s, thinking: false }));
       setTurn(false);
+      void queryClient.invalidateQueries({ queryKey: ["threads"] });
     }
 
-    // Get the new thread title
-    const title = await trpcClient.getThreadTitle.mutate({
-      threadID,
-    });
+    try {
+      // Get the new thread title
+      const title = await trpcClient.getThreadTitle.mutate({
+        threadID,
+      });
 
-    // Only update the title if one was generated and the user is still on this thread
-    if (title) {
-      setThread((current) =>
-        current?.id == threadID && current.title != title ? { ...current, title } : current,
-      );
+      // Only update the title if one was generated and the user is still on this thread
+      if (title) {
+        setThread((current) =>
+          current?.id == threadID && current.title != title ? { ...current, title } : current,
+        );
+      }
+    } finally {
+      // Lets the thread list know its out of date, even if titling failed
+      await queryClient.invalidateQueries({
+        queryKey: ["threads"],
+      });
     }
-
-    // Lets the thread/project list know its out of date
-    await queryClient.invalidateQueries({
-      queryKey: ["threads", currentThread.projectId],
-    });     
   }
 
   return { sendQuery, messages, thinking };
