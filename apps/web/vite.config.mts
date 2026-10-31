@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
@@ -32,7 +32,13 @@ function novusServer(): Plugin {
     });
   };
   const stop = () => {
-    child?.kill();
+    // On Windows, kill() only ends the `--watch` parent and orphans the server
+    // it spawned, so kill the whole tree. Sync, since this also runs on exit.
+    if (process.platform === 'win32' && child?.pid) {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    } else {
+      child?.kill();
+    }
     child = undefined;
   };
 

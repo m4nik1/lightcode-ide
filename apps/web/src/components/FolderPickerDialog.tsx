@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Folder, House, Loader2 } from "lucide-react";
@@ -23,6 +23,15 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
     queryFn: () => trpcClient.listDirectories.query({ path: currentPath }),
     placeholderData: (previous) => previous,
   });
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Focus the dialog on open; return focus to the opener on close.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+    return () => opener?.focus();
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -61,11 +70,13 @@ export function FolderPickerDialog({ onSelect, onCancel }: FolderPickerDialogPro
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Choose a project folder"
         className={cn(
-          "flex h-[min(480px,100%)] w-full max-w-lg flex-col overflow-hidden rounded-xl border",
+          "flex h-[min(480px,100%)] w-full max-w-lg flex-col overflow-hidden rounded-xl border outline-none",
           aiThemeClassNames.border,
           aiThemeClassNames.raisedSurface,
           aiThemeClassNames.textPrimary,
