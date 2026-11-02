@@ -66,6 +66,9 @@ export class ThreadService {
 
     this.runningThreadIDs.add(input.threadID);
 
+    // This will turn into something sent by client
+    let harness: CodexAppServerClient | null = null;
+
     try {
       let findThread = this.threads.get(input.threadID);
 
@@ -78,7 +81,13 @@ export class ThreadService {
           throw new Error(`No project found for thread ${input.threadID}`);
         }
 
-        findThread = new lightThread(this.codexInstance)
+        if(input.model.model.includes('gpt')) {
+          // Do something specific for GPT models
+          console.log("we are running a gpt model")
+          harness = this.codexInstance
+        }
+        
+        findThread = new lightThread(harness)
       
         findThread = await findThread.createThread(
           project.path,
@@ -103,7 +112,7 @@ export class ThreadService {
       console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
 
       for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking, input.mode, input.message)) {
-        console.log("Event received: ", event);
+        // console.log("Event received: ", event);
         if(event.method == 'item/completed'
           && event.params.item.type === 'agentMessage'
           && event.params.item.phase == 'final_answer') {

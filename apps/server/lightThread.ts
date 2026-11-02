@@ -11,13 +11,13 @@ Do not edit files or run mutating commands until the collaboration mode changes.
 </collaboration_mode>`;
 
 export default class lightThread {
-  codexInstance: CodexAppServerClient;
+  codexInstance: CodexAppServerClient | null;
   thread: null | ThreadStartResponse;
   turnId: null | string;
   id: null | string;
   title: string;
-  constructor(codexInstance: CodexAppServerClient) {
-    this.codexInstance = codexInstance
+  constructor(codexInstance: CodexAppServerClient | null) {
+    this.codexInstance = codexInstance ?? null;
     this.thread = null;
     this.id = null;
     this.turnId = null;
@@ -25,8 +25,13 @@ export default class lightThread {
   }
 
   async createThread(path: string, access: "read-only" | "workspace-write" | "danger-full-access") {
+    const codexInstance = this.codexInstance;
+    if (codexInstance === null) {
+      throw new Error("Harness is not available");
+    }
+
     // The approval policy is about the full access dropdown that is shown
-    this.thread = await this.codexInstance.startThread({
+    this.thread = await codexInstance.startThread({
       cwd: path,
       sandbox: access,
       approvalPolicy: 'never',
@@ -41,7 +46,7 @@ export default class lightThread {
 
   async stopTurn() {
     // The thread should stop here
-    if(this.thread === null || this.id === null || this.turnId === null) {
+    if(this.thread === null || this.id === null || this.turnId === null || this.codexInstance === null) {
       throw new Error("Thread has not been created or turn has not been started")
     }
 
@@ -56,6 +61,10 @@ export default class lightThread {
   async *sendQueryStream(model: string, thinking: AIReasoningEffort, mode: "plan" | "build", query: string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
+    }
+
+    if(this.codexInstance == null) {
+      throw new Error("Harness is not available");
     }
 
     const modeInstructions = mode === "plan"
