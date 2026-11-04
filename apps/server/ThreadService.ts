@@ -9,6 +9,7 @@ import {
   deleteThread,
 } from "./lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
+import type { lightHarness } from "./types.ts";
 import type { ServerNotification } from "@lightcode/codex-protocol";
 import { TITLE_MODEL_ID, type AIModelId, type AIReasoningEffort } from "./aiModelConfig.ts";
 
@@ -67,7 +68,7 @@ export class ThreadService {
     this.runningThreadIDs.add(input.threadID);
 
     // This will turn into something sent by client
-    let harness: CodexAppServerClient | null = null;
+    let harness: lightHarness = null;
 
     try {
       let findThread = this.threads.get(input.threadID);

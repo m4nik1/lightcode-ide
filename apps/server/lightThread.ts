@@ -16,8 +16,8 @@ export default class lightThread {
   turnId: null | string;
   id: null | string;
   title: string;
-  constructor(codexInstance: CodexAppServerClient | null) {
-    this.codexInstance = codexInstance ?? null;
+  constructor(harnessInstance: CodexAppServerClient | null) {
+    this.codexInstance = harnessInstance ?? null;
     this.thread = null;
     this.id = null;
     this.turnId = null;
