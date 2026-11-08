@@ -1,4 +1,11 @@
-import { createContext, type Dispatch, type ReactNode, type SetStateAction, useContext, useState } from "react";
+import {
+  createContext,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useContext,
+  useState,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { thread } from "../components/sidebar/types";
 import { trpcClient } from "../utils/trpc";
@@ -57,15 +64,15 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </threadContext.Provider>
-  )
-};
+  );
+}
 
 export function useThreads() {
-  const context  = useContext(threadContext);
+  const context = useContext(threadContext);
 
-  if(!context) {
-    throw new Error('useThreads must be used within its provider')
+  if (!context) {
+    throw new Error("useThreads must be used within its provider");
   }
 
-  return context
+  return context;
 }

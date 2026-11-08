@@ -10,7 +10,7 @@ import {
   getAllThreads,
   type ThreadListRecord,
   loadMessagesFromThread,
-} from "./lightQueries.ts";
+} from "./database/lightQueries.ts";
 import lightSpeedSearch from "./lightspeedSearch.ts";
 import { FileFinder } from "@ff-labs/fff-node";
 import { readdir, stat } from "node:fs/promises";
@@ -160,6 +160,7 @@ export const createAppRouter = (threadService: ThreadService, lightSearch : ligh
         crypto.randomUUID(),
         input.projectId,
         input.threadName,
+        null,
         timestamp,
         timestamp,
       )

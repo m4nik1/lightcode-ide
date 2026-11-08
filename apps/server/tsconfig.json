@@ -10,6 +10,6 @@
     "composite": true,
     "types": ["node"]
   },
-  "include": ["*.ts"],
+  "include": ["*.ts", "database/lightDB.ts", "database/lightQueries.ts"],
   "exclude": ["dist", "node_modules"]
 }

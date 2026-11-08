@@ -6,9 +6,10 @@ import { trpcClient } from '@/utils/trpc';
 export type ThreadState = {
     messages: ChatMessage[];
     thinking: boolean;
+    model: string;
 }
 
-const initialThreadState: ThreadState = { messages: [], thinking: false }
+const initialThreadState: ThreadState = { messages: [], thinking: false, model: 'gpt-6.1-Sol' }
 
 // Every Thread will start with this
 // This is instiated when a existing thread is opened or created

@@ -41,8 +41,8 @@ const createProjectStatement = database.prepare(`
 `);
 
 const createThread = database.prepare(`
-  INSERT INTO threads (id, project_id, name, created_at, updated_at)
-  VALUES (?, ?, ?, ?, ?)
+  INSERT INTO threads (id, project_id, name, type, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?)
   RETURNING id, name
 `);
 
@@ -72,6 +72,10 @@ const getThreadByIDStatement = database.prepare(
 
 const renameThread = database.prepare(
   `UPDATE threads SET name = ? WHERE id = ? RETURNING id, name`,
+);
+
+const updateThreadType = database.prepare(
+  `UPDATE threads SET type = ? WHERE id = ? RETURNING id`,
 );
 
 const deleteThread = database.prepare(`
@@ -150,6 +154,7 @@ export {
   getProjects,
   createThread,
   getAllThreads,
+  updateThreadType,
   storeMessage,
   renameThread,
   deleteThread

@@ -7,7 +7,8 @@ import {
   storeMessage,
   renameThread,
   deleteThread,
-} from "./lightQueries.ts";
+  updateThreadType,
+} from "./database/lightQueries.ts";
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import type { ServerNotification } from "@lightcode/codex-protocol";
 import { TITLE_MODEL_ID, type AIModelId, type AIReasoningEffort } from "./aiModelConfig.ts";
@@ -85,7 +86,13 @@ export class ThreadService {
           // Do something specific for GPT models
           console.log("we are running a gpt model")
           harness = this.codexInstance
-        }
+          
+          // Set thread type to harness (type, id)
+          updateThreadType.get('codex', input.threadID);
+        } 
+        // else if(input.model.model.includes('claude')) {
+        //   harness = 
+        // }
         
         findThread = new lightThread(harness)
       

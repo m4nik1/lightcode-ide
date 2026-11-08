@@ -7,10 +7,15 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import OpenAIIcon from "./icons/OpenAIIcon";
+import ClaudeIcon from "./icons/ClaudeIcon";
 import { cn } from "../lib/utils";
 import { aiThemeClassNames } from "../theme";
 import { useAIChat } from "../context/useAIChat";
-import { AI_MODEL_IDS, type AIModelId, type AIReasoningEffort } from "../lib/aiModelConfig";
+import {
+  AI_MODEL_IDS,
+  type AIModelId,
+  type AIReasoningEffort,
+} from "../lib/aiModelConfig";
 
 export type PickerOption<TValue extends string> = {
   label: string;
@@ -19,6 +24,7 @@ export type PickerOption<TValue extends string> = {
 };
 
 const modelLabels: Record<AIModelId, string> = {
+  "claude-opus-5.5": "Opus 5.5",
   "gpt-6-astra": "GPT-6 Astra",
   "gpt-6.1-sol": "GPT-6.1 Sol",
   "gpt-6-luna": "GPT-6 Luna",
@@ -70,12 +76,20 @@ export function PickerDropdown<TValue extends string>({
             aiThemeClassNames.surfaceHover,
             aiThemeClassNames.dataOpenSurfaceHover,
             triggerClassName ??
-              cn(aiThemeClassNames.textSecondary, aiThemeClassNames.hoverTextPrimary),
+              cn(
+                aiThemeClassNames.textSecondary,
+                aiThemeClassNames.hoverTextPrimary,
+              ),
           )}
         >
           {triggerLeading}
           {selectedLabel}
-          {showChevron ? <ChevronDownIcon aria-hidden="true" className="-ml-0.5 size-4 opacity-60 transition-transform group-data-[state=open]/trigger:rotate-180" /> : null}
+          {showChevron ? (
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="-ml-0.5 size-4 opacity-60 transition-transform group-data-[state=open]/trigger:rotate-180"
+            />
+          ) : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -151,7 +165,13 @@ export default function ModelPicker() {
         value={selectedModel}
         onSelect={modelSelected}
         menuWidth="min-w-52"
-        triggerLeading={<OpenAIIcon className="size-[18px]" aria-hidden="true" />}
+        triggerLeading={
+          selectedModel.startsWith("claude-") ? (
+            <ClaudeIcon className="size-[18px]" aria-hidden="true" />
+          ) : (
+            <OpenAIIcon className="size-[18px]" aria-hidden="true" />
+          )
+        }
       />
       <ToolbarDivider />
       <PickerDropdown
@@ -159,7 +179,13 @@ export default function ModelPicker() {
         value={thinkingLevel}
         onSelect={thinkingSelected}
         menuWidth="min-w-40"
-        triggerLeading={<BrainIcon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />}
+        triggerLeading={
+          <BrainIcon
+            className="size-[18px]"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
+        }
       />
     </>
   );

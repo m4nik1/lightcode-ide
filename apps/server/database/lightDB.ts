@@ -20,6 +20,7 @@ const initDatabase = `
         project_id STRING,
         external_thread_id STRING,
         name TEXT,
+        type STRING,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
     );
