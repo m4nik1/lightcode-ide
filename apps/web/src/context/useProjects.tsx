@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { trpcClient } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
+import { useThreads } from "./useThreads";
 
 // Loads sidebar projects and exposes project creation.
 
 export function useProjects() {
   const [isFolderPickerOpen, setFolderPickerOpen] = useState(false);
+  const { newThread } = useThreads();
   const getProjects = useQuery({
     queryKey: ["projects"],
     queryFn: () => trpcClient.getProjects.query(),
@@ -32,12 +34,19 @@ export function useProjects() {
       return;
     }
 
-    await trpcClient.addProject.mutate({
+    const project = await trpcClient.addProject.mutate({
       projectName: folderName,
       path: projectFolderPath,
     });
 
     await getProjects.refetch();
+
+    // Adding a project means you want to chat about it, so open a chat right away
+    try {
+      await newThread(project.id, project.path);
+    } catch (error) {
+      console.error("Failed to create chat for new project", error);
+    }
   }
 
   return {

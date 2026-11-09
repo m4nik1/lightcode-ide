@@ -47,7 +47,7 @@ type Router = {
     query: (input: { path?: string | null }) => Promise<DirectoryListing>;
   };
   addProject: {
-    mutate: (input: { projectName: string; path: string }) => Promise<unknown>;
+    mutate: (input: { projectName: string; path: string }) => Promise<ProjectRow>;
   };
   addThread: {
     mutate: (input: {

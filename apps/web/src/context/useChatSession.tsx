@@ -15,7 +15,7 @@ export function useChatSession() {
   
   const store = useStore();
   const { model, access, setTurn } = useAIChat();
-  const { currentThread, setThread } = useThreads();
+  const { currentThread, setThread, newThread } = useThreads();
 
   const threadID = currentThread?.id;
   const { messages, thinking } = useAtomValue(
@@ -24,9 +24,21 @@ export function useChatSession() {
 
   async function sendQuery(value: string, mode: "build" | "plan") {
     const text = value.trim();
-    if (!text || !currentThread) return;
+    if (!text) return;
 
-    const threadID = currentThread.id;
+    // No chat selected yet: start one in the first project instead of dropping the message
+    let thread = currentThread;
+    if (!thread) {
+      const projects = await queryClient.fetchQuery({
+        queryKey: ["projects"],
+        queryFn: () => trpcClient.getProjects.query(),
+      });
+      const project = projects[0];
+      if (!project) return;
+      thread = await newThread(project.id, project.path);
+    }
+
+    const threadID = thread.id;
 
     const userMessageID = crypto.randomUUID();
     const assistantMessageID = crypto.randomUUID();

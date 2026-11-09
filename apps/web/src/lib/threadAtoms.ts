@@ -25,7 +25,8 @@ export const threadAtom = atomFamily((threadID : string) => {
     isLoaded = true;
     try {
       trpcClient.loadMessages.query({ threadID }).then((savedMessages) => {
-        set((s) => ({ ...s, messages: savedMessages }))
+        // Don't clobber messages sent before the history finished loading
+        set((s) => (s.messages.length > 0 ? s : { ...s, messages: savedMessages }))
       })
     } catch(e) {
       isLoaded = false;

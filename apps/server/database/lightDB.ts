@@ -20,7 +20,7 @@ const initDatabase = `
         project_id STRING,
         external_thread_id STRING,
         name TEXT,
-        type STRING,
+        type TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
     );
@@ -37,5 +37,14 @@ const initDatabase = `
 `
 
 database.exec(initDatabase);
+
+// Migration: databases created before `type` existed need the column added
+const threadColumns = database
+    .prepare(`PRAGMA table_info(threads)`)
+    .all() as { name: string }[];
+
+if (!threadColumns.some((column) => column.name === 'type')) {
+    database.exec(`ALTER TABLE threads ADD COLUMN type TEXT`);
+}
 
 export default database;
