@@ -92,7 +92,8 @@ export class ThreadService {
           updateThreadType.get('codex', input.threadID);
         } 
         // else if(input.model.model.includes('claude')) {
-        //   harness = 
+        //   harness =
+        //   updateThreadType.get('claude', input.threadID);
         // }
         
         findThread = new lightThread(harness)

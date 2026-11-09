@@ -147,23 +147,14 @@ export function ToolbarDivider() {
 
 export default function ModelPicker() {
   const { model, modelSet } = useAIChat();
-  const selectedModel = model.model;
-  const thinkingLevel = model.thinking;
-
-  function modelSelected(model: AIModelId) {
-    modelSet(model, thinkingLevel);
-  }
-
-  function thinkingSelected(thinking: AIReasoningEffort) {
-    modelSet(selectedModel, thinking);
-  }
+  const { model: selectedModel, thinking: thinkingLevel } = model;
 
   return (
     <>
       <PickerDropdown
         options={modelOptions}
         value={selectedModel}
-        onSelect={modelSelected}
+        onSelect={(value) => modelSet(value, thinkingLevel)}
         menuWidth="min-w-52"
         triggerLeading={
           selectedModel.startsWith("claude-") ? (
@@ -177,7 +168,7 @@ export default function ModelPicker() {
       <PickerDropdown
         options={thinkingOptions}
         value={thinkingLevel}
-        onSelect={thinkingSelected}
+        onSelect={(value) => modelSet(selectedModel, value)}
         menuWidth="min-w-40"
         triggerLeading={
           <BrainIcon

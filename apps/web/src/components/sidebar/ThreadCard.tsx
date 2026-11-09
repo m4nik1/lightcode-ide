@@ -5,6 +5,8 @@ import { cn } from "../../lib/utils";
 import { aiThemeClassNames } from "../../theme";
 import type { ThreadListRow } from "../../utils/trpc";
 import { useThreads } from "@/context/useThreads";
+import { useAIChat } from "@/context/useAIChat";
+import { AI_MODEL_IDS } from "@/lib/aiModelConfig";
 import OpenAIIcon from "../icons/OpenAIIcon";
 
 type ModelIcon = ComponentType<SVGProps<SVGSVGElement>>;
@@ -24,6 +26,7 @@ type ThreadCardProps = {
 
 export function ThreadCard({ thread }: ThreadCardProps) {
   const { currentThread, setThread, deleteThread } = useThreads();
+  const { model, modelSet } = useAIChat();
   const isSelected = currentThread?.id === thread.id;
   const ModelLogo = iconForModel(thread.model);
 
@@ -43,14 +46,18 @@ export function ThreadCard({ thread }: ThreadCardProps) {
             type="button"
             aria-current={isSelected ? "page" : undefined}
             title={`${thread.name} · ${thread.project_name}`}
-            onClick={() =>
+            onClick={() => {
               setThread({
                 id: thread.id,
                 title: thread.name,
                 projectId: thread.project_id,
                 projectPath: thread.project_path,
-              })
-            }
+              });
+
+              // Restore the model this thread last used, if it's still a known model
+              const lastModel = AI_MODEL_IDS.find((id) => id === thread.model);
+              if (lastModel) modelSet(lastModel, model.thinking);
+            }}
             className={cn(
               "flex w-full select-none items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors",
               aiThemeClassNames.focusOutline,
