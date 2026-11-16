@@ -99,6 +99,23 @@ export default class lightThread {
     }
   }
 
+  async *sendClaudeQueryStream(model: string, thinking: AIReasoningEffort, query: string) {
+    if (!this.thread || !this.id) {
+      throw new Error("Thread has not been created")
+    }
+
+    if(this.claudeInstance == null) {
+      throw new Error("Harness is not available");
+    }
+
+    try {
+      for await (const event of ) {
+
+    } catch(err) {
+      console.error("Error in sendClaudeQueryStream: ", err)
+    }
+  }
+
   getInstance() {
     return this.codexInstance
   }
