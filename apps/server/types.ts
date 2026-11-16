@@ -1,5 +1,6 @@
 import { FileFinder } from "@ff-labs/fff-node";
-import { CodexAppServerClient } from "../../packages/codex-protocol/dist/client.js";
+import codexDriver from "./codexDriver.ts";
+import claudeDriver from "./claudeDriver.ts";
 
 export interface fileItem {
   relativePath: string;
@@ -10,4 +11,7 @@ export interface fffInstance {
   [key: string] : FileFinder
 }
 
-export type lightHarness = CodexAppServerClient | null;
+export type lightHarness = {
+  codex: codexDriver;
+  claude: claudeDriver;
+};

@@ -151,6 +151,7 @@ export const createAppRouter = (threadService: ThreadService, lightSearch : ligh
       })
     }),
 
+  // Creates thread in the database
   addThread: publicProcedure
     .input(z.object({ threadName: z.string(), projectId: z.string() }))
     .mutation(({ input }) => {

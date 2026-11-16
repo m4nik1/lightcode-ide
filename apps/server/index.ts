@@ -6,6 +6,9 @@ import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { ThreadService } from './ThreadService.ts';
 import { createAppRouter } from './appRouter.ts';
 import lightSpeedSearch from './lightspeedSearch.ts';
+import CodexProvider from './codexProvider.ts';
+import codexDriver from './codexDriver.ts';
+import claudeDriver from './claudeDriver.ts';
 
 const DEFAULT_PORT = 2024;
 const DEFAULT_HOST = '127.0.0.1';
@@ -28,6 +31,7 @@ export type StartServerOptions = {
 let activeServer: Server | undefined;
 let activeThreadService: ThreadService | undefined;
 let pendingStart: Promise<void> | undefined;
+let codexProvider: CodexProvider;
 
 function applyCorsHeaders(
   req: Parameters<ReturnType<typeof createHTTPHandler>>[0],
@@ -47,7 +51,7 @@ function applyCorsHeaders(
 async function startServerOnce(options: StartServerOptions) {
   const host = options.host ?? DEFAULT_HOST;
   const port = options.port ?? DEFAULT_PORT;
-  const threadService = new ThreadService(
+  codexProvider = new CodexProvider(
     new CodexAppServerClient({
       clientInfo: {
         name: 'lightcode-ide',
@@ -59,10 +63,11 @@ async function startServerOnce(options: StartServerOptions) {
     }),
   );
 
+  await codexProvider.connect();
+  
+  const threadService = new ThreadService({ codex: new codexDriver(codexProvider.getInstance()), claude: new claudeDriver() });
+
   const lightSearch = new lightSpeedSearch();
-
-
-  await threadService.start();
 
   const trpcHandler = createHTTPHandler({
     router: createAppRouter(threadService, lightSearch),
@@ -92,7 +97,7 @@ async function startServerOnce(options: StartServerOptions) {
       });
     });
   } catch (error) {
-    await threadService.close();
+    await codexProvider.close();
     throw error;
   }
 
@@ -133,7 +138,7 @@ export async function stopServer() {
     });
   }
 
-  await threadService?.close();
+  await codexProvider.close();
 }
 
 const entryPoint = process.argv[1];

@@ -1,7 +1,7 @@
-import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { CodexAppServerClient } from '@lightcode/codex-protocol'
 import type { ThreadStartResponse } from '@lightcode/codex-protocol'
 import type { AIReasoningEffort } from './aiModelConfig.ts'
+import claudeDriver from "./claudeDriver.ts";
 
 const PLAN_MODE_INSTRUCTIONS = `<collaboration_mode>
 # Collaboration Mode: Plan
@@ -12,13 +12,15 @@ Do not edit files or run mutating commands until the collaboration mode changes.
 </collaboration_mode>`;
 
 export default class lightThread {
-  codexInstance: CodexAppServerClient | null;
+  codexInstance: CodexAppServerClient;
+  claudeInstance: claudeDriver;
   thread: null | ThreadStartResponse;
   turnId: null | string;
   id: null | string;
   title: string;
-  constructor(harnessInstance: CodexAppServerClient | null) {
-    this.codexInstance = harnessInstance ?? null;
+  constructor(codexInstance: CodexAppServerClient,  claudeInstance: claudeDriver) {
+    this.codexInstance = codexInstance;
+    this.claudeInstance = claudeInstance;
     this.thread = null;
     this.id = null;
     this.turnId = null;
@@ -36,22 +38,13 @@ export default class lightThread {
       cwd: path,
       sandbox: access,
       approvalPolicy: 'never',
-    }) 
+    });
 
     console.log("Started new thread: ", this.thread)
 
     this.id = this.thread.thread.id;
 
     return this;
-  }
-
-  buildClaudeOptions(model: string, path: string) {
-    return {
-      cwd: path,
-      allowedTools: ['read', 'Glob', 'Grep'],
-      model: model,
-      include_partial_messages=true,
-    }
   }
 
   async stopTurn() {
@@ -68,7 +61,7 @@ export default class lightThread {
     console.log("Turn interrupted: ", turnInterrupt)
   }
 
-  async *sendQueryStream(model: string, thinking: AIReasoningEffort, mode: "plan" | "build", query: string, isClaude : boolean) {
+  async *sendCodexQueryStream(model: string, thinking: AIReasoningEffort, mode: "plan" | "build", query: string) {
     if (!this.thread || !this.id) {
       throw new Error("Thread has not been created")
     }
@@ -77,41 +70,32 @@ export default class lightThread {
       throw new Error("Harness is not available");
     }
 
-    if(!isClaude) {
+    // Legacy: will be removed in the future
+    const modeInstructions = mode === "plan"
+      ? PLAN_MODE_INSTRUCTIONS : ""
 
-      // Legacy: will be removed in the future
-      const modeInstructions = mode === "plan"
-        ? PLAN_MODE_INSTRUCTIONS : ""
-
-      try {
-        for await (const event of this.codexInstance.streamTurn({
-          threadId: this.id,
-          model: model,
-          effort: thinking,
-          input: [
-            {
-              type: "text",
-              text: `${modeInstructions}\n\n${query}`,
-              text_elements: [],
-            },
-          ],
-        })) {
-          // Remember the turn so stopTurn can interrupt it
-          if (event.method == "turn/started") {
-            this.turnId = event.params.turn.id;
-          }
-          console.log(event)
-          yield event;
+    try {
+      for await (const event of this.codexInstance.streamTurn({
+        threadId: this.id,
+        model: model,
+        effort: thinking,
+        input: [
+          {
+            type: "text",
+            text: `${modeInstructions}\n\n${query}`,
+            text_elements: [],
+          },
+        ],
+      })) {
+        // Remember the turn so stopTurn can interrupt it
+        if (event.method == "turn/started") {
+          this.turnId = event.params.turn.id;
         }
-      } finally {
-        this.turnId = null;
+        console.log(event)
+        yield event;
       }
-    } else {
-      try {
-        for await (const event of query(query, options=this.buildClaudeOptions(model, this.thread.cwd))) {
-          // if(event)
-        }
-      }
+    } finally {
+      this.turnId = null;
     }
   }
 

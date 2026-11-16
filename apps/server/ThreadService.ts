@@ -31,20 +31,12 @@ export class ThreadService {
   threads: Map<string, lightThread>;
   // Threads with a turn currently streaming
   runningThreadIDs: Set<string>;
-  codexInstance: CodexAppServerClient;
-  constructor(AIDriver: CodexAppServerClient) {
+  harnessDriver: lightHarness;
+  constructor(AIDriver: lightHarness) {
     this.recentThreads = [];
     this.threads = new Map();
     this.runningThreadIDs = new Set();
-    this.codexInstance = AIDriver;
-  }
-
-  async start() {
-    await this.codexInstance.connect();
-  }
-
-  async close() {
-    await this.codexInstance.close();
+    this.harnessDriver = AIDriver;
   }
 
   async stopTurn(threadID: string) {
@@ -52,7 +44,7 @@ export class ThreadService {
 
     const runningThread = this.threads.get(threadID)
 
-    if(!runningThread) {
+    if (!runningThread) {
       throw new Error(`No active thread found for ${threadID}`)
     }
 
@@ -69,7 +61,7 @@ export class ThreadService {
     this.runningThreadIDs.add(input.threadID);
 
     // This will turn into something sent by client
-    let harness: lightHarness = null;
+    let harness: lightHarness | null = null;
 
     try {
       let findThread = this.threads.get(input.threadID);
@@ -83,25 +75,29 @@ export class ThreadService {
           throw new Error(`No project found for thread ${input.threadID}`);
         }
 
-        if(input.model.model.includes('gpt')) {
+        let harness;
+
+        if (input.model.model.includes('gpt')) {
           // Do something specific for GPT models
           console.log("we are running a gpt model")
-          harness = this.codexInstance
-          
+          harness = this.harnessDriver.codex
+
           // Set thread type to harness (type, id)
           updateThreadType.get('codex', input.threadID);
-        } 
-        // else if(input.model.model.includes('claude')) {
-        //   harness =
-        //   updateThreadType.get('claude', input.threadID);
-        // }
+        }
+        else if(input.model.model.includes('claude')) {
+          harness = this.harnessDriver.claude
+          updateThreadType.get('claude', input.threadID);
+        }
         
-        findThread = new lightThread(harness)
-      
-        findThread = await findThread.createThread(
-          project.path,
-          input.access,
-        );
+        findThread = new lightThread(this.harnessDriver.codex.getInstance(), this.harnessDriver.claude);
+
+        if(input.model.model.includes('gpt')) {
+          findThread = await findThread.createThread(
+            project.path,
+            input.access,
+          );
+        }
 
         this.threads.set(input.threadID, findThread);
         this.recentThreads.push(findThread);
@@ -119,23 +115,30 @@ export class ThreadService {
       );
 
       console.log(`Sending message to ${input.model.model} with ${input.model.thinking}`)
-
-      for await (const event of findThread.sendQueryStream(input.model.model, input.model.thinking, input.mode, input.message)) {
-        // console.log("Event received: ", event);
-        if(event.method == 'item/completed'
-          && event.params.item.type === 'agentMessage'
-          && event.params.item.phase == 'final_answer') {
-          storeMessage.get(
-            crypto.randomUUID(),
-            input.threadID,
-            event.params.item.text,
-            input.model.model,
-            input.model.thinking,
-            "assistant",
-            nextMessageSequence(input.threadID),
-          );
+      if(input.model.model.includes('gpt')) {
+        for await (const event of findThread.sendCodexQueryStream(input.model.model, input.model.thinking, input.mode, input.message)) {
+          // console.log("Event received: ", event);
+          if (event.method == 'item/completed'
+            && event.params.item.type === 'agentMessage'
+            && event.params.item.phase == 'final_answer') {
+            storeMessage.get(
+              crypto.randomUUID(),
+              input.threadID,
+              event.params.item.text,
+              input.model.model,
+              input.model.thinking,
+              "assistant",
+              nextMessageSequence(input.threadID),
+            );
+          }
+          yield event;
         }
-        yield event;
+      }
+      // This is for claude
+      // TODO: Make sure to to give the input.threadID 
+      // so thread can be stored as that id
+      else {
+        console.log("We will do a claude stream nao!")
       }
     } finally {
       this.runningThreadIDs.delete(input.threadID);
@@ -143,7 +146,7 @@ export class ThreadService {
   }
 
   deleteThread(threadID: string) {
-    if(this.threads.has(threadID)) {
+    if (this.threads.has(threadID)) {
       this.threads.delete(threadID);
     }
 
@@ -166,9 +169,9 @@ export class ThreadService {
 
     let title = "";
 
-    const runningThread = await this.codexInstance.startThread({ ephemeral: true });
+    const runningThread = await this.harnessDriver.codex.getInstance().startThread({ ephemeral: true });
 
-    for await (const event of this.codexInstance.streamTurn({
+    for await (const event of this.harnessDriver.codex.getInstance().streamTurn({
       threadId: runningThread.thread.id,
       model: TITLE_MODEL_ID,
       effort: "low",
@@ -188,10 +191,10 @@ export class ThreadService {
       }
     }
 
-    if(title !== '' && title !== "Untitled chat") {
+    if (title !== '' && title !== "Untitled chat") {
       renameThread.get(title, threadID);
     }
-        
+
     // The turn is completed here
     return title;
   }
