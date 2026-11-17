@@ -109,7 +109,9 @@ export default class lightThread {
     }
 
     try {
-      for await (const event of ) {
+      for await (const event of this.claudeInstance.streamTurn(query, this.id, this.thread.cwd, model)) {
+        yield event
+      }
 
     } catch(err) {
       console.error("Error in sendClaudeQueryStream: ", err)
