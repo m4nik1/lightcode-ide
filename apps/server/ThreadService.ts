@@ -138,7 +138,8 @@ export class ThreadService {
       // TODO: Make sure to to give the input.threadID 
       // so thread can be stored as that id
       else {
-        console.log("We will do a claude stream nao!")
+        console.log("We will do a claude stream nao!");
+        findThread.sendClaudeQueryStream(input.model.model, input.model.thinking, input.message)
       }
     } finally {
       this.runningThreadIDs.delete(input.threadID);

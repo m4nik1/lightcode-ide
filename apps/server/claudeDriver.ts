@@ -13,6 +13,7 @@ export default class claudeDriver {
   }
 
   streamTurn(prompt : string, session_id: string, path: string, model : string) {
+    console.log("streaming a new turn now")
     return query({prompt, options: this.buildClaudeOptions(model, path, session_id)});
   }
 }

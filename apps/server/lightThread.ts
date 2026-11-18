@@ -110,6 +110,7 @@ export default class lightThread {
 
     try {
       for await (const event of this.claudeInstance.streamTurn(query, this.id, this.thread.cwd, model)) {
+        console.log('event: ', event)
         yield event
       }
 
