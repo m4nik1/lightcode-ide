@@ -99,23 +99,22 @@ export default class lightThread {
     }
   }
 
-  async *sendClaudeQueryStream(model: string, thinking: AIReasoningEffort, query: string) {
-    if (!this.thread || !this.id) {
-      throw new Error("Thread has not been created")
-    }
-
+  async *sendClaudeQueryStream(model: string, thinking: AIReasoningEffort, query: string, sessionId: string, cwd: string) {
     if(this.claudeInstance == null) {
       throw new Error("Harness is not available");
     }
 
+    // Resume the session if a previous turn already created it
+    const resume = this.id === sessionId;
+
     try {
-      for await (const event of this.claudeInstance.streamTurn(query, this.id, this.thread.cwd, model)) {
-        console.log('event: ', event)
+      for await (const event of this.claudeInstance.streamTurn(query, sessionId, cwd, model, resume)) {
+        this.id = sessionId;
         yield event
       }
-
     } catch(err) {
       console.error("Error in sendClaudeQueryStream: ", err)
+      throw err
     }
   }
 

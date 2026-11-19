@@ -12,6 +12,7 @@ import {
 import { CodexAppServerClient } from "@lightcode/codex-protocol";
 import type { lightHarness } from "./types.ts";
 import type { ServerNotification } from "@lightcode/codex-protocol";
+import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { TITLE_MODEL_ID, type AIModelId, type AIReasoningEffort } from "./aiModelConfig.ts";
 
 type AIMessage = {
@@ -51,7 +52,7 @@ export class ThreadService {
     await runningThread.stopTurn()
   }
 
-  async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification> {
+  async *sendMessage(input: AIMessage): AsyncGenerator<ServerNotification | SDKMessage> {
     // One turn per thread; claim it before any async work so overlapping
     // requests can't store a message or clear another turn's running state
     if (this.runningThreadIDs.has(input.threadID)) {
@@ -138,8 +139,26 @@ export class ThreadService {
       // TODO: Make sure to to give the input.threadID 
       // so thread can be stored as that id
       else {
-        console.log("We will do a claude stream nao!");
-        findThread.sendClaudeQueryStream(input.model.model, input.model.thinking, input.message)
+        const project = getProjectByThreadID(input.threadID);
+        if (!project) {
+          throw new Error(`No project found for thread ${input.threadID}`);
+        }
+
+        for await (const event of findThread.sendClaudeQueryStream(input.model.model, input.model.thinking, input.message, input.threadID, project.path)) {
+          // if (event.type === 'result' && event.subtype === 'success') {
+          //   storeMessage.get(
+          //     crypto.randomUUID(),
+          //     input.threadID,
+          //     event.result,
+          //     input.model.model,
+          //     input.model.thinking,
+          //     "assistant",
+          //     nextMessageSequence(input.threadID),
+          //   );
+          // }
+          console.log('claude event: ', event)
+          yield event;
+        }
       }
     } finally {
       this.runningThreadIDs.delete(input.threadID);

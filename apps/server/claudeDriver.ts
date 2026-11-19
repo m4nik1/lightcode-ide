@@ -2,18 +2,19 @@ import { query } from "@anthropic-ai/claude-agent-sdk"
 
 export default class claudeDriver {
 
-  buildClaudeOptions(model: string, path: string, session_id : string) {
+  buildClaudeOptions(model: string, path: string, sessionId: string, resume: boolean) {
     return {
       cwd: path,
-      session_id: session_id,
-      allowedTools: ['read', 'Glob', 'Grep'],
+      // First turn creates the session with our thread ID; later turns resume it
+      ...(resume ? { resume: sessionId } : { sessionId }),
+      allowedTools: ['Read', 'Glob', 'Grep'],
       model: model,
-      permisionMode: 'acceptEdits'
+      permissionMode: 'acceptEdits' as const,
+      includePartialMessages: true,
     }
   }
 
-  streamTurn(prompt : string, session_id: string, path: string, model : string) {
-    console.log("streaming a new turn now")
-    return query({prompt, options: this.buildClaudeOptions(model, path, session_id)});
+  streamTurn(prompt: string, sessionId: string, path: string, model: string, resume: boolean) {
+    return query({ prompt, options: this.buildClaudeOptions(model, path, sessionId, resume) });
   }
 }
